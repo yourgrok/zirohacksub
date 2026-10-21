@@ -75,7 +75,7 @@ export function resetAndSeed() {
       let holidays: unknown[] = [diwaliShown];
       let owner = OWNER_ACCOUNT;
       if (p.id === "site_b") holidays = [{ ...diwaliShown, kind: "closed", open: null, close: null }]; // TC1
-      if (p.id === "site_c") { phone = "090000 00001"; address = "42 Marigold Ln., Koregaon Park, Pune - 411001, MH"; } // TC2 (formatting only)
+      if (p.id === "site_c") { phone = "090000 00001"; address = "42 Marigold Ln., Koregaon Park, Pune, MH - 411001"; } // TC2 (formatting only)
       if (p.id === "site_d") { owner = OTHER_ACCOUNT; phone = "+91 90000 00099"; } // TC3 (claimed by someone else, stale phone)
       if (p.id === "site_e") hours = { ...RECORD_HOURS, sun: null }; // TC4 (moderation site, Sunday wrong)
       insML.run(p.id, OURS_LISTING[p.id], BUSINESS.name, address, phone, JSON.stringify(hours), JSON.stringify(holidays), owner, 0);

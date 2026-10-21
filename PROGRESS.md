@@ -4,7 +4,7 @@
 - [x] M1 Setup + docs skeleton
 - [x] M2 DB, schema, seed, normalisers + tests
 - [x] M3 Mock sites A-E, decoy, /mock/admin, reset
-- [ ] M4 Readers, comparator, state machine, deterministic planner, loop, approvals, apply, verifier, report (TC1-TC4)
+- [x] M4 Readers, comparator, state machine, deterministic planner, loop, approvals, apply, verifier, report (TC1-TC4)
 - [ ] M5 Gemini planner, guardrails, fallback, summary
 - [ ] M6 Holiday Foresight + TC6
 - [ ] M7 Plain-language parser + preview + cross-check + TC5
@@ -20,3 +20,7 @@
 
 ## Known issues
 (none yet)
+
+### Decisions (M4)
+- Playwright 1.64 wants a newer Chromium than the container's pre-installed build; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` (reader honours it). `READER_MODE=auto` falls back to HTTP+cheerio if launch fails.
+- Seed fix: site C address reordered words ("Pune, MH - 411001") because word *order* changes are real differences, not formatting.
