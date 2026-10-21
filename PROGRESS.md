@@ -9,7 +9,7 @@
 - [x] M6 Holiday Foresight + TC6
 - [x] M7 Plain-language parser + preview + cross-check + TC5
 - [x] M8 React console, /tests page, runners, evidence, CSV/print
-- [ ] M9 Docker, /health, README, docs, slides, final run
+- [x] M9 Docker, /health, README, docs, slides, final run
 
 ## Decisions
 - Gemini docs site (ai.google.dev) is unreachable from the build container; Interactions API call shape taken from the
@@ -18,8 +18,19 @@
 - Live Gemini runs cannot be executed in the build container (no key). Gemini path is unit-tested with a mocked client;
   evidence/llm/ is produced by the user via `npm run test:tc:llm`. No Gemini output is fabricated.
 
-## Known issues
-(none yet)
+## Known issues (honest)
+- **No live Gemini run exists.** The build container had no API key and could not reach ai.google.dev. The Gemini path (Interactions API call shape taken from the installed SDK types) is covered only by unit tests with a mocked client. First real call may need small adjustments (e.g. JSON-schema keywords accepted by `response_format`, or model names `gemini-3.8-flash` / `gemini-3.5-flash-lite`, which I could not verify). Any failure degrades safely to the deterministic planner and shows as "Fallback" in the trace. Run `npm run test:tc:llm` with the key to produce `evidence/llm/`.
+- **Docker / Render not built or deployed here** (no Docker in the container; deployment needs the owner's accounts). Dockerfile, Dockerfile.playwright and render.yaml are unverified.
+- Optional mock-OTP dashboard step not built (flagged listings show a manual step instead; the agent never automates OTP/CAPTCHA).
+- Stale special-day entries that exist on a site but not on the owner's record are not detected (only record → site is checked).
+- `data/holidays.json` dates are approximate and unverified (flagged `verified:false`, UI shows "verify date"); calendar covers 2026-11 → 2027-10.
+- Tests/evidence pin the date to 2026-10-21; seeded Diwali (2026-11-08) conditions assume that date. The live UI uses the real date unless DEMO_NOW is set, so after early Nov 2026 the seeded Diwali exception becomes "past" and drops out of comparisons (use DEMO_NOW=2026-10-21 for a demo).
+- `node:sqlite` fallback exists and the whole suite passes with `SQLITE_DRIVER=node`, but it was not exercised on Windows.
+- Windows: not run on Windows at all (Linux container). PowerShell steps are in README.
+- A finished run's page-read uses the real Playwright reader only when READER_MODE is playwright/auto; unit tests default to http, evidence screenshots (`npm run test:tc` with auto) use Playwright.
+
+## Final verification (from fresh state)
+- `npm run typecheck` ✔ · `npm test` 119/119 ✔ · `npm run build` ✔ · `npm run test:tc` TC1–TC6 6/6 PASS ✔ (evidence/SUMMARY.md generated) · `/tests` page Run all 6/6 ✔ (Playwright-driven) · `npm start` production boot from empty DB, /health ok ✔.
 
 ### Decisions (M4)
 - Playwright 1.64 wants a newer Chromium than the container's pre-installed build; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` (reader honours it). `READER_MODE=auto` falls back to HTTP+cheerio if launch fails.

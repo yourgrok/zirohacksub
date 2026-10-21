@@ -1,5 +1,4 @@
 import Database from "better-sqlite3";
-import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -14,6 +13,7 @@ export interface DB {
 
 /** Fallback driver (Node's built-in node:sqlite) in case better-sqlite3's native binary is unavailable, e.g. on some Windows setups. */
 function nodeSqlite(file: string): DB {
+  const { DatabaseSync } = process.getBuiltinModule("node:sqlite") as typeof import("node:sqlite");
   const d = new DatabaseSync(file);
   return {
     prepare: (sql) => d.prepare(sql) as any,
