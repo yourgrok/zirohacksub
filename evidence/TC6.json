@@ -1,0 +1,62 @@
+{
+  "id": "TC6",
+  "title": "Foresight alert for a holiday with no exception",
+  "mode": "deterministic",
+  "input": "Today is pinned to 21 Oct 2026. Bhai Dooj (11 Nov 2026) has no exception on the record.",
+  "expected": "An alert is raised (30-day milestone, chip “Not set”) with a draft suggestion that is NOT applied automatically.",
+  "actual": "Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first.",
+  "pass": true,
+  "explanation": "Actual result matches the expected result.",
+  "checks": [
+    {
+      "name": "Foresight raises an alert for Bhai Dooj (no exception set)",
+      "pass": true,
+      "detail": "Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first."
+    },
+    {
+      "name": "Alert milestone is the 30-day one (21 days away)",
+      "pass": true,
+      "detail": "milestone=30, daysAway=21"
+    },
+    {
+      "name": "Holiday is flagged for the owner to verify its date",
+      "pass": true,
+      "detail": "verified=false → UI shows “verify date”"
+    },
+    {
+      "name": "A draft is suggested but nothing is applied automatically",
+      "pass": true,
+      "detail": "draft: Special hours 10:00–14:00 on Bhai Dooj; exceptions unchanged (1); writes=0"
+    },
+    {
+      "name": "Readiness score for the next holiday (Diwali) is shown with its formula",
+      "pass": true,
+      "detail": "readiness=92"
+    }
+  ],
+  "startedAt": "2026-10-21T10:07:27.359Z",
+  "durationMs": 12,
+  "testDate": "2026-10-21",
+  "readerMode": "http",
+  "runs": [],
+  "trace": [],
+  "fallbacks": [],
+  "blocked": [],
+  "states": [],
+  "extra": {
+    "alert": {
+      "holidayId": "hol_2026_bhaidooj",
+      "name": "Bhai Dooj",
+      "date": "2026-11-11",
+      "daysAway": 21,
+      "milestone": 30,
+      "chip": "NOT_SET",
+      "message": "Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first."
+    },
+    "next": {
+      "name": "Diwali (Lakshmi Puja)",
+      "readiness": 92
+    }
+  },
+  "screenshots": []
+}

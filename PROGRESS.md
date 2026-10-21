@@ -8,7 +8,7 @@
 - [x] M5 Gemini planner, guardrails, fallback, summary
 - [x] M6 Holiday Foresight + TC6
 - [x] M7 Plain-language parser + preview + cross-check + TC5
-- [ ] M8 React console, /tests page, runners, evidence, CSV/print
+- [x] M8 React console, /tests page, runners, evidence, CSV/print
 - [ ] M9 Docker, /health, README, docs, slides, final run
 
 ## Decisions

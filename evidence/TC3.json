@@ -1,0 +1,341 @@
+{
+  "id": "TC3",
+  "title": "Listing claimed by someone else",
+  "mode": "deterministic",
+  "input": "Site D's listing is claimed by another account and has an outdated phone (+91 90000 00099).",
+  "expected": "FLAGGED_NOT_OWNER, never edited, zero write attempts logged for site D.",
+  "actual": "phone FLAGGED_NOT_OWNER; 0 write attempts",
+  "pass": true,
+  "explanation": "Actual result matches the expected result.",
+  "checks": [
+    {
+      "name": "Phone mismatch flagged as FLAGGED_NOT_OWNER",
+      "pass": true,
+      "detail": "state=FLAGGED_NOT_OWNER; reason=\"listing is claimed by another account — owner must reclaim it manually\""
+    },
+    {
+      "name": "No proposal card exists for site D",
+      "pass": true,
+      "detail": "none PROPOSED"
+    },
+    {
+      "name": "The owner cannot approve a flagged field",
+      "pass": true,
+      "detail": "approve → 409"
+    },
+    {
+      "name": "Zero write attempts logged for site D",
+      "pass": true,
+      "detail": "mock write log = 0, apply audit entries = 0"
+    },
+    {
+      "name": "Still flagged, never reported as corrected",
+      "pass": true,
+      "detail": "FLAGGED_NOT_OWNER"
+    }
+  ],
+  "startedAt": "2026-10-21T10:07:27.123Z",
+  "durationMs": 49,
+  "testDate": "2026-10-21",
+  "readerMode": "http",
+  "runs": [
+    "run_mvhy7k44_34",
+    "run_mvhy7k5g_35"
+  ],
+  "trace": [
+    {
+      "id": 1,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.137Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-A-1001] via http; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 13,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 2,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.138Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 3,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.140Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "4 fields: 4 match, 0 formatting-only, 0 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 4,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.140Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "0 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 5,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.144Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-B-1001] via http; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 4,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 6,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.145Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 7,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.146Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 8,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.147Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "1 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 9,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.151Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-C-1001] via http; phone=\"090000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 4,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 10,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.151Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "phone 090000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 11,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.153Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "4 fields: 2 match, 2 formatting-only, 0 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 12,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.153Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "0 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 13,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.163Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-D-1001] via http; phone=\"+91 90000 00099\"; 1 special day(s); canEdit=false",
+      "duration_ms": 9,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 14,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.163Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "phone +91 90000 00099 -> +919000000099; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 15,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.164Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 16,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.165Z",
+      "tool": "flag_listing",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "1 field(s) flagged: not the listing owner; no edit attempted",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is flag_listing"
+    },
+    {
+      "id": 17,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.169Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-E-1001] via http; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 3,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 18,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.169Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun closed; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 19,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.170Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 20,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.171Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "1 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 21,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.171Z",
+      "tool": "ask_owner",
+      "input": "{\"question\":\"2 change(s) proposed — please approve or reject each card.\"}",
+      "output_summary": "asked owner: 2 change(s) proposed — please approve or reject each card.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "scan finished; human approval is required before anything is edited"
+    },
+    {
+      "id": 22,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.171Z",
+      "tool": "done",
+      "input": "{}",
+      "output_summary": "nothing left to do",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 23,
+      "run_id": "run_mvhy7k44_34",
+      "at": "2026-10-21T10:07:27.171Z",
+      "tool": "summarise_report",
+      "input": "{}",
+      "output_summary": "1 need you to reclaim the listing (NearbyNow); 2 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 24,
+      "run_id": "run_mvhy7k5g_35",
+      "at": "2026-10-21T10:07:27.172Z",
+      "tool": "done",
+      "input": "{}",
+      "output_summary": "nothing left to do",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 25,
+      "run_id": "run_mvhy7k5g_35",
+      "at": "2026-10-21T10:07:27.172Z",
+      "tool": "summarise_report",
+      "input": "{}",
+      "output_summary": "1 need you to reclaim the listing (NearbyNow); 2 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    }
+  ],
+  "fallbacks": [],
+  "blocked": [],
+  "states": [
+    {
+      "platform": "site_d",
+      "field": "Phone",
+      "state": "FLAGGED_NOT_OWNER",
+      "original": "+91 90000 00099",
+      "current": "+91 90000 00099",
+      "intended": "+91 90000 00001",
+      "reason": "listing is claimed by another account — owner must reclaim it manually",
+      "history": [
+        "MISMATCH",
+        "FLAGGED_NOT_OWNER"
+      ]
+    }
+  ],
+  "extra": {},
+  "screenshots": []
+}

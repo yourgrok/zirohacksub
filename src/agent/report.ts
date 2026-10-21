@@ -3,7 +3,7 @@ import { listFields, listPlatforms, type FieldRow } from "../core/store.js";
 
 export interface ReportRow {
   fieldId: number; platform: string; platformId: string; field: string; fieldKey: string;
-  original: string; intended: string; approval: string; verified: string; state: string; reason: string; current: string;
+  original: string; intended: string; approval: string; verified: string; state: string; reason: string; current: string; currentNorm: string;
 }
 
 const approvalOf = (s: string) =>
@@ -20,7 +20,7 @@ export function buildRows(): ReportRow[] {
   return listFields().map((f: FieldRow) => ({
     fieldId: f.id, platform: names.get(f.platform_id) ?? f.platform_id, platformId: f.platform_id, field: f.label, fieldKey: f.field_key,
     original: f.original_raw ?? "", intended: f.intended_display ?? "", approval: approvalOf(f.state), verified: verifiedOf(f.state),
-    state: f.state, reason: f.reason ?? "", current: f.current_raw ?? "",
+    state: f.state, reason: f.reason ?? "", current: f.current_raw ?? "", currentNorm: f.current_norm ?? "",
   }));
 }
 

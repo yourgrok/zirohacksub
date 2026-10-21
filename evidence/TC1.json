@@ -1,0 +1,422 @@
+{
+  "id": "TC1",
+  "title": "Holiday hours differ on one site",
+  "mode": "deterministic",
+  "input": "Record: Diwali 8 Nov 2026 special hours 10:00–14:00. Site B shows Diwali as Closed; other sites match.",
+  "expected": "Site B holiday field is proposed, owner approves it, it is APPLIED and then VERIFIED after the public page is reloaded. No other site is written to.",
+  "actual": "B holiday: MISMATCH → PROPOSED → APPROVED → APPLIED → VERIFIED; 1 write(s).",
+  "pass": true,
+  "explanation": "Actual result matches the expected result.",
+  "checks": [
+    {
+      "name": "Site B holiday detected as a mismatch and proposed",
+      "pass": true,
+      "detail": "state=PROPOSED; original=\"8 Nov 2026: Closed\"; intended=\"8 Nov 2026: 10:00 AM – 2:00 PM\""
+    },
+    {
+      "name": "Sites A, C, D, E holiday already match (no proposal)",
+      "pass": true,
+      "detail": "all MATCH"
+    },
+    {
+      "name": "Nothing is written before the owner approves",
+      "pass": true,
+      "detail": "writes at B = 0"
+    },
+    {
+      "name": "State went APPLIED then VERIFIED",
+      "pass": true,
+      "detail": "MISMATCH → PROPOSED → APPROVED → APPLIED → VERIFIED"
+    },
+    {
+      "name": "Public page reloaded shows the approved value",
+      "pass": true,
+      "detail": "page shows 10:00–14:00 for 2026-11-08"
+    },
+    {
+      "name": "Exactly one write, only to site B",
+      "pass": true,
+      "detail": "total writes = 1"
+    },
+    {
+      "name": "Re-running never double-applies (idempotent)",
+      "pass": true,
+      "detail": "total writes after re-run = 1"
+    }
+  ],
+  "startedAt": "2026-10-21T10:07:27.033Z",
+  "durationMs": 60,
+  "testDate": "2026-10-21",
+  "readerMode": "http",
+  "runs": [
+    "run_mvhy7k1m_28",
+    "run_mvhy7k2m_29",
+    "run_mvhy7k2n_30",
+    "run_mvhy7k37_31"
+  ],
+  "trace": [
+    {
+      "id": 1,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.042Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-A-1001] via http; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 6,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 2,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.043Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 3,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.044Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "4 fields: 4 match, 0 formatting-only, 0 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 4,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.045Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_a\"}",
+      "output_summary": "0 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_a: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 5,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.048Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-B-1001] via http; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 3,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 6,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.049Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 7,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.050Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 8,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.051Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "1 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 9,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.054Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-C-1001] via http; phone=\"090000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 3,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 10,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.055Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "phone 090000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 11,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.056Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "4 fields: 2 match, 2 formatting-only, 0 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 12,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.056Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_c\"}",
+      "output_summary": "0 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_c: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 13,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.060Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-D-1001] via http; phone=\"+91 90000 00099\"; 1 special day(s); canEdit=false",
+      "duration_ms": 3,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 14,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.060Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "phone +91 90000 00099 -> +919000000099; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 15,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.061Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 16,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.063Z",
+      "tool": "flag_listing",
+      "input": "{\"platform\":\"site_d\"}",
+      "output_summary": "1 field(s) flagged: not the listing owner; no edit attempted",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_d: next step in the fixed workflow is flag_listing"
+    },
+    {
+      "id": 17,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.067Z",
+      "tool": "read_listing",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "Sunrise Sweets & Bakery [LST-E-1001] via http; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
+      "duration_ms": 3,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is read_listing"
+    },
+    {
+      "id": 18,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.067Z",
+      "tool": "normalise",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun closed; 1 holiday entry",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is normalise"
+    },
+    {
+      "id": 19,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.069Z",
+      "tool": "compare",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
+      "duration_ms": 1,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is compare"
+    },
+    {
+      "id": 20,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.069Z",
+      "tool": "propose",
+      "input": "{\"platform\":\"site_e\"}",
+      "output_summary": "1 proposal(s) created; waiting for owner approval",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "site_e: next step in the fixed workflow is propose"
+    },
+    {
+      "id": 21,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.069Z",
+      "tool": "ask_owner",
+      "input": "{\"question\":\"2 change(s) proposed — please approve or reject each card.\"}",
+      "output_summary": "asked owner: 2 change(s) proposed — please approve or reject each card.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": "scan finished; human approval is required before anything is edited"
+    },
+    {
+      "id": 22,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.070Z",
+      "tool": "done",
+      "input": "{}",
+      "output_summary": "nothing left to do",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 23,
+      "run_id": "run_mvhy7k1m_28",
+      "at": "2026-10-21T10:07:27.070Z",
+      "tool": "summarise_report",
+      "input": "{}",
+      "output_summary": "1 need you to reclaim the listing (NearbyNow); 2 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 24,
+      "run_id": "run_mvhy7k2m_29",
+      "at": "2026-10-21T10:07:27.071Z",
+      "tool": "done",
+      "input": "{}",
+      "output_summary": "nothing left to do",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 25,
+      "run_id": "run_mvhy7k2m_29",
+      "at": "2026-10-21T10:07:27.071Z",
+      "tool": "summarise_report",
+      "input": "{}",
+      "output_summary": "1 need you to reclaim the listing (NearbyNow); 2 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 26,
+      "run_id": "run_mvhy7k2n_30",
+      "at": "2026-10-21T10:07:27.085Z",
+      "tool": "apply_approved",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "holiday:ex_seed_diwali: sent (200)",
+      "duration_ms": 13,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is apply_approved"
+    },
+    {
+      "id": 27,
+      "run_id": "run_mvhy7k2n_30",
+      "at": "2026-10-21T10:07:27.089Z",
+      "tool": "reload_and_verify",
+      "input": "{\"platform\":\"site_b\"}",
+      "output_summary": "holiday:ex_seed_diwali: VERIFIED",
+      "duration_ms": 4,
+      "decider": "Deterministic",
+      "note": "site_b: next step in the fixed workflow is reload_and_verify"
+    },
+    {
+      "id": 28,
+      "run_id": "run_mvhy7k2n_30",
+      "at": "2026-10-21T10:07:27.089Z",
+      "tool": "done",
+      "input": "{}",
+      "output_summary": "nothing left to do",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 29,
+      "run_id": "run_mvhy7k2n_30",
+      "at": "2026-10-21T10:07:27.089Z",
+      "tool": "summarise_report",
+      "input": "{}",
+      "output_summary": "1 site(s) fixed and verified (CityPages); 1 need you to reclaim the listing (NearbyNow); 1 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 30,
+      "run_id": "run_mvhy7k37_31",
+      "at": "2026-10-21T10:07:27.092Z",
+      "tool": "done",
+      "input": "{}",
+      "output_summary": "nothing left to do",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    },
+    {
+      "id": 31,
+      "run_id": "run_mvhy7k37_31",
+      "at": "2026-10-21T10:07:27.092Z",
+      "tool": "summarise_report",
+      "input": "{}",
+      "output_summary": "1 site(s) fixed and verified (CityPages); 1 need you to reclaim the listing (NearbyNow); 1 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
+      "duration_ms": 0,
+      "decider": "Deterministic",
+      "note": null
+    }
+  ],
+  "fallbacks": [],
+  "blocked": [],
+  "states": [
+    {
+      "platform": "site_b",
+      "field": "Holiday 2026-11-08 (Diwali)",
+      "state": "VERIFIED",
+      "original": "8 Nov 2026: Closed",
+      "current": "8 Nov 2026: 10:00 AM – 2:00 PM",
+      "intended": "8 Nov 2026: 10:00 AM – 2:00 PM",
+      "reason": "reloaded public page shows the approved value",
+      "history": [
+        "MISMATCH",
+        "PROPOSED",
+        "APPROVED",
+        "APPLIED",
+        "VERIFIED"
+      ]
+    }
+  ],
+  "extra": {},
+  "screenshots": []
+}
