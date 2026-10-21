@@ -267,6 +267,7 @@ function Approvals({ st, rows, act }: { st: any; rows: Row[]; act: (f: () => Pro
                     <button className="btn small ghost" disabled={st.busy} onClick={() => act(() => api(`/api/fields/${r.fieldId}/reject`, {}))}>Reject</button>
                   </div>
                 )}
+                {r.state === "REJECTED" && <div className="actions"><span className="muted">You rejected this change; nothing will be sent.</span><button className="btn small ghost" disabled={st.busy} onClick={() => act(() => api(`/api/fields/${r.fieldId}/approve`, {}))}>Approve after all</button></div>}
                 {r.state === "APPROVED" && <div className="actions"><span className="muted">Approved — it is sent on “Apply approved &amp; verify”.</span><button className="btn small ghost" onClick={() => act(() => api(`/api/fields/${r.fieldId}/reject`, {}))}>Reject instead</button></div>}
                 {r.state === "FLAGGED_NOT_OWNER" && <p className="note red">Manual step for you: this listing is claimed by another account, so the agent did not try to edit it. Ask the owner of that account to release it, or claim it on the site yourself (any OTP/CAPTCHA is yours to complete), then scan again.</p>}
                 {r.state === "PENDING_MODERATION" && <p className="note amber">The site accepted the edit but its moderator has not approved it yet, so the public page still shows the old value. (Demo: approve it at <a href="/mock/admin" target="_blank" rel="noreferrer">/mock/admin</a>, then press “Apply approved &amp; verify” to re-check.)</p>}

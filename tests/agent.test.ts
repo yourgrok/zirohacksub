@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { resetAndSeed } from "../src/core/seed.js";
 import { getFieldByKey, listFields } from "../src/core/store.js";
 import { getTrace } from "../src/agent/loop.js";
-import { approveAllForPlatform, approveField, execute, scan } from "../src/agent/service.js";
+import { approveAllForPlatform, approveField, execute, rejectField, scan } from "../src/agent/service.js";
 import { startTestServer } from "./helpers.js";
 import { getDb } from "../src/core/db.js";
 
@@ -90,6 +90,21 @@ describe("TC4 edit pending moderation", () => {
     await fetch(`${s.url}/mock/admin/queue/${q.id}/approve`, { method: "POST", headers: { "content-type": "application/json" } });
     await execute();
     expect(getFieldByKey("site_e", "hours")!.state).toBe("VERIFIED");
+  });
+});
+
+describe("owner can change their mind", () => {
+  it("a rejected card can be re-approved, and a rejected one is never sent", async () => {
+    await scan();
+    const f = getFieldByKey("site_b", holidayKey)!;
+    rejectField(f.id);
+    await execute();
+    expect(writes("site_b")).toHaveLength(0);
+    await scan(); // still differs, stays rejected
+    expect(getFieldByKey("site_b", holidayKey)!.state).toBe("REJECTED");
+    approveField(f.id);
+    await execute();
+    expect(getFieldByKey("site_b", holidayKey)!.state).toBe("VERIFIED");
   });
 });
 

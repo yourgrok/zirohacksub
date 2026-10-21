@@ -48,7 +48,8 @@ export const isBusy = () => activeRun() !== null;
 export function approveField(id: number, who = "owner") {
   const f = getField(id);
   if (!f) throw new ApprovalError("No such field");
-  if (f.state !== "PROPOSED") throw new ApprovalError(`Only a proposed change can be approved (this one is ${f.state}).`);
+  if (f.state === "REJECTED") transition(id, "PROPOSED", "owner", `re-opened by ${who}`); // owner changed their mind
+  else if (f.state !== "PROPOSED") throw new ApprovalError(`Only a proposed change can be approved (this one is ${f.state}).`);
   transition(id, "APPROVED", "owner", `approved by ${who}`);
   audit(who, "approve", f.platform_id, f.field_key, { intended: f.intended, from: f.original_raw });
   return getField(id)!;

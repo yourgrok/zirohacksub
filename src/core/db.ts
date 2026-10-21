@@ -1,8 +1,39 @@
 import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 
-export type DB = Database.Database;
+/** The small slice of the better-sqlite3 API this app uses. */
+export interface DB {
+  prepare(sql: string): { run(...a: any[]): { changes: number | bigint; lastInsertRowid: number | bigint }; get(...a: any[]): unknown; all(...a: any[]): unknown[] };
+  exec(sql: string): unknown;
+  pragma(s: string): unknown;
+  transaction<T extends (...a: any[]) => any>(fn: T): T;
+  close(): void;
+}
+
+/** Fallback driver (Node's built-in node:sqlite) in case better-sqlite3's native binary is unavailable, e.g. on some Windows setups. */
+function nodeSqlite(file: string): DB {
+  const d = new DatabaseSync(file);
+  return {
+    prepare: (sql) => d.prepare(sql) as any,
+    exec: (sql) => d.exec(sql),
+    pragma: (s) => d.exec(`PRAGMA ${s}`),
+    transaction: (fn) => ((...a: any[]) => { d.exec("BEGIN"); try { const r = fn(...a); d.exec("COMMIT"); return r; } catch (e) { d.exec("ROLLBACK"); throw e; } }) as any,
+    close: () => d.close(),
+  };
+}
+
+export let driverName = "better-sqlite3";
+function open(file: string): DB {
+  if (process.env.SQLITE_DRIVER !== "node") {
+    try { return new Database(file) as unknown as DB; } catch (e) {
+      console.warn(`better-sqlite3 unavailable (${(e as Error).message.split("\n")[0]}); using node:sqlite`);
+    }
+  }
+  driverName = "node:sqlite";
+  return nodeSqlite(file);
+}
 
 let db: DB | null = null;
 
@@ -47,7 +78,7 @@ export function getDb(): DB {
   if (db) return db;
   const p = dbPath();
   if (p !== ":memory:") fs.mkdirSync(path.dirname(p), { recursive: true });
-  db = new Database(p);
+  db = open(p);
   db.pragma("journal_mode = MEMORY");
   db.exec(SCHEMA);
   return db;

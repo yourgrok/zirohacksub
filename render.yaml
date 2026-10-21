@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: listing-consistency-agent
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: READER_MODE
+        value: http
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_FAST_MODEL
+        value: gemini-3.5-flash-lite
+      - key: GEMINI_API_KEY
+        sync: false   # enter it in the Render dashboard, never in git

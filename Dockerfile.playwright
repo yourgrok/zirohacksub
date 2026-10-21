@@ -1,0 +1,11 @@
+# For hosts with more memory: same app, but READER_MODE=auto so pages are read in a real Chromium (Playwright).
+# Keep the image tag in step with the "playwright" version in package.json.
+FROM mcr.microsoft.com/playwright:v1.64.1-jammy
+WORKDIR /app
+ENV NODE_ENV=production READER_MODE=auto PORT=3000
+COPY package*.json ./
+RUN npm ci --include=dev
+COPY . .
+RUN npm run build && npm prune --omit=dev
+EXPOSE 3000
+CMD ["npm", "start"]

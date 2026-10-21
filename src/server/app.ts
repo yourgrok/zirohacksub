@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import fs from "node:fs";
 import path from "node:path";
-import { dbStatus, getDb } from "../core/db.js";
+import { dbStatus, driverName, getDb } from "../core/db.js";
 import { isDemoNow, today, TZ } from "../core/clock.js";
 import { resetAndSeed } from "../core/seed.js";
 import { getBusiness, getPlatformListing, listExceptions, listFields, listPlatforms } from "../core/store.js";
@@ -32,7 +32,7 @@ export function createApp() {
   app.use("/mock", mockRouter());
 
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok", version: pkg.version, readerMode: readerMode(), plannerMode: plannerMode(), db: dbStatus(), today: today() });
+    res.json({ status: "ok", version: pkg.version, readerMode: readerMode(), plannerMode: plannerMode(), db: dbStatus(), dbDriver: driverName, today: today() });
   });
 
   const state = () => {
