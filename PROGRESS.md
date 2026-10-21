@@ -3,7 +3,7 @@
 ## Milestones
 - [x] M1 Setup + docs skeleton
 - [x] M2 DB, schema, seed, normalisers + tests
-- [ ] M3 Mock sites A-E, decoy, /mock/admin, reset
+- [x] M3 Mock sites A-E, decoy, /mock/admin, reset
 - [ ] M4 Readers, comparator, state machine, deterministic planner, loop, approvals, apply, verifier, report (TC1-TC4)
 - [ ] M5 Gemini planner, guardrails, fallback, summary
 - [ ] M6 Holiday Foresight + TC6
