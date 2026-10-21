@@ -105,3 +105,12 @@ export function createField(row: Omit<FieldRow, "id" | "updated_at">): FieldRow 
 export function history(fieldId: number) {
   return getDb().prepare("SELECT * FROM state_history WHERE field_id=? ORDER BY id").all(fieldId);
 }
+
+/** Create an exception, or update the one that already covers exactly the same dates (re-activating it if it was removed). */
+export function upsertException(e: Omit<HolidayException, "id" | "status">): HolidayException {
+  const found = listExceptions().find((x) => x.start === e.start && x.end === e.end);
+  if (!found) return addException(e);
+  getDb().prepare("UPDATE exceptions SET kind=?, open=?, close=?, reason=?, source=?, status='active' WHERE id=?")
+    .run(e.kind, e.open, e.close, e.reason, e.source, found.id);
+  return { ...e, id: found.id, status: "active" };
+}

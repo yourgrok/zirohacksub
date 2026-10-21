@@ -99,6 +99,13 @@ export const TOOLS: Record<ToolName, ToolDef> = {
       const comps = compareAll(getBusiness(), listExceptions(), r.pub, n);
       st.comps.set(platform, comps);
       for (const c of comps) upsertComparison(platform, c);
+      // fields that no longer exist in the comparison (exception cancelled or past) must not stay actionable
+      const keys = new Set(comps.map((c) => c.key));
+      for (const f of listFields(platform)) {
+        if (!keys.has(f.field_key) && ["MISMATCH", "PROPOSED", "REJECTED"].includes(f.state)) {
+          transition(f.id, "MATCH", "comparator", "no longer relevant (cancelled or past); nothing to change");
+        }
+      }
       const tally = (s: string) => comps.filter((c) => c.state === s).length;
       return { summary: `${comps.length} fields: ${tally("MATCH")} match, ${tally("FORMAT_ONLY_EQUIVALENT")} formatting-only, ${tally("MISMATCH")} mismatch` };
     },
