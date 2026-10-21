@@ -1,6 +1,8 @@
 import { getDb } from "../core/db.js";
 import { audit, getField, listFields, transition } from "../core/store.js";
-import { activeRun, runAgent } from "./loop.js";
+import { activeRun, recordTrace, runAgent } from "./loop.js";
+import { geminiPlanner, summariseReport } from "./geminiPlanner.js";
+import { geminiEnabled } from "./llm.js";
 import { deterministicPlanner } from "./planners.js";
 import { templateSummary } from "./report.js";
 import type { Planner } from "./types.js";
@@ -10,18 +12,19 @@ export class ApprovalError extends Error {
 }
 
 export type PlannerProvider = () => Planner;
-let provider: PlannerProvider = () => deterministicPlanner;
+let provider: PlannerProvider = () => (geminiEnabled() ? geminiPlanner : deterministicPlanner);
+export const plannerMode = (): "gemini" | "deterministic" => (geminiEnabled() ? "gemini" : "deterministic");
 export function setPlannerProvider(p: PlannerProvider) { provider = p; }
 export const currentPlanner = () => provider();
 
-/** Hook so the Gemini layer can write the plain-English summary. Falls back to the template. */
-export type Summariser = () => Promise<string>;
-let summariser: Summariser = async () => templateSummary();
-export function setSummariser(s: Summariser) { summariser = s; }
-
 async function finish(runId: string) {
   let summary: string;
-  try { summary = await summariser(); } catch { summary = templateSummary(); }
+  const t0 = performance.now();
+  try {
+    const r = await summariseReport();
+    summary = r.text;
+    recordTrace(runId, "summarise_report", {}, summary, performance.now() - t0, r.decider, r.note);
+  } catch { summary = templateSummary(); }
   getDb().prepare("UPDATE runs SET summary=? WHERE id=?").run(summary, runId);
   return summary;
 }

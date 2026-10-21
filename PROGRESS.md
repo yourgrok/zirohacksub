@@ -5,7 +5,7 @@
 - [x] M2 DB, schema, seed, normalisers + tests
 - [x] M3 Mock sites A-E, decoy, /mock/admin, reset
 - [x] M4 Readers, comparator, state machine, deterministic planner, loop, approvals, apply, verifier, report (TC1-TC4)
-- [ ] M5 Gemini planner, guardrails, fallback, summary
+- [x] M5 Gemini planner, guardrails, fallback, summary
 - [ ] M6 Holiday Foresight + TC6
 - [ ] M7 Plain-language parser + preview + cross-check + TC5
 - [ ] M8 React console, /tests page, runners, evidence, CSV/print

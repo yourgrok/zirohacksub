@@ -15,7 +15,7 @@ let runSeq = 0;
 let active: string | null = null;
 export const activeRun = () => active;
 
-function record(runId: string, tool: string, input: unknown, output: string, ms: number, decider: Decider, note?: string) {
+export function recordTrace(runId: string, tool: string, input: unknown, output: string, ms: number, decider: Decider, note?: string) {
   getDb().prepare("INSERT INTO trace (run_id,at,tool,input,output_summary,duration_ms,decider,note) VALUES (?,?,?,?,?,?,?,?)")
     .run(runId, nowTs(), tool, JSON.stringify(input), output, Math.round(ms), decider, note ?? null);
 }
@@ -75,18 +75,18 @@ export async function runAgent(opts: RunOptions): Promise<{ runId: string; steps
       let { decision } = res;
       let decider = res.decider;
       let note = res.note;
-      if (decision.tool === "done") { record(runId, "done", {}, decision.rationale || "finished", 0, decider, note); break; }
+      if (decision.tool === "done") { recordTrace(runId, "done", {}, decision.rationale || "finished", 0, decider, note); break; }
 
       const verdict = guard(decision, view, st);
       if (verdict.kind === "block") {
         blocked++;
-        record(runId, decision.tool, { platform: decision.platform, fields: decision.fields }, `BLOCKED BY GUARDRAIL: ${verdict.reason}`, 0, "Blocked", `proposed by ${res.decider}${res.note ? ` (${res.note})` : ""}`);
+        recordTrace(runId, decision.tool, { platform: decision.platform, fields: decision.fields }, `BLOCKED BY GUARDRAIL: ${verdict.reason}`, 0, "Blocked", `proposed by ${res.decider}${res.note ? ` (${res.note})` : ""}`);
         const alt = await deterministicPlanner.next(view, st);
         decision = alt.decision; decider = "Deterministic"; note = "next step chosen by deterministic planner after a guardrail block";
-        if (decision.tool === "done") { record(runId, "done", {}, decision.rationale, 0, decider, note); break; }
+        if (decision.tool === "done") { recordTrace(runId, "done", {}, decision.rationale, 0, decider, note); break; }
       } else if (verdict.kind === "force") {
         blocked++;
-        record(runId, decision.tool, { platform: decision.platform }, `BLOCKED BY GUARDRAIL: ${verdict.reason} → forced ${verdict.replacement.tool}`, 0, "Blocked", `proposed by ${res.decider}`);
+        recordTrace(runId, decision.tool, { platform: decision.platform }, `BLOCKED BY GUARDRAIL: ${verdict.reason} → forced ${verdict.replacement.tool}`, 0, "Blocked", `proposed by ${res.decider}`);
         decision = verdict.replacement; decider = "Deterministic"; note = "forced by guardrail";
       }
 
@@ -94,18 +94,18 @@ export async function runAgent(opts: RunOptions): Promise<{ runId: string; steps
       const input = tool.schema.safeParse(toolInput(decision));
       const t0 = performance.now();
       if (!input.success) {
-        record(runId, decision.tool, decision, `invalid tool input: ${input.error.issues[0]?.message}`, performance.now() - t0, "Blocked", note);
+        recordTrace(runId, decision.tool, decision, `invalid tool input: ${input.error.issues[0]?.message}`, performance.now() - t0, "Blocked", note);
         blocked++;
         continue;
       }
       try {
         const out = await tool.run(st, input.data);
         const ms = performance.now() - t0;
-        record(runId, decision.tool, input.data, out.summary, ms, decider, [decision.rationale, note].filter(Boolean).join(" | "));
+        recordTrace(runId, decision.tool, input.data, out.summary, ms, decider, [decision.rationale, note].filter(Boolean).join(" | "));
         st.recent.push(`${decision.tool}(${decision.platform ?? ""}): ${out.summary}`);
         if (decision.platform) st.stage.set(decision.platform, out.forced ? "skipped" : (NEXT_STAGE[decision.tool as ToolName] ?? "skipped"));
       } catch (e) {
-        record(runId, decision.tool, input.data, `ERROR: ${(e as Error).message}`, performance.now() - t0, decider, note);
+        recordTrace(runId, decision.tool, input.data, `ERROR: ${(e as Error).message}`, performance.now() - t0, decider, note);
         st.recent.push(`${decision.tool}(${decision.platform ?? ""}): ERROR ${(e as Error).message}`);
         if (decision.platform) st.stage.set(decision.platform, "skipped");
       }
