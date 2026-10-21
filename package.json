@@ -1,0 +1,46 @@
+{
+  "name": "listing-consistency-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"cross-env NODE_ENV=development tsx watch src/server/index.ts\" \"vite\"",
+    "start": "cross-env NODE_ENV=production tsx src/server/index.ts",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:tc": "cross-env LLM_PROVIDER=none tsx src/runner/cli.ts deterministic",
+    "test:tc:llm": "cross-env LLM_PROVIDER=gemini tsx src/runner/cli.ts llm"
+  },
+  "dependencies": {
+    "@google/genai": "^2.30.0",
+    "better-sqlite3": "^13.0.3",
+    "cheerio": "^1.2.0",
+    "chrono-node": "^2.10.3",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/supertest": "^7.2.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
+    "playwright": "^1.64.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "supertest": "^7.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}
