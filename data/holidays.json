@@ -1,0 +1,164 @@
+[
+  {
+    "id": "hol_2026_diwali",
+    "name": "Diwali (Lakshmi Puja)",
+    "date": "2026-11-08",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2026_bhaidooj",
+    "name": "Bhai Dooj",
+    "date": "2026-11-11",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2026_gurunanak",
+    "name": "Guru Nanak Jayanti",
+    "date": "2026-11-24",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2026_christmas",
+    "name": "Christmas Day",
+    "date": "2026-12-25",
+    "region": "National",
+    "kind": "national",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_newyear",
+    "name": "New Year's Day",
+    "date": "2027-01-01",
+    "region": "National",
+    "kind": "observance",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_sankranti",
+    "name": "Makar Sankranti / Pongal",
+    "date": "2027-01-14",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_republic",
+    "name": "Republic Day",
+    "date": "2027-01-26",
+    "region": "National",
+    "kind": "national",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_shivaratri",
+    "name": "Maha Shivaratri",
+    "date": "2027-03-06",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_eidfitr",
+    "name": "Eid ul-Fitr",
+    "date": "2027-03-10",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_holi",
+    "name": "Holi",
+    "date": "2027-03-22",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_goodfriday",
+    "name": "Good Friday",
+    "date": "2027-03-26",
+    "region": "National",
+    "kind": "national",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_ambedkar",
+    "name": "Dr. Ambedkar Jayanti",
+    "date": "2027-04-14",
+    "region": "National",
+    "kind": "national",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_eidadha",
+    "name": "Eid al-Adha (Bakrid)",
+    "date": "2027-05-17",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_independence",
+    "name": "Independence Day",
+    "date": "2027-08-15",
+    "region": "National",
+    "kind": "national",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_rakhi",
+    "name": "Raksha Bandhan",
+    "date": "2027-08-19",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_ganesh",
+    "name": "Ganesh Chaturthi",
+    "date": "2027-09-05",
+    "region": "Maharashtra",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_gandhi",
+    "name": "Gandhi Jayanti",
+    "date": "2027-10-02",
+    "region": "National",
+    "kind": "national",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  },
+  {
+    "id": "hol_2027_dussehra",
+    "name": "Dussehra",
+    "date": "2027-10-08",
+    "region": "Pan-India",
+    "kind": "festival",
+    "verified": false,
+    "note": "Festival dates shift each year \u2014 confirm the date before accepting."
+  }
+]

@@ -29,9 +29,6 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE TABLE IF NOT EXISTS trace (
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, at TEXT, tool TEXT, input TEXT, output_summary TEXT,
   duration_ms INTEGER, decider TEXT, note TEXT);
-CREATE TABLE IF NOT EXISTS drafts (
-  id TEXT PRIMARY KEY, holiday_id TEXT, holiday_name TEXT, date TEXT, kind TEXT, open TEXT, close TEXT,
-  status TEXT DEFAULT 'draft', created_at TEXT);
 CREATE TABLE IF NOT EXISTS mock_listings (
   site TEXT, listing_id TEXT, display_name TEXT, address TEXT, phone TEXT, hours_json TEXT, holidays_json TEXT,
   owner_account TEXT, is_decoy INTEGER DEFAULT 0, PRIMARY KEY (site, listing_id));
@@ -63,7 +60,7 @@ export function closeDb() {
 
 const TABLES = [
   "business", "exceptions", "platforms", "platform_listings", "field_states", "state_history", "audit_log",
-  "runs", "trace", "drafts", "mock_listings", "mock_queue", "mock_writes",
+  "runs", "trace", "mock_listings", "mock_queue", "mock_writes",
 ];
 
 export function wipeAll() {
