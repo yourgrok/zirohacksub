@@ -56,8 +56,8 @@ describe("tabbed console (browser)", () => {
 
   run("scan fills Approvals; the consistency table is compact; the change log records an edit", async () => {
     if (!browser) return;
-    await page.click("button:has-text('Scan listings')"); await idle();
-    await page.waitForSelector(".nudge"); // the scan tells the owner what it found
+    await page.click("button:has-text('Scan listings')");
+    await page.waitForSelector(".nudge", { timeout: 45000 }); // the scan tells the owner what it found (waits for the run to finish)
     expect(await page.locator(".nudge h2").innerText()).toMatch(/change.* to review/);
     expect(await page.locator("#tab-approvals .tabcount:not(.pend)").count()).toBe(1);
     await page.click(".nudge button:has-text('Later')");

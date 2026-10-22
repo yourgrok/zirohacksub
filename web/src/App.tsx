@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { api, type Me } from "./api";
 import { Ctx, Row, TAB_DEFS, TabId } from "./shared";
 import DetailsTab from "./tabs/DetailsTab";
@@ -48,33 +48,49 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
 
   const act = useCallback(async (fn: () => Promise<unknown>) => { setErr(null); try { await fn(); } catch (e: any) { setErr(e.message); } await load(); }, [load]);
 
-  if (!st) return <div className="wrap"><p>Loading…</p>{err && <p className="err">{err}</p>}</div>;
-
-  const rows: Row[] = st.rows;
-  const pendingMod = rows.filter((r) => r.state === "PENDING_MODERATION").length;
-  const notOwner = rows.filter((r) => r.state === "FLAGGED_NOT_OWNER").length;
-  const proposedCount = rows.filter((r) => r.state === "PROPOSED").length;
-  const approvedCount = rows.filter((r) => r.state === "APPROVED").length;
-  const waiting = proposedCount + approvedCount;
-  // which step the owner should press next, so it can be highlighted
-  const next: 1 | 2 | 3 = proposedCount > 0 ? 2 : approvedCount > 0 ? 3 : 1;
-  // reminder: everything reviewed, something approved, nothing applied yet
-  const showNudge = !st.busy && proposedCount === 0 && approvedCount > 0 && nudgeDismissedAt !== approvedCount;
-  // Scan: start it, follow it until the agent is idle again, then tell the owner what it found
-  const runScan = () => act(async () => {
-    setScanPrompt(null);
-    await api("/api/runs/scan", {});
+  // Start a run and follow it until the agent is idle again (the run itself is fast; this keeps the page in step with it)
+  const followRun = useCallback(async (path: string) => {
+    await api(path, {});
     for (let i = 0; i < 300; i++) {
       const fresh = await api("/api/state");
       setSt(fresh);
       if (!fresh.busy) break;
       await new Promise((r) => setTimeout(r, 800));
     }
-    setScanPrompt("show");
-  });
+  }, []);
+  // Coming back to this tab (e.g. after approving an edit in the mock moderation admin) re-checks sites that were waiting for a moderator
+  const auto = useRef({ pending: 0, busy: true, last: 0 });
+  useEffect(() => {
+    const onVisible = () => {
+      const a = auto.current;
+      if (document.visibilityState !== "visible" || a.pending === 0 || a.busy || Date.now() - a.last < 8000) return;
+      a.last = Date.now();
+      followRun("/api/runs/execute").catch(() => load());
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => { document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("focus", onVisible); };
+  }, [followRun, load]);
+
+  if (!st) return <div className="wrap"><p>Loading…</p>{err && <p className="err">{err}</p>}</div>;
+
+  const rows: Row[] = st.rows;
+  const pendingMod = rows.filter((r) => r.state === "PENDING_MODERATION").length;
+  const notOwner = rows.filter((r) => r.state === "FLAGGED_NOT_OWNER").length;
+  auto.current.pending = pendingMod; auto.current.busy = !!st.busy;
+  const proposedCount = rows.filter((r) => r.state === "PROPOSED").length;
+  const approvedCount = rows.filter((r) => r.state === "APPROVED").length;
+  const waiting = proposedCount + approvedCount;
+  // which step the owner should press next, so it can be highlighted
+  const next: 1 | 2 | 3 = proposedCount > 0 ? 2 : approvedCount > 0 || pendingMod > 0 ? 3 : 1;
+  // reminder: everything reviewed, something approved, nothing applied yet
+  const showNudge = !st.busy && proposedCount === 0 && approvedCount > 0 && nudgeDismissedAt !== approvedCount;
+  const runScan = () => act(async () => { setScanPrompt(null); await followRun("/api/runs/scan"); setScanPrompt("show"); });
+  // Apply what was approved and/or re-check sites whose moderator had not approved yet (same run: the agent re-reads each page)
+  const runExecute = () => act(() => followRun("/api/runs/execute"));
   const closeScan = () => setScanPrompt(null);
   const checkChanges = () => { setScanPrompt(null); go("approvals"); };
-  const applyNow = () => { setNudgeDismissedAt(approvedCount); act(() => api("/api/runs/execute", {})); go("trace"); };
+  const applyNow = () => { setNudgeDismissedAt(approvedCount); runExecute(); go("trace"); };
   const ctx: Ctx = { st, me, act, go, rev, onSwitched };
   const Panel = PANELS[tab];
 
@@ -117,7 +133,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
           <span className="steparrow" aria-hidden>›</span>
           <button className={`btn stepbtn ${next === 2 ? "primary next" : ""}`} disabled={st.busy || proposedCount === 0} onClick={() => go("approvals")} title={proposedCount === 0 ? "Nothing waiting for your review" : "Review what the agent found"}><span className="stepno">2</span><span className="steptxt">Review &amp; approve{proposedCount > 0 ? ` (${proposedCount})` : ""}<small>{proposedCount > 0 ? "your decision" : "nothing to review"}</small></span></button>
           <span className="steparrow" aria-hidden>›</span>
-          <button className={`btn stepbtn ${next === 3 ? "primary next" : ""}`} disabled={st.busy || approvedCount === 0} onClick={() => act(() => api("/api/runs/execute", {}))} title={approvedCount === 0 ? "Approve at least one change first" : "Sends only what you approved, then reloads each page to check"}><span className="stepno">3</span><span className="steptxt">Apply approved &amp; verify{approvedCount > 0 ? ` (${approvedCount})` : ""}<small>{approvedCount > 0 ? "press this to send" : "approve something first"}</small></span></button>
+          <button className={`btn stepbtn ${next === 3 ? "primary next" : ""}`} disabled={st.busy || approvedCount + pendingMod === 0} onClick={runExecute} title={approvedCount > 0 ? "Sends only what you approved, then reloads each page to check" : pendingMod > 0 ? "Reloads the sites that were waiting for a moderator and checks whether the change is live now" : "Approve at least one change first"}><span className="stepno">3</span><span className="steptxt">{approvedCount > 0 ? `Apply approved & verify (${approvedCount})` : pendingMod > 0 ? `Re-check pending sites (${pendingMod})` : "Apply approved & verify"}<small>{approvedCount > 0 ? "press this to send" : pendingMod > 0 ? "did the site approve it?" : "approve something first"}</small></span></button>
           {st.busy && <button type="button" className="spin linkish-btn" onClick={() => go("trace")} title="Open the Agent Trace">🤖 Working… view progress</button>}
         </div>
         <div className="tabs" role="tablist" aria-label="Sections" onKeyDown={onTabKey}>
