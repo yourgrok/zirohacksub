@@ -134,6 +134,10 @@ button on `/tests` (it uses a SIMULATED rogue planner; it should show every unsa
 did not work, the docs honestly say so; do not edit them to claim otherwise.
 
 ## Likely problems and what to do
+- "My new PIN stopped working": on Render free the database is wiped when the service restarts or sleeps, so a business created
+  with "Set up my business" disappears with it (the demo PIN `7KQ4X-M9PHT` always works because it is re-created on boot). Also a PIN
+  that was never used within 30 minutes of being issued expires, and changing `PIN_SECRET` invalidates PINs issued before the change.
+  Reloading the browser or logging out never invalidates a PIN. This is expected on the free tier, not a bug.
 - Render build fails at `npm ci` / better-sqlite3: ask for the log. The app has a `node:sqlite` fallback, so the
   fix is usually to set the environment variable `SQLITE_DRIVER=node` on Render (it forces the built-in driver).
 - Render says "no open port" / health check failing: the app listens on `$PORT` (0.0.0.0) and `/health` must return

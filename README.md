@@ -87,6 +87,8 @@ GitHub will ask you to sign in in the browser the first time (Git Credential Man
 3. **Environment → Add Environment Variable:** `PIN_SECRET` = a long random string (click **Generate** if offered; a blueprint creates it for you), and `GEMINI_API_KEY` = your key (optional). The others default correctly (`READER_MODE=http`, models). Set **Health Check Path** to `/health`.
 4. Deploy. When it is live open `https://<your-service>.onrender.com/health` — you should see `"status":"ok"`. Then open the root URL for the console and `/tests` to run all six tests.
 
+> **Businesses created through "Set up my business" are lost whenever a free service restarts or sleeps** (their PINs then stop working; the seeded demo PIN `7KQ4X-M9PHT` always works). Keeping them would need a paid persistent disk or a hosted database.
+>
 > **SQLite on a free host is temporary.** The disk is wiped on restart/redeploy; that is fine because the app **reseeds the demo data on boot** (and "Reset demo data" does it on demand). Free services also sleep when idle, so the first request can take ~30–60 s.
 >
 > `Dockerfile.playwright` is for hosts with more memory (reads pages in real Chromium, `READER_MODE=auto`). **Neither Dockerfile was built in the authoring environment** (no Docker there) — the app itself was run and tested directly with Node 22.
@@ -112,7 +114,9 @@ GitHub will ask you to sign in in the browser the first time (Git Credential Man
 - **Rate limit:** 5 wrong PINs per client IP, then a 60 s cool-down that doubles on each further lock-out (max 15 min). Every failure gets the same message: "Invalid PIN."
 - **Session:** a random 256-bit id in an `httpOnly`, `SameSite=Lax` (and `Secure` over HTTPS) cookie; only its SHA-256 is stored; 8-hour lifetime; **Log out** destroys it on the server. State-changing requests from another origin are refused.
 - **Demo PIN: `7KQ4X-M9PHT`** (synthetic; it opens the seeded "Sunrise Sweets & Bakery" business so TC1–TC6 and `/tests` keep working). It is re-hashed on every boot, so changing `PIN_SECRET` never locks it out. Only this business can reset the shared data or open `/tests`.
-- `PIN_SECRET` (env var) is the server-side HMAC key. Set it on Render (a blueprint generates one). If it is missing in production a random temporary one is used (PINs of newly created businesses then stop working after a restart).
+- `PIN_SECRET` (env var) is the server-side HMAC key. Set it on Render (a blueprint generates one). If you leave it empty (the default in `.env.example`) and use a file database, the app generates a random secret **once** and keeps it in `data/.pin_secret` (git-ignored, owner-only), so restarting the server on your PC never invalidates a PIN. Only with an in-memory database, or a disk that cannot be written, is a temporary per-process secret used.
+- **When does a PIN stop working?** Reloading the browser, logging out or restarting the server on your PC does *not* invalidate it. It stops working if (1) the business was deleted: on a free host the database is temporary, so businesses created through onboarding vanish whenever the service restarts or sleeps (the seeded demo PIN keeps working because it is re-created on every boot); (2) it was never used within 30 minutes of being issued (the business is discarded and onboarding can be repeated); (3) you changed `PIN_SECRET` after the PIN was issued (the seeded demo PIN is re-hashed on every boot, but other PINs are not); or (4) you reset the demo data.
+- The PIN screen cannot be shown again: if you reload it before saving the PIN, the PIN is lost (it is still valid if you wrote it down, but if not, wait 30 minutes or just run onboarding again).
 - **Lost PIN = redo onboarding** (v1 limitation): only the HMAC is stored, so nobody, not even an admin, can show it again.
 
 ## New owner onboarding (score matching)

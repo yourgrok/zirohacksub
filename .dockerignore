@@ -7,3 +7,4 @@ data/*.db
 data/*.db-*
 evidence/llm
 *.log
+data/.pin_secret

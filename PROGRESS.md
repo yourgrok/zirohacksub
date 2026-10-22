@@ -55,3 +55,6 @@ Done: tenant-scoped data layer (required `bizId`, in-place migration of old DBs)
 - No screen to edit a business record after onboarding (hours default to Mon-Sat 9-6 when the owner enters none, and the owner is told).
 - `/mock/admin` (the site's moderators) is intentionally open.
 - Not run on Windows or deployed; Gemini path still only unit-tested with a mocked client.
+
+### Fix: PIN invalid after a server restart
+Reproduced: with a file database and `PIN_SECRET` empty (the `.env.example` default) every boot generated a new random secret, so a PIN whose business was still in the database no longer verified. Now an auto-generated secret is persisted once in `data/.pin_secret` (git-ignored, mode 600); `PIN_SECRET` still wins when set; `tests/secret.test.ts` covers restart, env-var priority, in-memory and unwritable-disk cases. On a free host the whole database (and this file) is wiped on restart, so onboarded businesses disappear there: documented in the README.
