@@ -16,7 +16,7 @@ import { DetailsError, hoursToText, updateBusinessDetails } from "../core/detail
 import { removeException } from "../core/store.js";
 import { readerMode } from "../agent/reader.js";
 import { acceptDraft, foresight } from "../foresight/index.js";
-import { IntentError, confirmIntent, preview, refine } from "../nl/index.js";
+import { IntentError, confirmDetails, confirmIntent, isDetailIntent, preview, refine } from "../nl/index.js";
 import { evidenceDir, writeGuardrail, writeResults } from "../runner/evidence.js";
 import { listTests, runAllTcs, runGuardrailDemo, runTc, TC_IDS, TEST_DATE, type TcMode, type TcResult } from "../runner/tc.js";
 import { geminiEnabled } from "../agent/llm.js";
@@ -155,7 +155,14 @@ export function createApp() {
   /* ── plain-language changes ── */
   api.post("/nl/preview", (req, res) => res.json(preview(bizOf(req), String(req.body?.text ?? ""))));
   api.post("/nl/refine", wrap(async (req, res) => res.json(await refine(bizOf(req), String(req.body?.text ?? "")))));
-  api.post("/nl/confirm", wrap((req, res) => res.json(confirmIntent(bizOf(req), req.body?.intent))));
+  api.post("/nl/confirm", wrap((req, res) => {
+    const bizId = bizOf(req);
+    if (isDetailIntent(req.body?.intent)) {
+      if (isBusy(bizId) || starting.has(bizId)) return res.status(409).json({ error: "The agent is working right now. Please try again in a moment." });
+      return res.json(confirmDetails(bizId, req.body.intent));
+    }
+    res.json(confirmIntent(bizId, req.body?.intent));
+  }));
 
   /* ── tests page (demo business only: it resets everything) ── */
   api.get("/tests", requireDemo, (_req, res) => res.json({ tests: listTests(), results: Object.fromEntries(lastResults), testDate: TEST_DATE, llmAvailable: geminiEnabled(), busy: testRunning }));

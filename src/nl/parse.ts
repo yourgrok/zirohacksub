@@ -39,7 +39,7 @@ function hhmm(h: number, m: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-function extractTimes(text: string): { open: string | null; close: string | null; kind: "range" | "close" | "open" | null; rest: string } {
+export function extractTimes(text: string): { open: string | null; close: string | null; kind: "range" | "close" | "open" | null; rest: string } {
   const r = text.match(TIME_RANGE_RE);
   if (r) {
     const [, h1, m1, mer1, h2, m2, mer2] = r;

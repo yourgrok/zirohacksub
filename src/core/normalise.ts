@@ -105,7 +105,7 @@ function dayFromToken(tok: string): Day | null {
   return (WEEKDAYS as readonly string[]).includes(k) ? (k as Day) : null;
 }
 
-function expandDays(spec: string): Day[] {
+export function expandDays(spec: string): Day[] {
   const out: Day[] = [];
   const cleaned = spec.replace(/\bto\b/gi, "-").replace(/\band\b|&/gi, ",");
   for (const part of cleaned.split(",")) {

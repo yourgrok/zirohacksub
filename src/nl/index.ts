@@ -5,6 +5,8 @@ import type { HolidayException } from "../core/types.js";
 import { fastModel, geminiEnabled, llmJson, plannerModel, LlmError } from "../agent/llm.js";
 import { loadHolidays } from "../foresight/index.js";
 import { IntentZ, intentKey, parseChange, type Chip, type Intent, type NlContext, type NlResult } from "./parse.js";
+import { interpret, type DetailIntent, type Interpreted } from "./intent.js";
+import { DetailsError, updateBusinessDetails, type EditResult } from "../core/details.js";
 import { prettyDate, prettyDateWithDay } from "../core/clock.js";
 import { fmt12 } from "../core/normalise.js";
 
@@ -18,8 +20,8 @@ export function liveContext(bizId: string): NlContext {
 }
 
 /** Instant, always available, never blocks on an LLM. */
-export function preview(bizId: string, text: string): NlResult {
-  return parseChange(text, liveContext(bizId));
+export function preview(bizId: string, text: string): Interpreted {
+  return interpret(bizId, text, liveContext(bizId));
 }
 
 export function chipsFor(i: Intent): Chip[] {
@@ -60,7 +62,10 @@ Return JSON: {"status":"ok"|"ask","action":"closed"|"special"|"reopen","start":"
 export async function refine(bizId: string, text: string): Promise<Refinement> {
   if (!geminiEnabled()) return { verdict: "skipped", note: "No Gemini key — deterministic parser only." };
   const ctx = liveContext(bizId);
-  const det = parseChange(text, ctx);
+  const first = interpret(bizId, text, ctx);
+  // only date-type requests are cross-checked; edits and questions stay local and are never sent to a model
+  if (first.status === "detail" || first.status === "answer") return { verdict: "skipped", note: "handled locally" };
+  const det = first;
   if (det.status === "empty") return { verdict: "skipped", note: "empty" };
   try {
     const t = ctx.today;
@@ -86,6 +91,21 @@ export async function refine(bizId: string, text: string): Promise<Refinement> {
 /* ───────────── confirm ───────────── */
 
 export class IntentError extends Error { status = 400; }
+
+const DetailConfirmZ = z.object({
+  kind: z.literal("details"),
+  changes: z.object({ name: z.string().optional(), address: z.string().optional(), phone: z.string().optional(), hours: z.string().optional() }),
+});
+
+/** Confirm a typed change to the record (phone, address, name, weekly hours). Same validation as the edit form. */
+export function confirmDetails(bizId: string, raw: unknown): EditResult {
+  const p = DetailConfirmZ.safeParse(raw);
+  if (!p.success) throw new IntentError("That change is not valid.");
+  try { return updateBusinessDetails(bizId, p.data.changes, "owner (typed it)"); }
+  catch (e) { if (e instanceof DetailsError) throw new IntentError(e.message); throw e; }
+}
+
+export const isDetailIntent = (raw: unknown): raw is DetailIntent => !!raw && typeof raw === "object" && (raw as { kind?: string }).kind === "details";
 
 /** Nothing is saved until the owner presses Confirm — this is the only place an NL change is persisted. */
 export function confirmIntent(bizId: string, raw: unknown): HolidayException {
