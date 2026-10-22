@@ -1,18 +1,11 @@
-/* Warm palette: beige page, cream cards, warm brown text, one muted olive-sage accent for actions.
+/* Warm palette (always light, even when the device is in dark mode): beige page, cream cards, warm brown text, one muted olive-sage accent for actions.
    Status colours carry meaning only: green = done, clay (terracotta) = needs you, sand = in progress, rose red = blocked. */
 :root {
+  color-scheme: light;
   --bg: #f4eee3; --card: #fbf8f1; --ink: #3a312a; --muted: #6a5e51; --line: #e2d8c6;
   --brand: #54733f; --brand-hover: #486536; --brand-ink: #ffffff; --brand-soft: #ebe2cf; --brand-text: #3f5a2e;
   --green: #36612a; --green-bg: #dfebd2; --clay: #8a431f; --clay-bg: #f4dcc8; --red: #9b2a38; --red-bg: #f7dadd;
   --gray-bg: #ece4d5; --soft-bg: #f0e9db; --soft-ink: #4a4036;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1814; --card: #25201a; --ink: #ece4d6; --muted: #b3a796; --line: #3a3228;
-    --brand: #9fc283; --brand-hover: #b2d398; --brand-ink: #17200f; --brand-soft: #332c20; --brand-text: #b9d3a2;
-    --green: #a8cf8d; --green-bg: #263320; --clay: #eaa87a; --clay-bg: #40291b; --red: #f2a3ad; --red-bg: #412127;
-    --gray-bg: #2d271f; --soft-bg: #29231c; --soft-ink: #d8cfbf;
-  }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15.5px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }

@@ -85,3 +85,6 @@ Observed once: `tests/ui.test.ts` (the long scan + edit + change-log test) timed
 
 ### Palette revision (beige)
 Feedback: the teal-green still looked too close to blue. Replaced it in `web/src/styles.css`: beige page `#f4eee3`, cream cards, warm brown text; olive-sage `#54733f` for actions and focus; terracotta (`--clay`) for "needs you" and the waiting-count badge; sand for "in progress"; rose red only for blocked or errors; warm dark mode (brown, not grey). Chosen on purpose: primary buttons are not red/terracotta, because an action must not look like an error. All text/background pairs checked at 4.5:1 or better in both modes. Also fixed a leftover `a-blue` class (30-day holiday alert had no style) and renamed `amber` classes/variables to `clay`.
+
+### Fix: beige never showed on dark-mode devices
+The console followed the OS dark-mode setting, so a user whose device is in dark mode saw the dark palette and never the beige one (my review had forced light mode, which hid this). Removed the `prefers-color-scheme: dark` block and set `color-scheme: light`: the console is now beige on every device. Dark screenshots removed.
