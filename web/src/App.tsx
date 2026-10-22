@@ -26,6 +26,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const [err, setErr] = useState<string | null>(null);
   const [rev, setRev] = useState(0);
   const [tab, setTab] = useState<TabId>(tabFromHash);
+  const [scanPrompt, setScanPrompt] = useState<"show" | null>(null);
   const [nudgeDismissedAt, setNudgeDismissedAt] = useState(-1); // approved-count the owner last chose "Later" for
 
   useEffect(() => {
@@ -50,6 +51,8 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   if (!st) return <div className="wrap"><p>Loading…</p>{err && <p className="err">{err}</p>}</div>;
 
   const rows: Row[] = st.rows;
+  const pendingMod = rows.filter((r) => r.state === "PENDING_MODERATION").length;
+  const notOwner = rows.filter((r) => r.state === "FLAGGED_NOT_OWNER").length;
   const proposedCount = rows.filter((r) => r.state === "PROPOSED").length;
   const approvedCount = rows.filter((r) => r.state === "APPROVED").length;
   const waiting = proposedCount + approvedCount;
@@ -57,6 +60,20 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const next: 1 | 2 | 3 = proposedCount > 0 ? 2 : approvedCount > 0 ? 3 : 1;
   // reminder: everything reviewed, something approved, nothing applied yet
   const showNudge = !st.busy && proposedCount === 0 && approvedCount > 0 && nudgeDismissedAt !== approvedCount;
+  // Scan: start it, follow it until the agent is idle again, then tell the owner what it found
+  const runScan = () => act(async () => {
+    setScanPrompt(null);
+    await api("/api/runs/scan", {});
+    for (let i = 0; i < 300; i++) {
+      const fresh = await api("/api/state");
+      setSt(fresh);
+      if (!fresh.busy) break;
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    setScanPrompt("show");
+  });
+  const closeScan = () => setScanPrompt(null);
+  const checkChanges = () => { setScanPrompt(null); go("approvals"); };
   const applyNow = () => { setNudgeDismissedAt(approvedCount); act(() => api("/api/runs/execute", {})); go("trace"); };
   const ctx: Ctx = { st, me, act, go, rev, onSwitched };
   const Panel = PANELS[tab];
@@ -96,7 +113,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
 
       <div className="sticky">
         <div className="actionbar" role="region" aria-label="Run the agent">
-          <button className={`btn stepbtn ${next === 1 ? "primary next" : ""}`} disabled={st.busy} onClick={() => act(() => api("/api/runs/scan", {}))} title="Reads every listing site and compares meaning, not formatting"><span className="stepno">1</span><span className="steptxt">Scan listings<small>find differences</small></span></button>
+          <button className={`btn stepbtn ${next === 1 ? "primary next" : ""}`} disabled={st.busy} onClick={runScan} title="Reads every listing site and compares meaning, not formatting"><span className="stepno">1</span><span className="steptxt">Scan listings<small>find differences</small></span></button>
           <span className="steparrow" aria-hidden>›</span>
           <button className={`btn stepbtn ${next === 2 ? "primary next" : ""}`} disabled={st.busy || proposedCount === 0} onClick={() => go("approvals")} title={proposedCount === 0 ? "Nothing waiting for your review" : "Review what the agent found"}><span className="stepno">2</span><span className="steptxt">Review &amp; approve{proposedCount > 0 ? ` (${proposedCount})` : ""}<small>{proposedCount > 0 ? "your decision" : "nothing to review"}</small></span></button>
           <span className="steparrow" aria-hidden>›</span>
@@ -109,10 +126,11 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
               {t.more && !TAB_DEFS[i - 1]?.more && <span className="tabsep" aria-hidden />}
               <button
                 id={`tab-${t.id}`} role="tab" aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1}
-                className={`tab ${t.more ? "more" : ""} ${tab === t.id ? "on" : ""}`} title={t.hint} onClick={() => go(t.id)}
+                className={`tab ${t.more ? "more" : ""} ${tab === t.id ? "on" : ""} ${t.id === "approvals" && pendingMod > 0 ? "attn" : ""}`} title={t.hint} onClick={() => go(t.id)}
               >
                 {t.label}
                 {t.id === "approvals" && waiting > 0 && <span className="tabcount" aria-label={`${waiting} waiting`}>{waiting}</span>}
+                {t.id === "approvals" && pendingMod > 0 && <span className="tabcount pend" title="Waiting for a site's moderator to approve" aria-label={`${pendingMod} waiting for site moderation`}>⏳ {pendingMod}</span>}
               </button>
             </React.Fragment>
           ))}
@@ -125,6 +143,32 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="panel">
         <Panel {...ctx} />
       </div>
+      {scanPrompt === "show" && !st.busy && !showNudge && (
+        <div className="nudge-back" onKeyDown={(e) => { if (e.key === "Escape") closeScan(); }}>
+          <div className="nudge" role="dialog" aria-modal="true" aria-labelledby="scan-h">
+            {proposedCount > 0 || pendingMod > 0 || notOwner > 0 ? (
+              <>
+                <h2 id="scan-h">{proposedCount > 0 ? `Scan finished: ${proposedCount} change${proposedCount === 1 ? "" : "s"} to review` : "Scan finished: nothing new to approve"}</h2>
+                <ul className="scan-list">
+                  {proposedCount > 0 && <li><b>{proposedCount}</b> listing detail{proposedCount === 1 ? " differs" : "s differ"} from your record. You decide whether to fix {proposedCount === 1 ? "it" : "them"}.</li>}
+                  {pendingMod > 0 && <li><b>{pendingMod}</b> edit{pendingMod === 1 ? " is" : "s are"} waiting for a site's moderator (the public page still shows the old value).</li>}
+                  {notOwner > 0 && <li><b>{notOwner}</b> listing{notOwner === 1 ? " is" : "s are"} claimed by someone else, so you need to reclaim {notOwner === 1 ? "it" : "them"} first.</li>}
+                </ul>
+                <div className="actions">
+                  <button className="btn primary big" autoFocus onClick={checkChanges}>{proposedCount > 0 ? "Check changes" : "Open Approvals"}</button>
+                  <button className="btn ghost" onClick={closeScan}>Later</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="scan-h">Scan finished: no changes found</h2>
+                <p>Your name, address, phone and hours match on every listing site, so there is nothing for you to approve.</p>
+                <div className="actions"><button className="btn primary big" autoFocus onClick={closeScan}>OK</button></div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       {showNudge && (
         <div className="nudge-back" onKeyDown={(e) => { if (e.key === "Escape") setNudgeDismissedAt(approvedCount); }}>
           <div className="nudge" role="dialog" aria-modal="true" aria-labelledby="nudge-h">
