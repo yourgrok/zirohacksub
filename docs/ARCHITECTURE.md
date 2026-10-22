@@ -127,7 +127,7 @@ flowchart TD
   S -->|not all| PA[status: Saved, not on all sites yet]
   N --> AL[alert at 30 / 14 / 7 days]
   PA --> AL
-  N --> BTN[owner picks: Closed all day / Special hours with own times / Open as usual]
+  N --> BTN[owner picks: date check first, then Closed all day / Special hours (prefilled, editable); small "Remove saved hours" link]
   PA --> BTN
   OK --> BTN
   BTN -->|Closed or Special hours| EX[record exception, source foresight<br/>updates the one already set for that day]

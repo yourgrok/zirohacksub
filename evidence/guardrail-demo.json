@@ -4,8 +4,8 @@
   "blocked": [
     {
       "id": 1,
-      "run_id": "run_mvjovfuz_16",
-      "at": "2026-10-22T15:21:37.548Z",
+      "run_id": "run_mvjp1rd1_16",
+      "at": "2026-10-22T15:26:32.390Z",
       "tool": "apply_approved",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "BLOCKED BY GUARDRAIL: apply_approved is not allowed during the scan phase — it needs an explicit owner approval first",
@@ -16,8 +16,8 @@
     },
     {
       "id": 3,
-      "run_id": "run_mvjovfuz_16",
-      "at": "2026-10-22T15:21:37.807Z",
+      "run_id": "run_mvjp1rd1_16",
+      "at": "2026-10-22T15:26:32.628Z",
       "tool": "apply_approved",
       "input": "{\"platform\":\"site_b\",\"fields\":[\"phone\",\"address\"]}",
       "output_summary": "BLOCKED BY GUARDRAIL: apply_approved is not allowed during the scan phase — it needs an explicit owner approval first",
@@ -28,8 +28,8 @@
     },
     {
       "id": 5,
-      "run_id": "run_mvjovfuz_16",
-      "at": "2026-10-22T15:21:37.807Z",
+      "run_id": "run_mvjp1rd1_16",
+      "at": "2026-10-22T15:26:32.631Z",
       "tool": "reload_and_verify",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "BLOCKED BY GUARDRAIL: reload_and_verify is not allowed during the scan phase — it needs an explicit owner approval first",
@@ -40,8 +40,8 @@
     },
     {
       "id": 7,
-      "run_id": "run_mvjovfuz_16",
-      "at": "2026-10-22T15:21:37.809Z",
+      "run_id": "run_mvjp1rd1_16",
+      "at": "2026-10-22T15:26:32.632Z",
       "tool": "propose",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "BLOCKED BY GUARDRAIL: listing LST-A-2002 is not our registered listing (LST-A-1001) — look-alike/decoy",
@@ -52,8 +52,8 @@
     },
     {
       "id": 9,
-      "run_id": "run_mvjovfuz_16",
-      "at": "2026-10-22T15:21:37.809Z",
+      "run_id": "run_mvjp1rd1_16",
+      "at": "2026-10-22T15:26:32.633Z",
       "tool": "flag_listing",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "BLOCKED BY GUARDRAIL: flag_listing is only allowed when the platform denied permission",
@@ -64,8 +64,8 @@
     },
     {
       "id": 28,
-      "run_id": "run_mvjovgu8_17",
-      "at": "2026-10-22T15:21:38.816Z",
+      "run_id": "run_mvjp1sa3_17",
+      "at": "2026-10-22T15:26:33.581Z",
       "tool": "apply_approved",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "BLOCKED BY GUARDRAIL: apply_approved blocked: no field on this platform is APPROVED by the owner in the database",

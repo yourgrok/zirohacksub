@@ -78,7 +78,7 @@ The rogue planner tried to apply with no approval, apply fields nobody approved,
 
 ## 5. Test results (copied from the latest run)
 
-Run: 2026-10-22T15:21:23.285Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
+Run: 2026-10-22T15:26:18.209Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|

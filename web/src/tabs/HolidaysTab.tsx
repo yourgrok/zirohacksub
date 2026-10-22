@@ -23,18 +23,17 @@ function HolidayRow({ h, today, st, act, go, expanded, onToggle }: { h: any; tod
   const minDate = [today, shift(h.holiday.date, -DATE_SHIFT_DAYS)].sort().pop() as string; // the later of today and (calendar − 30 days)
   const maxDate = shift(h.holiday.date, DATE_SHIFT_DAYS);
   const otherOk = otherDate !== "" && otherDate !== h.date && otherDate >= minDate && otherDate <= maxDate;
+  // step 1 is the date question; hours already saved for this holiday (or a verified date) count as checked
+  const answer: DateAnswer = dateAnswer ?? (ex || !needsDateCheck ? "yes" : null);
+  const dateReady = answer === "yes" || (answer === "no" && otherOk);
   const bad = mode === "special" && (!open || !close || open >= close);
-  const dateBlocked = needsDateCheck && (dateAnswer === null || (dateAnswer === "no" && !otherOk));
   const current: Mode = mode ?? (ex ? ex.kind : null);
-  const finalDate = dateAnswer === "no" && otherOk ? otherDate : h.date;
+  const finalDate = answer === "no" && otherOk ? otherDate : h.date;
 
   const pick = (m: "closed" | "special") => {
     setMode(m);
-    // something already saved for this holiday counts as checked; a new choice has to be checked
-    setDateAnswer(ex ? "yes" : null);
-    setOtherDate("");
     if (m === "special") {
-      // start from what is already saved, else from the suggestion for this holiday
+      // prefilled but editable: what is already saved, else the suggestion for this holiday
       setOpen(ex?.kind === "special" && ex.open ? ex.open : h.suggestion.open ?? "10:00");
       setClose(ex?.kind === "special" && ex.close ? ex.close : h.suggestion.close ?? "14:00");
     }
@@ -43,7 +42,7 @@ function HolidayRow({ h, today, st, act, go, expanded, onToggle }: { h: any; tod
   const save = async () => {
     let ok = false;
     const body: any = mode === "closed" ? { kind: "closed" } : { kind: "special", open, close };
-    if (dateAnswer === "no") body.date = otherDate;
+    if (answer === "no") body.date = otherDate;
     await act(async () => {
       await api(`/api/foresight/${h.holiday.id}/accept`, body);
       await api("/api/runs/scan", {});
@@ -76,55 +75,66 @@ function HolidayRow({ h, today, st, act, go, expanded, onToggle }: { h: any; tod
 
       {expanded && h.editable && (
         <div className="hbody">
-          <div className="seg" role="group" aria-label={`Hours for ${h.holiday.name}`}>
-            <button type="button" className={`segbtn ${current === "closed" ? "on" : ""}`} aria-pressed={current === "closed"} disabled={st.busy} onClick={() => pick("closed")}>Closed all day</button>
-            <button type="button" className={`segbtn ${current === "special" ? "on" : ""}`} aria-pressed={current === "special"} disabled={st.busy} onClick={() => pick("special")}>Special hours</button>
-            <button type="button" className="segbtn" disabled={st.busy || !ex} title={ex ? "Cancel the saved hours for this day" : "Nothing is set for this day, so you are already open as usual"} onClick={clear}>Open as usual</button>
-          </div>
-
-          {mode && (
-            <div className="editor">
-              {mode === "special" ? (
-                <div className="times">
-                  <label>Opens <input type="time" value={open} onChange={(e) => setOpen(e.target.value)} /></label>
-                  <label>Closes <input type="time" value={close} onChange={(e) => setClose(e.target.value)} /></label>
-                </div>
-              ) : (
-                <p className="small">{h.holiday.name} will be marked closed all day.</p>
-              )}
-              {bad && <p className="err small">The closing time must be after the opening time.</p>}
-
-              {needsDateCheck && (
-                <fieldset className="dateq">
-                  <legend>Is {h.holiday.name} on {niceDate(h.date)} this year?</legend>
-                  <div className="seg">
-                    <button type="button" className={`segbtn ${dateAnswer === "yes" ? "on" : ""}`} aria-pressed={dateAnswer === "yes"} onClick={() => setDateAnswer("yes")}>Yes, {niceDate(h.date)}</button>
-                    <button type="button" className={`segbtn ${dateAnswer === "no" ? "on" : ""}`} aria-pressed={dateAnswer === "no"} onClick={() => setDateAnswer("no")}>No, it's on another date</button>
-                  </div>
-                  {dateAnswer === "no" && (
-                    <div className="newdate">
-                      <label>Correct date <input type="date" value={otherDate} min={minDate} max={maxDate} onChange={(e) => setOtherDate(e.target.value)} /></label>
-                      {otherDate !== "" && !otherOk && (
-                        <p className="err small">{otherDate === h.date ? `That is the date shown above. Choose "Yes" instead.` : `Pick a date between ${niceDate(minDate)} and ${niceDate(maxDate)}.`}</p>
-                      )}
-                      {ex && otherOk && <p className="muted small">Your saved hours for {niceDate(h.date)} will be moved to {niceDate(otherDate)}. The old day will be proposed for removal from listing sites that show it.</p>}
-                    </div>
-                  )}
-                </fieldset>
-              )}
-
-              <div className="actions">
-                <button className="btn primary small" disabled={st.busy || bad || dateBlocked} onClick={save}>
-                  {dateAnswer === "no" && otherOk ? `Save for ${niceDate(finalDate)}` : "Save to my record"}
-                </button>
-                <button className="btn ghost small" disabled={st.busy} onClick={cancel}>Cancel</button>
+          {needsDateCheck && !dateReady && (
+            <fieldset className="dateq">
+              <legend>First, is {h.holiday.name} on {niceDate(h.date)} this year?</legend>
+              <div className="seg">
+                <button type="button" className={`segbtn ${dateAnswer === "yes" ? "on" : ""}`} aria-pressed={dateAnswer === "yes"} onClick={() => setDateAnswer("yes")}>Yes, {niceDate(h.date)}</button>
+                <button type="button" className={`segbtn ${answer === "no" ? "on" : ""}`} aria-pressed={answer === "no"} onClick={() => setDateAnswer("no")}>No, it's on another date</button>
               </div>
-              <p className="muted small">This only saves it on your record. You approve every listing-site change in Approvals.</p>
-            </div>
+              {answer === "no" && (
+                <div className="newdate">
+                  <label>Correct date <input type="date" value={otherDate} min={minDate} max={maxDate} onChange={(e) => setOtherDate(e.target.value)} /></label>
+                  {otherDate !== "" && !otherOk && (
+                    <p className="err small">{otherDate === h.date ? `That is the date shown above. Choose "Yes" instead.` : `Pick a date between ${niceDate(minDate)} and ${niceDate(maxDate)}.`}</p>
+                  )}
+                </div>
+              )}
+            </fieldset>
           )}
 
-          {!mode && h.chip === "SET_PARTIAL" && (
-            <p className="muted small">Saved on your record, but not every listing site shows it yet. <button className="linkish-btn" onClick={() => go("approvals")}>Check Approvals</button></p>
+          {dateReady && (
+            <>
+              {needsDateCheck && (
+                <p className="muted small">
+                  Date: <b>{niceDate(finalDate)}</b>{" "}
+                  <button type="button" className="linkish-btn" disabled={st.busy} onClick={() => { setDateAnswer(null); setOtherDate(""); setMode(null); }}>Wrong date?</button>
+                </p>
+              )}
+              <div className="seg" role="group" aria-label={`Hours for ${h.holiday.name}`}>
+                <button type="button" className={`segbtn ${current === "closed" ? "on" : ""}`} aria-pressed={current === "closed"} disabled={st.busy} onClick={() => pick("closed")}>Closed all day</button>
+                <button type="button" className={`segbtn ${current === "special" ? "on" : ""}`} aria-pressed={current === "special"} disabled={st.busy} onClick={() => pick("special")}>Special hours</button>
+              </div>
+
+              {mode && (
+                <div className="editor">
+                  {mode === "special" ? (
+                    <div className="times">
+                      <label>Opens <input type="time" value={open} onChange={(e) => setOpen(e.target.value)} /></label>
+                      <label>Closes <input type="time" value={close} onChange={(e) => setClose(e.target.value)} /></label>
+                    </div>
+                  ) : (
+                    <p className="small">{h.holiday.name} will be marked closed all day.</p>
+                  )}
+                  {bad && <p className="err small">The closing time must be after the opening time.</p>}
+                  {ex && answer === "no" && otherOk && <p className="muted small">Your saved hours for {niceDate(h.date)} will be moved to {niceDate(otherDate)}. The old day will be proposed for removal from listing sites that show it.</p>}
+                  <div className="actions">
+                    <button className="btn primary small" disabled={st.busy || bad} onClick={save}>
+                      {answer === "no" && otherOk ? `Save for ${niceDate(finalDate)}` : "Save to my record"}
+                    </button>
+                    <button className="btn ghost small" disabled={st.busy} onClick={cancel}>Cancel</button>
+                  </div>
+                  <p className="muted small">This only saves it on your record. You approve every listing-site change in Approvals.</p>
+                </div>
+              )}
+
+              {!mode && h.chip === "SET_PARTIAL" && (
+                <p className="muted small">Saved on your record, but not every listing site shows it yet. <button className="linkish-btn" onClick={() => go("approvals")}>Check Approvals</button></p>
+              )}
+              {!mode && ex && (
+                <p className="small"><button type="button" className="linkish-btn" disabled={st.busy} onClick={clear} title="Cancel the saved hours for this day">Remove saved hours (open as usual)</button></p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -150,7 +160,7 @@ export default function HolidaysTab({ st, act, go, rev }: Ctx) {
   return (
     <section className="card">
       <h2>Upcoming holidays <span className="muted">(next {fs.windowDays} days)</span></h2>
-      <p className="muted small">Choose whether you close, keep special hours, or stay open. Festival dates can shift each year, so we ask you to confirm the date, or give us the right one, before you save. Saving only updates your record; you approve every listing-site change in Approvals.</p>
+      <p className="muted small">Confirm the date first (festival dates can shift each year), then choose Closed all day or Special hours. The times start filled in and you can change them. Saving only updates your record; you approve every listing-site change in Approvals.</p>
       {fs.alerts.map((a: any) => (
         <div key={a.holidayId} className={`alert ${a.milestone === 7 ? "a-red" : a.milestone === 14 ? "a-clay" : "a-soft"}`}><b>{a.milestone}-day alert:</b> {a.message}</div>
       ))}
