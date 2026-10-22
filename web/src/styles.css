@@ -232,7 +232,7 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 .mnode.now { transform: scale(1.18); box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 22%, transparent); }
 .mnode:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
 .mlabel { position: absolute; width: 116px; text-align: center; font-size: 12px; color: var(--muted); pointer-events: none; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mlabel.above { display: flex; align-items: flex-end; justify-content: center; height: 34px; } .mlabel code { font-size: 11.5px; }
+.mlabel.above { gap: 5px; display: flex; align-items: flex-end; justify-content: center; height: 34px; } .mlabel code { font-size: 11.5px; }
 .mbot { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; will-change: transform; }
 .mbot-emoji { display: inline-block; font-size: 34px; line-height: 1; filter: drop-shadow(0 3px 4px #0005); animation: bob .8s ease-in-out infinite; }
 .mdetail { margin-top: 10px; padding: 10px 14px; border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: 10px; background: var(--card); }
@@ -242,3 +242,9 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 
 .mbot-img { display: block; width: 54px; height: auto; user-select: none; filter: drop-shadow(0 3px 4px #0005); animation: bob .8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .mbot-img { animation: none; } }
+
+.mspeech { position: absolute; left: 50%; bottom: calc(100% + 2px); transform: translateX(-50%); white-space: nowrap; background: #fff; color: #1d1d1d; border: 2px solid var(--brand); border-radius: 12px; padding: 3px 10px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 6px #0003; animation: pop .22s ease-out; }
+.mspeech::after { content: ""; position: absolute; left: 50%; top: 100%; width: 9px; height: 9px; background: #fff; border-right: 2px solid var(--brand); border-bottom: 2px solid var(--brand); transform: translate(-50%, -50%) rotate(45deg); }
+@keyframes pop { from { opacity: 0; transform: translateX(-50%) scale(.7); } }
+.say-word { font-weight: 600; color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .mspeech { animation: none; } }

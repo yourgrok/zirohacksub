@@ -8,6 +8,12 @@ const ICON: Record<string, string> = {
   reload_and_verify: "🔄", ask_owner: "❓", done: "🏁", summarise_report: "📋", create_listing: "🆕",
 };
 const icon = (tool: string) => ICON[tool] ?? "•";
+/** One or two plain words for each tool, for people who don't read code. */
+const SAY: Record<string, string> = {
+  read_listing: "Reading…", normalise: "Tidying up", compare: "Comparing", propose: "Suggesting", flag_listing: "Not yours!",
+  apply_approved: "Applying", reload_and_verify: "Double-checking", ask_owner: "Your turn", done: "All done", summarise_report: "Summing up", create_listing: "Adding a listing",
+};
+export const say = (r: { tool: string; decider?: string }) => (r.decider === "Blocked" ? "Stopped!" : SAY[r.tool] ?? "Working…");
 
 export default function TraceMap({ rows }: { rows: any[] }) {
   const reduced = useReducedMotion();
@@ -64,7 +70,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
     if (e.pointerType === "touch" || !inner.current) return;
     stopTimers();
     const r = inner.current.getBoundingClientRect();
-    const x = e.clientX - r.left, y = Math.min(H - 20, Math.max(20, e.clientY - r.top));
+    const x = e.clientX - r.left, y = Math.min(H - 20, Math.max(74, e.clientY - r.top));
     target.current = { x, y }; kick();
     let best = -1, bd = 70;
     pts.forEach((p, i) => { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = i; } });
@@ -100,12 +106,13 @@ export default function TraceMap({ rows }: { rows: any[] }) {
                   onClick={() => goTo(i)} onFocus={() => goTo(i)}
                 >{icon(r.tool)}</button>
                 <span className={`mlabel ${top ? "above" : "below"}`} style={{ left: p.x - 58, top: top ? p.y - R - 40 : p.y + R + 6 }} aria-hidden>
-                  <b>#{i + 1}</b> <code>{r.tool}</code>
+                  <b>#{i + 1}</b> <span className="say-word">{say(r)}</span>
                 </span>
               </React.Fragment>
             );
           })}
-          <div className="mbot" ref={bot} aria-hidden><img ref={face} className="mbot-img" src="/agent.png" alt="" draggable={false} /></div>
+          <div className="mbot" ref={bot} aria-hidden>
+            <span className="mspeech" key={`${focus}-${say(t)}`}>{say(t)}</span><img ref={face} className="mbot-img" src="/agent.png" alt="" draggable={false} /></div>
         </div>
       </div>
       {t && (
