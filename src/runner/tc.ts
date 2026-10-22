@@ -170,7 +170,9 @@ const BODIES: Record<TcId, Body> = {
 
 export async function runTc(id: TcId, opts: RunnerOptions): Promise<TcResult> {
   const prevProvider = process.env.LLM_PROVIDER;
+  const prevPlanner = process.env.AGENT_PLANNER;
   process.env.LLM_PROVIDER = opts.mode === "deterministic" ? "none" : "gemini";
+  if (opts.mode === "deterministic") delete process.env.AGENT_PLANNER; else process.env.AGENT_PLANNER = "gemini"; // the LLM run exercises the opt-in Gemini planner
   setClockOverride(TEST_DATE);
   const t0 = performance.now();
   const startedAt = new Date().toISOString();
@@ -191,6 +193,7 @@ export async function runTc(id: TcId, opts: RunnerOptions): Promise<TcResult> {
   } finally {
     setClockOverride(null);
     if (prevProvider === undefined) delete process.env.LLM_PROVIDER; else process.env.LLM_PROVIDER = prevProvider;
+    if (prevPlanner === undefined) delete process.env.AGENT_PLANNER; else process.env.AGENT_PLANNER = prevPlanner;
   }
   const trace = runs.flatMap((r) => getTrace(r));
   const pass = checks.length > 0 && checks.every((x) => x.pass);

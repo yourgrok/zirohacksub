@@ -16,8 +16,12 @@ export class NotFoundError extends Error {
 }
 
 export type PlannerProvider = () => Planner;
-let provider: PlannerProvider = () => (geminiEnabled() ? geminiPlanner : deterministicPlanner);
-export const plannerMode = (): "gemini" | "deterministic" => (geminiEnabled() ? "gemini" : "deterministic");
+/**
+ * The agent loop is rules-driven by default: the deterministic planner picks every tool, so a scan never waits on (or burns the
+ * quota of) a model. Gemini is used only in Edit & Ask. The Gemini planner is an opt-in experiment: AGENT_PLANNER=gemini plus a key.
+ */
+export const plannerMode = (): "gemini" | "deterministic" => (process.env.AGENT_PLANNER === "gemini" && geminiEnabled() ? "gemini" : "deterministic");
+let provider: PlannerProvider = () => (plannerMode() === "gemini" ? geminiPlanner : deterministicPlanner);
 export function setPlannerProvider(p: PlannerProvider) { provider = p; }
 export const currentPlanner = () => provider();
 
@@ -25,6 +29,11 @@ async function finish(bizId: string, runId: string) {
   let summary: string;
   const t0 = performance.now();
   try {
+    if (plannerMode() !== "gemini") { // rules-driven: the headline is a template over the field states, no model call
+      summary = templateSummary(bizId);
+      getDb().prepare("UPDATE runs SET summary=? WHERE id=?").run(summary, runId);
+      return summary;
+    }
     const r = await summariseReport(bizId);
     summary = r.text;
     recordTrace(runId, "summarise_report", {}, summary, performance.now() - t0, r.decider, r.note);

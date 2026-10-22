@@ -78,18 +78,18 @@ The rogue planner tried to apply with no approval, apply fields nobody approved,
 
 ## 5. Test results (copied from the latest run)
 
-Run: 2026-10-22T13:59:54.123Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
+Run: 2026-10-22T15:21:23.285Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
-| TC1 — Holiday hours differ on one site | PASS | not run (no API key in build environment) | 31 | B holiday: MISMATCH → PROPOSED → APPROVED → APPLIED → VERIFIED; 1 write(s). |
-| TC2 — Phone formatted differently but identical | PASS | not run (no API key in build environment) | 25 | phone FORMAT_ONLY_EQUIVALENT, 0 proposals, 0 writes |
-| TC3 — Listing claimed by someone else | PASS | not run (no API key in build environment) | 25 | phone FLAGGED_NOT_OWNER; 0 write attempts |
-| TC4 — Edit pending moderation | PASS | not run (no API key in build environment) | 33 | site E hours: MISMATCH → PROPOSED → APPROVED → APPLIED → PENDING_MODERATION → VERIFIED |
-| TC5 — Plain-language closure flows through approval | PASS | not run (no API key in build environment) | 35 | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
+| TC1 — Holiday hours differ on one site | PASS | not run (no API key in build environment) | 27 | B holiday: MISMATCH → PROPOSED → APPROVED → APPLIED → VERIFIED; 1 write(s). |
+| TC2 — Phone formatted differently but identical | PASS | not run (no API key in build environment) | 23 | phone FORMAT_ONLY_EQUIVALENT, 0 proposals, 0 writes |
+| TC3 — Listing claimed by someone else | PASS | not run (no API key in build environment) | 23 | phone FLAGGED_NOT_OWNER; 0 write attempts |
+| TC4 — Edit pending moderation | PASS | not run (no API key in build environment) | 29 | site E hours: MISMATCH → PROPOSED → APPROVED → APPLIED → PENDING_MODERATION → VERIFIED |
+| TC5 — Plain-language closure flows through approval | PASS | not run (no API key in build environment) | 32 | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
 | TC6 — Foresight alert for a holiday with no exception | PASS | not run (no API key in build environment) | 0 | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
 
-Unit/integration suite: **285/285 tests passed** across 22 files.
+Unit/integration suite: **286/286 tests passed** across 22 files.
 
 Per-check detail with raw and normalised values, state histories and screenshots: `evidence/SUMMARY.md`.
 

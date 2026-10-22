@@ -18,7 +18,7 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 |---|---|---|
 | ![](docs/screenshots/24-tab-edit-ask.png) | ![](docs/screenshots/26-tab-trace.png) | ![](docs/screenshots/29-mobile-tabs.png) |
 
-The agent works with **no API key** (deterministic planner). With `GEMINI_API_KEY` set, Gemini picks each next tool through the Interactions API; code-level guardrails still block anything unsafe, and any failure falls back to the deterministic planner (all visible in the agent trace).
+The agent loop is **rules-driven** and needs **no API key**: a fixed collect → plan → find → act sequence where each step picks its tool by rules, and every edit is guarded in code and approved by the owner. Gemini (`gemini-3.5-flash-lite`, Interactions API) is used in **one place only**: the Edit & Ask box double-checks the date parser. An experimental Gemini planner can be switched on with `AGENT_PLANNER=gemini` (used by `npm run test:tc:llm`); it falls back to the rules on any failure.
 
 ---
 
@@ -214,4 +214,4 @@ Results of the latest run: [`evidence/SUMMARY.md`](evidence/SUMMARY.md) · detai
 See `.env.example`: `PIN_SECRET`, `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`), `GEMINI_FAST_MODEL` (default `gemini-3.5-flash-lite`), `LLM_PROVIDER=gemini|none`, `READER_MODE=playwright|http|auto`, `DEMO_NOW=YYYY-MM-DD` (fixes "today"; the header then says "(demo date)"). All date logic is Asia/Kolkata.
 
 ## Honest limitations
-Mock sites only · festival dates in `data/holidays.json` are approximate and must be confirmed by the owner ("verify date") · free-host database resets (reseeds on boot) · the LLM is optional and fully guarded · the exact Gemini model names are taken from the brief and could not be checked against Google's docs from the build environment — if a model name is rejected the app tries the other one, then falls back to deterministic · the optional mock-OTP step was not built · claiming an unclaimed listing is a mock (no OTP) · the login rate limiter lives in memory (resets on restart, per instance) · there is no screen to edit a business record after onboarding · `/mock/admin` is deliberately open.
+Mock sites only · festival dates in `data/holidays.json` are approximate and must be confirmed by the owner ("verify date") · free-host database resets (reseeds on boot) · the LLM is optional (Edit & Ask only) and fully guarded · the exact Gemini model names are taken from the brief and could not be checked against Google's docs from the build environment — if a model name is rejected the app tries the other one, then falls back to deterministic · the optional mock-OTP step was not built · claiming an unclaimed listing is a mock (no OTP) · the login rate limiter lives in memory (resets on restart, per instance) · there is no screen to edit a business record after onboarding · `/mock/admin` is deliberately open.

@@ -68,7 +68,7 @@ export default function DetailsTab({ st, me, act, go }: Ctx) {
         <summary>Settings{me.business?.isDemo ? " and demo tools" : ""}</summary>
         <dl className="kv">
           <dt>Today</dt><dd>{st.today} ({st.tz}){st.demoNow ? ", fixed demo date" : ""}</dd>
-          <dt>Planner</dt><dd>{st.plannerMode === "gemini" ? "Gemini, with safety rules in code" : "Deterministic (no AI key needed)"}</dd>
+          <dt>Planner</dt><dd>{st.plannerMode === "gemini" ? "Gemini (experimental), with safety rules in code" : "Rules-driven (fixed steps, safety checks in code)"}</dd>
           <dt>Page reader</dt><dd>{st.readerMode}</dd>
           <dt>Login</dt><dd>PIN only{b.isDemo ? " (demo business)" : ""}</dd>
         </dl>

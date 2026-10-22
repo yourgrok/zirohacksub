@@ -56,7 +56,7 @@ Transitions live in `src/core/states.ts`; entering `APPROVED` requires actor `ow
 ```mermaid
 sequenceDiagram
   participant L as Agent loop
-  participant P as Planner (Gemini or Deterministic)
+  participant P as Planner (rules by default; Gemini only if AGENT_PLANNER=gemini)
   participant G as Guardrail (code)
   participant T as Tool registry
   participant DB as SQLite

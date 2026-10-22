@@ -13,7 +13,7 @@ export interface LlmClient { generate(req: LlmRequest): Promise<string> }
 export function geminiEnabled(): boolean {
   return (process.env.LLM_PROVIDER ?? "gemini") !== "none" && !!process.env.GEMINI_API_KEY;
 }
-export const plannerModel = () => process.env.GEMINI_MODEL || "gemini-3.8-flash";
+export const plannerModel = () => process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 export const fastModel = () => process.env.GEMINI_FAST_MODEL || "gemini-3.5-flash-lite";
 
 const redact = (s: string) => {

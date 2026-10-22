@@ -16,6 +16,7 @@ const SECRET = "AIza-FAKE-SECRET-KEY-123";
 beforeEach(() => {
   resetAndSeed();
   process.env.LLM_PROVIDER = "gemini";
+  process.env.AGENT_PLANNER = "gemini"; // the Gemini planner is opt-in; these tests cover it
   process.env.GEMINI_API_KEY = SECRET;
   process.env.LLM_BACKOFF_MS = "5";
   process.env.LLM_TIMEOUT_MS = "300";
@@ -23,6 +24,7 @@ beforeEach(() => {
 afterEach(() => {
   setLlmClient(null);
   process.env.LLM_PROVIDER = "none";
+  delete process.env.AGENT_PLANNER;
   delete process.env.GEMINI_API_KEY;
 });
 
@@ -55,7 +57,7 @@ describe("Gemini planner (mocked client)", () => {
     const seen: LlmRequest[] = [];
     setLlmClient({ generate: async (req) => { seen.push(req); return sensible.generate(req); } });
     const r = await scan(B);
-    expect(seen[0].model).toBe("gemini-3.8-flash");
+    expect(seen[0].model).toBe("gemini-3.5-flash-lite");
     expect(seen[0].jsonSchema).toHaveProperty("properties.tool");
     for (const q of seen) expect(JSON.stringify(q)).not.toContain(SECRET);
     expect(JSON.stringify(getTrace(r.runId))).not.toContain(SECRET);
@@ -194,4 +196,14 @@ describe("Gemini planner (mocked client)", () => {
   });
 
   it("LlmError kinds are exported", () => { expect(new LlmError("timeout", "x").kind).toBe("timeout"); });
+});
+
+describe("rules-driven by default", () => {
+  it("a scan makes zero Gemini calls when AGENT_PLANNER is not set, even with a key", async () => {
+    delete process.env.AGENT_PLANNER;
+    let n = 0;
+    setLlmClient({ async generate() { n++; return "{}"; } });
+    await scan(B);
+    expect(n).toBe(0);
+  });
 });

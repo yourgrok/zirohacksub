@@ -1,6 +1,6 @@
 # Test evidence summary
 
-Generated: 2026-10-22T14:00:10.479Z  
+Generated: 2026-10-22T15:21:38.818Z  
 Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **auto** · mock data only.
 
 Every run starts from a fresh reset of the seeded demo data. The deterministic run uses `LLM_PROVIDER=none` so results cannot fail randomly because of rate limits or model changes.
@@ -44,7 +44,7 @@ Field state history:
 
 Screenshots: `evidence/screenshots/TC1-siteB-before.png`, `evidence/screenshots/TC1-siteB-after.png`
 
-Trace: 31 tool calls recorded (see `TC1.json`).
+Trace: 27 tool calls recorded (see `TC1.json`).
 
 ## TC2 — Phone formatted differently but identical
 
@@ -70,7 +70,7 @@ Field state history:
 
 Screenshots: `evidence/screenshots/TC2-siteC.png`
 
-Trace: 25 tool calls recorded (see `TC2.json`).
+Trace: 23 tool calls recorded (see `TC2.json`).
 
 ## TC3 — Listing claimed by someone else
 
@@ -96,7 +96,7 @@ Field state history:
 
 Screenshots: `evidence/screenshots/TC3-siteD.png`
 
-Trace: 25 tool calls recorded (see `TC3.json`).
+Trace: 23 tool calls recorded (see `TC3.json`).
 
 ## TC4 — Edit pending moderation
 
@@ -123,7 +123,7 @@ Field state history:
 
 Screenshots: `evidence/screenshots/TC4-siteE-pending.png`, `evidence/screenshots/TC4-siteE-approved.png`
 
-Trace: 33 tool calls recorded (see `TC4.json`).
+Trace: 29 tool calls recorded (see `TC4.json`).
 
 ## TC5 — Plain-language closure flows through approval
 
@@ -139,7 +139,7 @@ Trace: 33 tool calls recorded (see `TC4.json`).
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjlyjf30 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvjovbnp0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -155,7 +155,7 @@ Field state history:
 
 Screenshots: `evidence/screenshots/TC5-siteA-after.png`
 
-Trace: 35 tool calls recorded (see `TC5.json`).
+Trace: 32 tool calls recorded (see `TC5.json`).
 
 ## TC6 — Foresight alert for a holiday with no exception
 
