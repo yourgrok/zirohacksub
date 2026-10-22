@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../api";
+import TraceMap from "./TraceMap";
 import { Ctx, EmptyState, timeIST, useReducedMotion } from "../shared";
 
 type Dec = "all" | "Gemini" | "Deterministic" | "Fallback" | "Blocked";
@@ -57,6 +58,8 @@ export default function TraceTab({ rev }: Ctx) {
       </div>
       <p className="muted">Each step the agent took. The badge shows who decided: Gemini, Deterministic (fixed rules), Fallback (rules took over) or Blocked (stopped by a safety rule).</p>
       <div className="chipbar">{(["all", "Gemini", "Deterministic", "Fallback", "Blocked"] as Dec[]).map((d) => <button key={d} className={`fchip ${dec === d ? "on" : ""}`} onClick={() => setDec(d)}>{d === "all" ? "All steps" : d} <span className="cnt">{count(d)}</span></button>)}</div>
+      <TraceMap rows={shown} />
+      {shown.length > 0 && <h3 className="maph">Step-by-step details</h3>}
       {shown.length > 1 && <p className="muted small hint">{reduced ? "Hover or focus a step to see where the agent is." : "Hover over the steps: the little agent follows your pointer, and walks on by itself when you rest."}</p>}
 
       {loaded && shown.length === 0 && <EmptyState title="No steps yet">Press “Scan listings” and the agent’s steps will appear here.</EmptyState>}
