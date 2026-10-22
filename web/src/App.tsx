@@ -46,7 +46,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
     return () => clearInterval(t);
   }, [st?.busy, load]);
 
-  const act = useCallback(async (fn: () => Promise<unknown>) => { setErr(null); try { await fn(); } catch (e: any) { setErr(e.message); } await load(); }, [load]);
+  const act = useCallback(async (fn: () => Promise<unknown>): Promise<boolean> => { setErr(null); let ok = true; try { await fn(); } catch (e: any) { ok = false; setErr(e.message); } await load(); return ok; }, [load]);
 
   // Start a run and follow it until the agent is idle again (the run itself is fast; this keeps the page in step with it)
   const followRun = useCallback(async (path: string) => {
@@ -59,17 +59,22 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
     }
   }, []);
   // Coming back to this tab (e.g. after approving an edit in the mock moderation admin) re-checks sites that were waiting for a moderator
-  const auto = useRef({ pending: 0, busy: true, last: 0 });
+  const auto = useRef({ pending: 0, busy: true, awaySince: 0 });
   useEffect(() => {
-    const onVisible = () => {
+    // only a real trip away (the owner switched tabs or windows for a few seconds) triggers it
+    const leave = () => { if (!auto.current.awaySince) auto.current.awaySince = Date.now(); };
+    const back = () => {
       const a = auto.current;
-      if (document.visibilityState !== "visible" || a.pending === 0 || a.busy || Date.now() - a.last < 8000) return;
-      a.last = Date.now();
+      const away = a.awaySince ? Date.now() - a.awaySince : 0;
+      a.awaySince = 0;
+      if (document.visibilityState !== "visible" || away < 3000 || a.pending === 0 || a.busy) return;
       followRun("/api/runs/execute").catch(() => load());
     };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => { document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("focus", onVisible); };
+    const onVis = () => (document.visibilityState === "hidden" ? leave() : back());
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", leave);
+    window.addEventListener("focus", back);
+    return () => { document.removeEventListener("visibilitychange", onVis); window.removeEventListener("blur", leave); window.removeEventListener("focus", back); };
   }, [followRun, load]);
 
   if (!st) return <div className="wrap"><p>Loading…</p>{err && <p className="err">{err}</p>}</div>;
@@ -85,7 +90,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const next: 1 | 2 | 3 = proposedCount > 0 ? 2 : approvedCount > 0 || pendingMod > 0 ? 3 : 1;
   // reminder: everything reviewed, something approved, nothing applied yet
   const showNudge = !st.busy && proposedCount === 0 && approvedCount > 0 && nudgeDismissedAt !== approvedCount;
-  const runScan = () => act(async () => { setScanPrompt(null); await followRun("/api/runs/scan"); setScanPrompt("show"); });
+  const runScan = async () => { setScanPrompt(null); if (await act(() => followRun("/api/runs/scan"))) setScanPrompt("show"); }; // popup only after the page state is fully refreshed
   // Apply what was approved and/or re-check sites whose moderator had not approved yet (same run: the agent re-reads each page)
   const runExecute = () => act(() => followRun("/api/runs/execute"));
   const closeScan = () => setScanPrompt(null);

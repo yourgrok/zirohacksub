@@ -106,13 +106,19 @@ function DetailsForm({ st, act, go, rev }: Ctx) {
   const [orig, setOrig] = useState(f);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [dirty, setDirty] = useState(false);
+  const touched = useRef<Set<string>>(new Set()); // fields the person has typed in
 
   useEffect(() => {
     if (dirty) return; // never overwrite what the person is typing
-    api("/api/business").then((b) => { const v = { name: b.name, address: b.address, phone: b.phone, hours: b.hoursText }; setF(v); setOrig(v); }).catch(() => undefined);
+    api("/api/business").then((b) => {
+      const v = { name: b.name, address: b.address, phone: b.phone, hours: b.hoursText };
+      setOrig(v);
+      // if they started typing while this was loading, keep what they typed and fill in only the fields they have not touched
+      setF((cur) => (touched.current.size === 0 ? v : { ...v, ...Object.fromEntries([...touched.current].map((k) => [k, (cur as any)[k]])) }));
+    }).catch(() => undefined);
   }, [rev, dirty]);
 
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => { setDirty(true); setF({ ...f, [k]: e.target.value }); };
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => { touched.current.add(k); setDirty(true); setF((cur) => ({ ...cur, [k]: e.target.value })); };
   const changed = (Object.keys(f) as (keyof typeof f)[]).some((k) => f[k] !== orig[k]);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +126,7 @@ function DetailsForm({ st, act, go, rev }: Ctx) {
     await act(async () => {
       try {
         const r: any = await api("/api/business", f, "PUT");
+        touched.current.clear();
         setDirty(false);
         setOrig(f);
         if (!r.changed.length) { setMsg({ ok: true, text: "Nothing was different, so nothing changed." }); return; }
@@ -141,7 +148,7 @@ function DetailsForm({ st, act, go, rev }: Ctx) {
         <p className="muted small">Hours example: <code>Mon-Sat 09:00-21:00; Sun 10:00-14:00</code> (9am or 21:00 both work; a day you leave out is closed).</p>
         <div className="actions">
           <button className="btn primary" disabled={!changed || st.busy}>Save changes</button>
-          <button type="button" className="btn ghost" disabled={!changed} onClick={() => { setF(orig); setDirty(false); setMsg(null); }}>Undo my edits</button>
+          <button type="button" className="btn ghost" disabled={!changed} onClick={() => { touched.current.clear(); setF(orig); setDirty(false); setMsg(null); }}>Undo my edits</button>
           {msg?.ok && <button type="button" className="linkish" onClick={() => go("approvals")}>Review the fixes</button>}
         </div>
         {msg && <p className={msg.ok ? "ok" : "err"} role={msg.ok ? "status" : "alert"}>{msg.text}</p>}

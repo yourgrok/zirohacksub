@@ -66,7 +66,9 @@ describe("tabbed console (browser)", () => {
     expect(h).toBeLessThan(34);
     await page.click("#tab-edit");
     await page.fill("#e-name", "Sunrise Sweets"); await page.click("button:has-text('Save changes')");
-    await page.waitForSelector("text=Saved: business name"); await idle();
+    await page.waitForSelector("text=Saved: business name", { timeout: 30000 }).catch(async (e) => {
+      throw new Error(`no "Saved" message; the page says: ${await page.locator("form.eform p.ok, form.eform p.err, .alert").allInnerTexts().then((t) => t.join(" | "))} :: ${e.message}`);
+    }); await idle();
     await page.click("#tab-changelog"); await page.waitForSelector("table.log");
     const log = await page.locator("table.log").innerText();
     expect(log).toContain("Business name");

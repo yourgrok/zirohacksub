@@ -25,7 +25,7 @@ export interface Ctx {
   st: any;
   me: Me;
   /** run an action, show its error, then reload the shared state */
-  act: (fn: () => Promise<unknown>) => Promise<void>;
+  act: (fn: () => Promise<unknown>) => Promise<boolean>;
   go: (tab: TabId) => void;
   /** increases every time the shared state is reloaded; tabs that fetch their own data refetch when it changes */
   rev: number;
