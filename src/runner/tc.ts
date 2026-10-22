@@ -161,8 +161,9 @@ const BODIES: Record<TcId, Body> = {
     const h = f.holidays.find((x) => x.holiday.id === "hol_2026_bhaidooj")!;
     c("Holiday is flagged for the owner to verify its date", h.holiday.verified === false, "verified=false → UI shows “verify date”");
     c("A draft is suggested but nothing is applied automatically", !!h.suggestion && listExceptions(B).length === exBefore && totalWrites() === 0, `draft: ${h.suggestion.label}; exceptions unchanged (${exBefore}); writes=${totalWrites()}`);
-    c("Readiness score for the next holiday (Diwali) is shown with its formula", f.next?.readiness === 92 && f.formula.length > 20, `readiness=${f.next?.readiness}`);
-    extra.alert = a; extra.next = f.next && { name: f.next.holiday.name, readiness: f.next.readiness };
+    const diwali = f.holidays.find((x) => x.holiday.id === "hol_2026_diwali")!;
+    c("Each holiday shows whether it is set: Diwali is saved but not on every site yet; Bhai Dooj is Not set", diwali.chip === "SET_PARTIAL" && h.chip === "NOT_SET", `Diwali: ${diwali.chipText} (${diwali.sitesShowing}/${diwali.sitesTotal} sites); Bhai Dooj: ${h.chipText}`);
+    extra.alert = a; extra.statuses = { diwali: diwali.chipText, bhaiDooj: h.chipText };
     return a ? a.message : "no alert";
   },
 };

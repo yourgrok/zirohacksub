@@ -126,7 +126,7 @@ Per-check detail with raw and normalised values, state histories and screenshots
 
 ## 6. Innovation
 
-- **Holiday Foresight:** scans 90 days ahead from the bundled festival calendar (all dates flagged \`verified:false\` → UI shows "verify date"), chips per holiday (Not set / Set on record only / Consistent everywhere / Mismatch on N sites), alerts at 30/14/7 days, draft "Closed"/"Special hours" suggestions that never apply by themselves, and a 0–100 readiness score with its formula in a tooltip.
+- **Holiday Foresight:** scans 90 days ahead from the bundled festival calendar (all dates flagged \`verified:false\` → the tab warns that festival dates shift and asks the owner to confirm the date before saving), a status per holiday (Not set / Saved — not on all sites yet / Set on all sites), alerts at 30/14/7 days, and one-click Closed all day / Special hours (editable opening and closing time) / Open as usual buttons. Choosing hours only saves them on the owner's record; every site change still goes through the normal approval cards, and field-level mismatches stay in the scan and Approvals.
 - **Plain-language closures:** one text box; a 300 ms-debounced live preview resolves "tomorrow", "next Monday", "24 to 26 Dec", "open 10 to 2 on Diwali" against today (Asia/Kolkata) and shows the resolved date; unclear/past/ambiguous input gets exactly one clarifying question; 23 unit tests on the parser.
 - **Visible guardrails:** blocked actions appear in the trace with a red "Blocked" badge.
 
@@ -163,7 +163,7 @@ const slides = `# Slide outline (11 slides) — built from real run data
 
 **8. Guardrails you can see** — ${guard ? `A simulated rogue planner made ${guard.attempts} unsafe attempts (apply without approval, unapproved fields, verify without apply, decoy listing, flag an editable listing): ${guard.attempts} blocked, ${guard.writesAfter} writes, ${guard.verifiedCount} false VERIFIED.` : "run the guardrail demo."}
 
-**9. Add-ons: Foresight and plain English** — Holiday Foresight: 90-day scan, chips, alerts at 30/14/7 days, drafts that never auto-apply, readiness score (${det[5]?.extra && (det[5].extra as any).next ? `Diwali readiness ${(det[5].extra as any).next.readiness}/100 on the seeded data` : "see TC6"}); TC6: "${det[5]?.actual ?? ""}". Plain English: "we are closed on 26th December" → live chips → Confirm → normal approval pipeline (TC5: ${det[4]?.actual ?? ""}).
+**9. Add-ons: Foresight and plain English** — Holiday Foresight: 90-day scan, a Not set / Set on all sites status per holiday, alerts at 30/14/7 days, Closed / Special hours / Open as usual buttons that never auto-apply; TC6: "${det[5]?.actual ?? ""}". Plain English: "we are closed on 26th December" → live chips → Confirm → normal approval pipeline (TC5: ${det[4]?.actual ?? ""}).
 
 **10. New owner: PIN login + score matching** — no username; a view-once PIN; the agent scores every listing on every site (phone 40 · address 35 · name 25), look-alike *Sunrise Sweet House* scores 37.7 vs 100, a good match owned by someone else is flagged, the owner confirms each match, and missing sites are added only after approval and verified (\`evidence/onboarding-demo.md\`). Every business is isolated from the others.
 

@@ -1,6 +1,6 @@
 # Test evidence summary
 
-Generated: 2026-10-22T12:41:03.206Z  
+Generated: 2026-10-22T13:48:30.040Z  
 Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **auto** · mock data only.
 
 Every run starts from a fresh reset of the seeded demo data. The deterministic run uses `LLM_PROVIDER=none` so results cannot fail randomly because of rate limits or model changes.
@@ -139,7 +139,7 @@ Trace: 33 tool calls recorded (see `TC4.json`).
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjj4smv0 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvjljj6v0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -173,7 +173,7 @@ Trace: 35 tool calls recorded (see `TC5.json`).
 | Alert milestone is the 30-day one (21 days away) | pass | milestone=30, daysAway=21 |
 | Holiday is flagged for the owner to verify its date | pass | verified=false → UI shows “verify date” |
 | A draft is suggested but nothing is applied automatically | pass | draft: Special hours 10:00–14:00 on Bhai Dooj; exceptions unchanged (1); writes=0 |
-| Readiness score for the next holiday (Diwali) is shown with its formula | pass | readiness=92 |
+| Each holiday shows whether it is set: Diwali is saved but not on every site yet; Bhai Dooj is Not set | pass | Diwali: Saved — not on all sites yet (4/5 sites); Bhai Dooj: Not set |
 
 Trace: 0 tool calls recorded (see `TC6.json`).
 

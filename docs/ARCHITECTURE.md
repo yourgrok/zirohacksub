@@ -121,19 +121,21 @@ The decoy exists on all five sites with a different ID, address, phone and hours
 flowchart TD
   H[data/holidays.json<br/>verified:false, region] --> W[next 90 days from today IST / DEMO_NOW]
   W --> C{exception on record covering the date?}
-  C -->|no| N[chip: Not set]
+  C -->|no| N[status: Not set]
   C -->|yes| S[read every site's special days]
-  S -->|0 show it| RO[chip: Set on record only]
-  S -->|all show it| OK[chip: Consistent everywhere]
-  S -->|some| MM[chip: Mismatch on N sites]
+  S -->|all show it| OK[status: Set on all sites]
+  S -->|not all| PA[status: Saved, not on all sites yet]
   N --> AL[alert at 30 / 14 / 7 days]
-  RO --> AL
-  MM --> AL
-  N --> DR[draft: Closed or Special hours]
-  DR -->|owner accepts| EX[record exception, source foresight]
+  PA --> AL
+  N --> BTN[owner picks: Closed all day / Special hours with own times / Open as usual]
+  PA --> BTN
+  OK --> BTN
+  BTN -->|Closed or Special hours| EX[record exception, source foresight<br/>updates the one already set for that day]
+  BTN -->|Open as usual| RM[cancel that day's exception]
   EX --> PIPE[normal scan → approval → apply → verify]
+  RM --> PIPE
 ```
-Readiness (0-100) for the next holiday = 40 (exception on record) + 40 × (sites correct ÷ sites) + 20 (nothing flagged/pending; 10 if pending; 0 if flagged). Seeded Diwali: 40 + 32 + 20 = 92 (site B wrong).
+Field-level mismatches (which site shows what) are not shown on the Holidays tab: they live in the scan, Approvals and Consistency tabs. Days inside a longer closure typed in Edit & Ask are read-only here.
 
 ## 7. Add-on flow: plain-language closures
 

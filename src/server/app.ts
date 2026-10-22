@@ -15,7 +15,7 @@ import { buildChangeLog } from "../agent/changelog.js";
 import { DetailsError, hoursToText, updateBusinessDetails } from "../core/details.js";
 import { removeException } from "../core/store.js";
 import { readerMode } from "../agent/reader.js";
-import { acceptDraft, foresight } from "../foresight/index.js";
+import { acceptDraft, clearHoliday, foresight } from "../foresight/index.js";
 import { IntentError, confirmDetails, confirmIntent, isDetailIntent, preview, refine } from "../nl/index.js";
 import { evidenceDir, writeGuardrail, writeResults } from "../runner/evidence.js";
 import { listTests, runAllTcs, runGuardrailDemo, runTc, TC_IDS, TEST_DATE, type TcMode, type TcResult } from "../runner/tc.js";
@@ -150,7 +150,16 @@ export function createApp() {
 
   /* ── foresight ── */
   api.get("/foresight", wrap(async (req, res) => res.json(await foresight(bizOf(req)))));
-  api.post("/foresight/:id/accept", wrap((req, res) => res.json(acceptDraft(bizOf(req), String(req.params.id), req.body ?? undefined))));
+  api.post("/foresight/:id/accept", wrap((req, res) => {
+    const bizId = bizOf(req);
+    if (isBusy(bizId) || starting.has(bizId)) return res.status(409).json({ error: "The agent is working right now. Please try again in a moment." });
+    res.json(acceptDraft(bizId, String(req.params.id), req.body ?? undefined));
+  }));
+  api.post("/foresight/:id/clear", wrap((req, res) => {
+    const bizId = bizOf(req);
+    if (isBusy(bizId) || starting.has(bizId)) return res.status(409).json({ error: "The agent is working right now. Please try again in a moment." });
+    res.json(clearHoliday(bizId, String(req.params.id)));
+  }));
 
   /* ── plain-language changes ── */
   api.post("/nl/preview", (req, res) => res.json(preview(bizOf(req), String(req.body?.text ?? ""))));

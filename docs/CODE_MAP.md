@@ -36,7 +36,7 @@
 │   ├── onboarding/                config.ts (ALL weights + thresholds), similarity.ts (phone/address/name), score.ts (scoring + decision rules),
 │   │                              discover.ts (read every listing on every site), service.ts (start/confirm/PIN/activation), coverage.ts (listed / not listed on)
 │   ├── agent/createListing.ts     "add my business to this site": propose, apply (duplicate re-check), verify
-│   ├── foresight/index.ts         90-day holiday scan, chips, alerts 30/14/7, readiness, drafts
+│   ├── foresight/index.ts         90-day holiday scan, set/not-set status, alerts 30/14/7, set-hours and clear
 │   ├── nl/parse.ts                deterministic date parser (chrono-node + rules)
 │   ├── nl/intent.ts               the text box brain: edit details, weekly hours, answer questions, or fall back to dates
 │   ├── core/details.ts            validated edit of the owner-approved record (+ resets stale approvals), shared validators

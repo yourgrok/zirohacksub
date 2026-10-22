@@ -29,13 +29,13 @@
       "detail": "draft: Special hours 10:00–14:00 on Bhai Dooj; exceptions unchanged (1); writes=0"
     },
     {
-      "name": "Readiness score for the next holiday (Diwali) is shown with its formula",
+      "name": "Each holiday shows whether it is set: Diwali is saved but not on every site yet; Bhai Dooj is Not set",
       "pass": true,
-      "detail": "readiness=92"
+      "detail": "Diwali: Saved — not on all sites yet (4/5 sites); Bhai Dooj: Not set"
     }
   ],
-  "startedAt": "2026-10-22T12:41:01.288Z",
-  "durationMs": 622,
+  "startedAt": "2026-10-22T13:48:27.991Z",
+  "durationMs": 653,
   "testDate": "2026-10-21",
   "readerMode": "auto",
   "runs": [],
@@ -53,9 +53,9 @@
       "chip": "NOT_SET",
       "message": "Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first."
     },
-    "next": {
-      "name": "Diwali (Lakshmi Puja)",
-      "readiness": 92
+    "statuses": {
+      "diwali": "Saved — not on all sites yet",
+      "bhaiDooj": "Not set"
     }
   },
   "screenshots": []
