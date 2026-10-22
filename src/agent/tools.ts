@@ -3,6 +3,8 @@ import { nowTs } from "../core/clock.js";
 import { audit, createField, getBusiness, getFieldByKey, getPlatformListing, listExceptions, listFields, transition, type FieldRow } from "../core/store.js";
 import { ChangeZ, type Change } from "../mock/changes.js";
 import { mockAuthHeaders } from "../auth/mockCreds.js";
+import { applyCreate, isCreateRow, verifyCreate } from "./createListing.js";
+import { isCreate } from "../mock/changes.js";
 import { changeKey, compareAll, normalisePublic, showsIntended, type Comparison } from "./compare.js";
 import { baseUrl, fetchPage, parseDashboard, parsePublic } from "./reader.js";
 import { TOOL_NAMES, type RunState, type ToolName } from "./types.js";
@@ -103,7 +105,7 @@ export const TOOLS: Record<ToolName, ToolDef> = {
       // fields that no longer exist in the comparison (exception cancelled or past) must not stay actionable
       const keys = new Set(comps.map((c) => c.key));
       for (const f of listFields(st.bizId, platform)) {
-        if (!keys.has(f.field_key) && ["MISMATCH", "PROPOSED", "REJECTED"].includes(f.state)) {
+        if (!keys.has(f.field_key) && !isCreateRow(f) && ["MISMATCH", "PROPOSED", "REJECTED"].includes(f.state)) {
           transition(f.id, "MATCH", "comparator", "no longer relevant (cancelled or past); nothing to change");
         }
       }
@@ -145,17 +147,21 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     description: "Send ONLY owner-approved fields (state APPROVED in the database) to the platform dashboard.",
     schema: z.object({ platform: z.string(), fields: z.array(z.string()).optional() }),
     async run(st, { platform }) {
-      const l = getPlatformListing(st.bizId, platform);
       const account = getBusiness(st.bizId).mockAccount;
-      const rows = listFields(st.bizId, platform).filter((f) => f.state === "APPROVED");
-      if (!rows.length) return { summary: "no approved fields; nothing sent" };
+      const approved = listFields(st.bizId, platform).filter((f) => f.state === "APPROVED");
+      if (!approved.length) return { summary: "no approved fields; nothing sent" };
+      const out: string[] = [];
+      // "add my business to this site" cards (nothing is linked on that site yet, so there is no listing to read first)
+      for (const f of approved.filter(isCreateRow)) out.push(await applyCreate(st, platform, f));
+      const rows = approved.filter((f) => !isCreateRow(f));
+      if (!rows.length) return { summary: out.join("; ") };
+      const l = getPlatformListing(st.bizId, platform);
       const r = await ensureRead(st, platform, true);
       if (!r.dash.canEdit) {
         for (const f of rows) transition(f.id, "FLAGGED_NOT_OWNER", "system", "permission denied on dashboard — flagged, no edit attempted");
         audit(st.bizId, "agent", "flag", platform, null, { reason: "permission denied before apply", fields: rows.length });
         return { summary: `permission denied: ${rows.length} approved field(s) flagged, 0 writes attempted`, forced: { reason: "permission denied" } };
       }
-      const out: string[] = [];
       for (const f of rows) {
         const change = ChangeZ.parse(JSON.parse(f.intended!));
         // idempotence: re-read; if the page already shows the value, do not write again
@@ -187,8 +193,12 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     description: "Reload the public page and dashboard and verify applied edits. Only this tool can mark a field VERIFIED.",
     schema: PlatformIn,
     async run(st, { platform }) {
-      const rows = listFields(st.bizId, platform).filter((f) => f.state === "APPLIED" || f.state === "PENDING_MODERATION");
-      if (!rows.length) return { summary: "nothing to verify" };
+      const inflight = listFields(st.bizId, platform).filter((f) => f.state === "APPLIED" || f.state === "PENDING_MODERATION");
+      if (!inflight.length) return { summary: "nothing to verify" };
+      const created: string[] = [];
+      for (const f of inflight.filter(isCreateRow)) created.push(await verifyCreate(st, platform, f));
+      const rows = inflight.filter((f) => !isCreateRow(f));
+      if (!rows.length) return { summary: created.join("; ") };
       const r = await ensureRead(st, platform, true); // fresh reload
       const n = normalisePublic(r.pub);
       const comps = compareAll(getBusiness(st.bizId), listExceptions(st.bizId), r.pub, n);
@@ -200,7 +210,7 @@ export const TOOLS: Record<ToolName, ToolDef> = {
         if (showsIntended(f.field_key, change, n)) {
           transition(f.id, "VERIFIED", "verifier", `reloaded public page shows the approved value`, patch);
           res.push(`${f.field_key}: VERIFIED`);
-        } else if (r.dash.pending.some((p) => p.change && changeKey(p.change) === changeKey(change))) {
+        } else if (r.dash.pending.some((p) => p.change && !isCreate(p.change) && changeKey(p.change) === changeKey(change))) {
           transition(f.id, "PENDING_MODERATION", "verifier", "public page unchanged; edit is waiting in the platform's moderation queue", patch);
           res.push(`${f.field_key}: PENDING_MODERATION`);
         } else {
@@ -209,7 +219,7 @@ export const TOOLS: Record<ToolName, ToolDef> = {
         }
         audit(st.bizId, "verifier", "verify", platform, f.field_key, { result: getFieldByKey(st.bizId, platform, f.field_key)?.state });
       }
-      return { summary: res.join("; ") };
+      return { summary: [...created, ...res].join("; ") };
     },
   },
   ask_owner: {

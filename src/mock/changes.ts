@@ -21,12 +21,34 @@ export const ChangeZ = z.discriminatedUnion("action", [
 ]);
 export type Change = z.infer<typeof ChangeZ>;
 
-export function summariseChange(c: Change): string {
+export function summariseChange(c: Change | CreateChange): string {
   switch (c.action) {
+    case "create_listing": return `Create new listing "${c.listing.name}"`;
     case "set_phone": return `Change phone to ${c.value}`;
     case "set_address": return `Change address to ${c.value}`;
     case "set_hours": return "Change weekly opening hours";
     case "set_holiday": return `Set special day ${c.holiday.start}..${c.holiday.end}`;
     case "remove_holiday": return `Remove special day ${c.start}..${c.end}`;
   }
+}
+
+/** Asking a site to create a brand-new listing for the owner. The site assigns the listing id. */
+export const CreateChangeZ = z.object({
+  action: z.literal("create_listing"),
+  listingId: z.string().optional(), // filled in once the site has assigned one
+  listing: z.object({
+    name: z.string().min(2).max(80),
+    address: z.string().min(8).max(200),
+    phone: z.string().min(7).max(25),
+    hours: WeeklyHoursZ,
+  }),
+});
+export type CreateChange = z.infer<typeof CreateChangeZ>;
+
+/** Anything a dashboard can show as "pending review". */
+export const AnyChangeZ = z.union([ChangeZ, CreateChangeZ]);
+export type AnyChange = z.infer<typeof AnyChangeZ>;
+
+export function isCreate(c: AnyChange | null | undefined): c is CreateChange {
+  return !!c && c.action === "create_listing";
 }

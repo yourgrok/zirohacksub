@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { SITE_CFG } from "../mock/siteConfig.js";
-import { ChangeZ, type Change } from "../mock/changes.js";
+import { AnyChangeZ, type AnyChange } from "../mock/changes.js";
 
 export type ReaderMode = "playwright" | "http" | "auto";
 export const readerMode = (): ReaderMode => {
@@ -102,7 +102,7 @@ export interface DashboardRead {
   listingId: string | null;
   canEdit: boolean;
   claimedByOther: boolean;
-  pending: { summary: string; change: Change | null }[];
+  pending: { summary: string; change: AnyChange | null }[];
 }
 
 export function parseDashboard(html: string): DashboardRead {
@@ -110,8 +110,8 @@ export function parseDashboard(html: string): DashboardRead {
   const root = $("[data-listing-id]").first();
   const canEdit = root.attr("data-can-edit") === "true";
   const pending = $(".pending-change").map((_, el) => {
-    let change: Change | null = null;
-    try { const p = ChangeZ.safeParse(JSON.parse($(el).attr("data-change") ?? "")); if (p.success) change = p.data; } catch { /* ignore */ }
+    let change: AnyChange | null = null;
+    try { const p = AnyChangeZ.safeParse(JSON.parse($(el).attr("data-change") ?? "")); if (p.success) change = p.data; } catch { /* ignore */ }
     return { summary: $(el).text().replace(/\s+/g, " ").trim(), change };
   }).get();
   return { listingId: root.attr("data-listing-id") ?? null, canEdit, claimedByOther: $(".claim-banner").attr("data-claim") === "other", pending };

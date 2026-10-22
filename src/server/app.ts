@@ -8,7 +8,9 @@ import { getBusiness, getPlatformListing, listExceptions, listLinkedPlatforms } 
 import { mockRouter } from "../mock/sites.js";
 import { anyRunning, getTraceFor, listRuns, makeRoguePlanner } from "../agent/loop.js";
 import { ApprovalError, NotFoundError, approveAllForPlatform, approveField, currentPlanner, execute, isBusy, plannerMode, rejectField, scan } from "../agent/service.js";
-import { buildRows, latestRunSummary, templateSummary, toCsv } from "../agent/report.js";
+import { buildMatchRows, buildRows, latestRunSummary, matchesToCsv, templateSummary, toCsv } from "../agent/report.js";
+import { CreateListingError, proposeCreateListing } from "../agent/createListing.js";
+import { coverageOf } from "../onboarding/coverage.js";
 import { readerMode } from "../agent/reader.js";
 import { acceptDraft, foresight } from "../foresight/index.js";
 import { IntentError, confirmIntent, preview, refine } from "../nl/index.js";
@@ -69,7 +71,7 @@ export function createApp() {
       today: today(), demoNow: isDemoNow(), tz: TZ, plannerMode: plannerMode(), readerMode: readerMode(),
       busy: isBusy(bizId) || starting.has(bizId), lastError: lastErrors.get(bizId) ?? null,
       business: { id: b.id, name: b.name, address: b.address, phone: b.phone, hours: b.hours, isDemo: b.isDemo },
-      exceptions: listExceptions(bizId), platforms, rows,
+      exceptions: listExceptions(bizId), platforms, rows, coverage: coverageOf(bizId), matches: buildMatchRows(bizId),
       summary: latestRunSummary(bizId) ?? (rows.length ? templateSummary(bizId) : null), llmAvailable: geminiEnabled(),
     };
   };
@@ -118,7 +120,13 @@ export function createApp() {
   api.get("/report.csv", (req, res) => {
     res.type("text/csv").set("Content-Disposition", 'attachment; filename="consistency-report.csv"').send(toCsv(buildRows(bizOf(req))));
   });
+  api.get("/report-matches.csv", (req, res) => {
+    res.type("text/csv").set("Content-Disposition", 'attachment; filename="listing-matches.csv"').send(matchesToCsv(buildMatchRows(bizOf(req))));
+  });
   api.get("/audit", (req, res) => res.json(getDb().prepare("SELECT * FROM audit_log WHERE business_id=? ORDER BY id DESC LIMIT 200").all(bizOf(req))));
+
+  /* ── add my business to a site where it is not listed (a card the owner must approve) ── */
+  api.post("/listings/:platformId/propose", wrap(async (req, res) => res.json(await proposeCreateListing(bizOf(req), String(req.params.platformId)))));
 
   /* ── foresight ── */
   api.get("/foresight", wrap(async (req, res) => res.json(await foresight(bizOf(req)))));
@@ -168,7 +176,7 @@ export function createApp() {
   }
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err instanceof ApprovalError || err instanceof NotFoundError || err instanceof IntentError ? (err as any).status : (err as any).status ?? 500;
+    const status = err instanceof ApprovalError || err instanceof NotFoundError || err instanceof IntentError || err instanceof CreateListingError ? (err as any).status : (err as any).status ?? 500;
     const msg = String(err.message ?? err).replaceAll(process.env.GEMINI_API_KEY ?? "\u0000", "[redacted]");
     res.status(status).json({ error: msg });
   });

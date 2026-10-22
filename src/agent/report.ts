@@ -1,4 +1,5 @@
 import { getDb } from "../core/db.js";
+import { CREATE_KEY } from "./createListing.js";
 import { listFields, listPlatforms, type FieldRow } from "../core/store.js";
 
 export interface ReportRow {
@@ -51,4 +52,37 @@ export function toCsv(rows: ReportRow[]): string {
   const q = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
   const head = ["Platform", "Field", "Original value", "Intended value", "Approval status", "Verified status"];
   return [head.map(q).join(","), ...rows.map((r) => [r.platform, r.field, r.original, r.intended, r.approval, r.verified].map(q).join(","))].join("\r\n");
+}
+
+/* ───────────── "how your listings were matched" (new owners only) ───────────── */
+
+export interface MatchRow {
+  platformId: string; platform: string; listingId: string; score: number | null; confirmation: string; status: string; note: string;
+  why: string; created: { intended: string; approval: string; verified: string; state: string } | null;
+}
+
+const CONFIRM_TEXT: Record<string, string> = {
+  confirmed: "Confirmed by owner", linked: "Confirmed by owner", rejected: "Rejected by owner", flagged: "Flagged: claimed by another account (not linked)",
+  none: "No listing found", created: "Created by the agent after owner approval", unreadable: "Site could not be read",
+};
+
+export function buildMatchRows(bizId: string): MatchRow[] {
+  const names = new Map(listPlatforms().map((p) => [p.id, p.name]));
+  const rows = getDb().prepare("SELECT * FROM site_matches WHERE business_id=? ORDER BY platform_id").all(bizId) as any[];
+  return rows.map((m) => {
+    const bd = m.breakdown_json ? JSON.parse(m.breakdown_json) : null;
+    const f = listFields(bizId, m.platform_id).find((x) => x.field_key === CREATE_KEY);
+    return {
+      platformId: m.platform_id, platform: names.get(m.platform_id) ?? m.platform_id, listingId: m.listing_id ?? "—", score: m.score ?? null,
+      confirmation: CONFIRM_TEXT[m.status] ?? m.status, status: m.status, note: m.note ?? "",
+      why: bd ? `phone ${bd.phone.points}/${bd.phone.max} · address ${bd.address.points}/${bd.address.max} · name ${bd.name.points}/${bd.name.max}` : "",
+      created: f ? { intended: f.intended_display ?? "", approval: approvalOf(f.state), verified: verifiedOf(f.state), state: f.state } : null,
+    };
+  });
+}
+
+export function matchesToCsv(rows: MatchRow[]): string {
+  const q = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
+  const head = ["Site", "Matched listing ID", "Match score", "Why", "Owner confirmation", "Created listing: intended", "Approval status", "Verified status"];
+  return [head.map(q).join(","), ...rows.map((r) => [r.platform, r.listingId, r.score ?? "", r.why, r.confirmation, r.created?.intended ?? "", r.created?.approval ?? "", r.created?.verified ?? ""].map((x) => q(String(x))).join(","))].join("\r\n");
 }

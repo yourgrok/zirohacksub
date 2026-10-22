@@ -4,7 +4,8 @@ import { nowTs } from "../core/clock.js";
 import { formatHolidayLine, formatHours } from "../core/normalise.js";
 import { mockAccountOf } from "../auth/mockCreds.js";
 import type { WeeklyHours } from "../core/types.js";
-import { ChangeZ, summariseChange, type Change, type HolidayEntry } from "./changes.js";
+import { ChangeZ, CreateChangeZ, summariseChange, type Change, type CreateChange, type HolidayEntry } from "./changes.js";
+import { phoneKey } from "../onboarding/similarity.js";
 import { SITE_CFG, type SiteCfg } from "./siteConfig.js";
 
 interface MockListing {
@@ -112,6 +113,21 @@ ${pendHtml}
   return page(cfg, `Dashboard ${l.listing_id}`, body, `data-can-edit="${canEdit}"`);
 }
 
+function insertListing(site: string, listingId: string, c: CreateChange, account: string) {
+  getDb().prepare("INSERT OR IGNORE INTO mock_listings VALUES (?,?,?,?,?,?,?,?,?)")
+    .run(site, listingId, c.listing.name, c.listing.address, c.listing.phone, JSON.stringify(c.listing.hours), "[]", account, 0);
+}
+
+/** The site assigns listing ids (LST-<site>-5xxx), also for listings still waiting in the moderation queue. */
+function nextListingId(site: string, slug: string): string {
+  const rows = [
+    ...(getDb().prepare("SELECT listing_id FROM mock_listings WHERE site=?").all(site) as { listing_id: string }[]),
+    ...(getDb().prepare("SELECT listing_id FROM mock_queue WHERE site=?").all(site) as { listing_id: string }[]),
+  ];
+  const n = rows.map((r) => Number(r.listing_id.split("-")[2])).filter((x) => x >= 5000);
+  return `LST-${slug.toUpperCase()}-${Math.max(5000, ...n) + 1}`;
+}
+
 /* ───────────── router ───────────── */
 
 export function mockRouter(): express.Router {
@@ -140,9 +156,9 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
     if (!q || q.status !== "pending") return res.status(404).json({ error: "no pending item" });
     if (approve) {
       const slug = q.site.replace("site_", "");
-      const l = load(slug, q.listing_id)!;
-      applyChange(l, JSON.parse(q.change_json));
-      save(l);
+      const change = JSON.parse(q.change_json);
+      if (change.action === "create_listing") insertListing(q.site, q.listing_id, change as CreateChange, q.account);
+      else { const l = load(slug, q.listing_id)!; applyChange(l, change); save(l); }
     }
     getDb().prepare("UPDATE mock_queue SET status=? WHERE id=?").run(approve ? "approved" : "rejected", q.id);
     if (req.accepts("html") && !req.is("json")) return res.redirect("/mock/admin");
@@ -178,6 +194,47 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
     const l = load(cfg.slug, req.params.id);
     if (!l) return res.status(404).send(page(cfg, "Not found", "<h1>Listing not found</h1>"));
     res.send(renderDashboard(cfg, l, mockAccountOf(req)));
+  });
+
+  /** Create a brand-new listing for the signed-in account. Moderated sites queue it instead of publishing it. */
+  r.post("/:slug/listings", (req, res) => {
+    const cfg = SITE_CFG[req.params.slug];
+    const site = `site_${cfg.slug}`;
+    const acct = mockAccountOf(req);
+    const log = (id: string, code: number) =>
+      getDb().prepare("INSERT INTO mock_writes (site,listing_id,at,account,action,result_code) VALUES (?,?,?,?,?,?)").run(site, id, nowTs(), acct ?? "anonymous", "create_listing", code);
+    if (!acct) { log("-", 401); return res.status(401).json({ error: "login_required" }); }
+    const parsed = CreateChangeZ.safeParse(req.body);
+    if (!parsed.success) { log("-", 400); return res.status(400).json({ error: "invalid listing" }); }
+    const c = parsed.data;
+    const key = phoneKey(c.listing.phone);
+    const existing = (getDb().prepare("SELECT listing_id, phone FROM mock_listings WHERE site=?").all(site) as { listing_id: string; phone: string }[]).find((x) => key && phoneKey(x.phone) === key);
+    if (existing) { log("-", 409); return res.status(409).json({ error: "duplicate_listing", message: "A listing with this phone number already exists on this site." }); }
+    const listingId = nextListingId(site, cfg.slug);
+    if (cfg.moderation) {
+      const queued = { ...c, listingId };
+      const info = getDb().prepare("INSERT INTO mock_queue (site,listing_id,change_json,summary,status,created_at,account) VALUES (?,?,?,?,?,?,?)")
+        .run(site, listingId, JSON.stringify(queued), summariseChange(queued), "pending", nowTs(), acct);
+      log(listingId, 202);
+      return res.status(202).json({ status: "pending_moderation", queueId: Number(info.lastInsertRowid), listingId });
+    }
+    insertListing(site, listingId, c, acct);
+    log(listingId, 200);
+    res.json({ status: "created", listingId });
+  });
+
+  /** The signed-in account's own overview: its listings and anything waiting for review. */
+  r.get("/:slug/dashboard", (req, res) => {
+    const cfg = SITE_CFG[req.params.slug];
+    const acct = mockAccountOf(req);
+    if (!acct) return res.status(401).send(page(cfg, "Sign in", `<h1>Please sign in</h1><p class="banner deny">Sign in to see your listings.</p>`));
+    const site = `site_${cfg.slug}`;
+    const mine = getDb().prepare("SELECT listing_id, display_name FROM mock_listings WHERE site=? AND owner_account=?").all(site, acct) as { listing_id: string; display_name: string }[];
+    const pending = getDb().prepare("SELECT * FROM mock_queue WHERE site=? AND account=? AND status='pending'").all(site, acct) as any[];
+    const body = `<div data-account-page="true"><h1>Your account</h1><p>Signed in as ${esc(acct)}</p>
+<h3>Your listings (${mine.length})</h3><ul>${mine.map((m) => `<li><a href="/mock/${cfg.slug}/listing/${m.listing_id}">${esc(m.display_name)}</a> (${m.listing_id})</li>`).join("")}</ul>
+${pending.length ? `<h3>Pending changes (${pending.length})</h3>${pending.map((p) => `<div class="banner pend pending-change" data-change="${esc(p.change_json)}">${esc(p.summary)} — awaiting moderator review</div>`).join("")}` : ""}</div>`;
+    res.send(page(cfg, "Your account", body));
   });
 
   /** Mock stand-in for "claim this business". Real sites verify ownership first (OTP, postcard, phone call) —
