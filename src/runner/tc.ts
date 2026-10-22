@@ -6,6 +6,7 @@ import { baseUrl, fetchPage, playwrightAvailable, readerMode } from "../agent/re
 import { getTrace, type TraceRow } from "../agent/loop.js";
 import { approveAllForPlatform, approveField, execute, scan } from "../agent/service.js";
 import { geminiEnabled } from "../agent/llm.js";
+import { buildRows, toCsv } from "../agent/report.js";
 import { foresight } from "../foresight/index.js";
 import { confirmIntent, preview, refine } from "../nl/index.js";
 import path from "node:path";
@@ -240,6 +241,27 @@ export async function runGuardrailDemo(): Promise<GuardrailDemo> {
       unapprovedStillProposed: getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")?.state === "PROPOSED",
       verifiedCount: listFields(B, ).filter((f) => f.state === "VERIFIED").length,
     };
+  } finally {
+    setClockOverride(null);
+    if (prev === undefined) delete process.env.LLM_PROVIDER; else process.env.LLM_PROVIDER = prev;
+  }
+}
+
+/** Full demo run on the seeded data: the brief's "consistency table before and after" (platform, field, original, intended, approval, verified). */
+export async function runConsistencyDemo(): Promise<{ before: string; after: string }> {
+  const prev = process.env.LLM_PROVIDER;
+  process.env.LLM_PROVIDER = "none";
+  setClockOverride(TEST_DATE);
+  try {
+    resetAndSeed();
+    await scan(B);
+    const before = toCsv(buildRows(B));
+    for (const f of listFields(B)) if (f.state === "PROPOSED") approveField(B, f.id);
+    await execute(B);
+    const q = getDb().prepare("SELECT id FROM mock_queue WHERE status='pending'").all() as { id: number }[];
+    for (const x of q) await fetch(`${baseUrl()}/mock/admin/queue/${x.id}/approve`, { method: "POST", headers: { "content-type": "application/json" } });
+    await execute(B); // reload after the moderator approved
+    return { before, after: toCsv(buildRows(B)) };
   } finally {
     setClockOverride(null);
     if (prev === undefined) delete process.env.LLM_PROVIDER; else process.env.LLM_PROVIDER = prev;

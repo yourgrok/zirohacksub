@@ -4,6 +4,25 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 
 ![My Details tab](docs/screenshots/20-tab-details.png)
 
+## For reviewers (2-minute check)
+
+**Live demo:** <https://zirohacksub.onrender.com/> · **demo PIN** `7KQ4X-M9PHT` (synthetic, public on purpose).
+
+1. The free host sleeps when idle: the **first load can take about 30 to 60 seconds**. Wait for the login page.
+2. Log in with the PIN. Press **Reset demo data** on the My Details tab (only the demo business can; the `/tests` page also runs TC1-TC6) to return to a clean starting state; the data also reseeds whenever the host restarts.
+3. Press **1 Scan listings**, approve the cards in **Approvals**, then **Apply approved & verify**. ShopFront shows *Pending moderation*; approve it at `/mock/admin`, return to the app and it re-checks and shows *Verified*.
+4. Open **Consistency** for the before/after table (CSV button).
+
+| Rubric line | Where the proof is |
+|---|---|
+| Problem fit & usefulness | [docs/SUBMISSION_NOTES.md](docs/SUBMISSION_NOTES.md) §1; the Consistency table; [evidence/consistency-before.csv](evidence/consistency-before.csv) and [after](evidence/consistency-after.csv) (platform, field, original, intended, approval, verified) |
+| Agentic capability | Agent loop with 8 tools (read, normalise, compare, propose, apply, verify, flag, ask) in `src/agent/`; the **Agent Trace** tab; [evidence/guardrail-demo.json](evidence/guardrail-demo.json): 6 of 6 unsafe attempts blocked |
+| Technical implementation | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); guardrails in code; `evidence/unit-tests.json` (286 tests) |
+| Innovation | PIN-only onboarding with score matching, Holiday Foresight, plain-language closures, trace map |
+| User experience | numbered step bar, reminder popups, plain-word Agent Trace |
+| Presentation | the slide deck, plus screenshots in `evidence/screenshots/` |
+| Official test cases TC1-TC4 | [evidence/SUMMARY.md](evidence/SUMMARY.md) and `evidence/TC1.json` to `TC6.json`: input, result and evidence for each; no differences from the expected results |
+
 ## What it does
 
 1. You keep one owner-approved record (address, phone, normal hours, holiday exceptions, stable IDs).

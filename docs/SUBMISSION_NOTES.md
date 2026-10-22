@@ -28,10 +28,10 @@ Requirements from the brief and where they are met:
 
 Loop: **Collect → Plan → Read → Normalise → Compare → Propose → (owner approves) → Apply approved → Reload & verify → Report.** Two phases: *scan* (read-only up to proposals) and *execute* (apply approved + verify).
 
-The agent has a **tool registry** of eight tools: `read_listing`, `normalise`, `compare`, `propose`, `apply_approved`, `reload_and_verify`, `flag_listing`, `ask_owner`. Two planners share it:
+The agent has a **tool registry** of eight tools: `read_listing`, `normalise`, `compare`, `propose`, `apply_approved`, `reload_and_verify`, `flag_listing`, `ask_owner`. Two planners share it (the rules-driven one is the default):
 
 - **Deterministic planner** — always available; used with no API key or when the LLM fails.
-- **Gemini planner** — default when `GEMINI_API_KEY` is set. Each step Gemini sees only the tool list, the business record, per-platform state and previous tool results (never secrets) and returns a Zod-validated JSON decision.
+- **Gemini planner** — optional, switched on with `AGENT_PLANNER=gemini` (used by `npm run test:tc:llm`). The deployed demo uses the rules-driven planner, with Gemini only in Edit & Ask. Each step Gemini sees only the tool list, the business record, per-platform state and previous tool results (never secrets) and returns a Zod-validated JSON decision.
 
 Every tool call is written to a timestamped **agent trace** (tool, input, output summary, duration) with a badge saying who decided: **Gemini / Deterministic / Fallback / Blocked**.
 

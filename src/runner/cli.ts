@@ -6,7 +6,7 @@ import { createApp } from "../server/app.js";
 import { seedIfEmpty } from "../core/seed.js";
 import { closeReader } from "../agent/reader.js";
 import { geminiEnabled } from "../agent/llm.js";
-import { runAllTcs, runGuardrailDemo, type TcMode } from "./tc.js";
+import { runAllTcs, runConsistencyDemo, runGuardrailDemo, type TcMode } from "./tc.js";
 import { evidenceDir, writeGuardrail, writeResults } from "./evidence.js";
 
 const mode = (process.argv[2] === "llm" ? "llm" : "deterministic") as TcMode;
@@ -26,7 +26,12 @@ async function main() {
   console.log(`Running TC1-TC6 (${mode}) ...`);
   const results = await runAllTcs({ mode, screenshotDir: shotDir });
   writeResults(results, sub);
-  if (mode === "deterministic") writeGuardrail(await runGuardrailDemo());
+  if (mode === "deterministic") {
+    writeGuardrail(await runGuardrailDemo());
+    const t = await runConsistencyDemo();
+    fs.writeFileSync(path.join(evidenceDir(), "consistency-before.csv"), t.before);
+    fs.writeFileSync(path.join(evidenceDir(), "consistency-after.csv"), t.after);
+  }
   for (const r of results) console.log(`${r.pass ? "PASS" : "FAIL"}  ${r.id}  ${r.title}${r.pass ? "" : "\n      " + r.explanation}`);
   console.log(`Evidence written to ${path.join(evidenceDir(), sub)} and ${path.join(evidenceDir(), "SUMMARY.md")}`);
   await closeReader();
