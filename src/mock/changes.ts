@@ -15,6 +15,7 @@ export type HolidayEntry = z.infer<typeof HolidayEntryZ>;
 export const ChangeZ = z.discriminatedUnion("action", [
   z.object({ action: z.literal("set_phone"), value: z.string() }),
   z.object({ action: z.literal("set_address"), value: z.string() }),
+  z.object({ action: z.literal("set_name"), value: z.string().min(2).max(80) }),
   z.object({ action: z.literal("set_hours"), hours: WeeklyHoursZ }),
   z.object({ action: z.literal("set_holiday"), holiday: HolidayEntryZ }),
   z.object({ action: z.literal("remove_holiday"), start: z.string(), end: z.string() }),
@@ -26,6 +27,7 @@ export function summariseChange(c: Change | CreateChange): string {
     case "create_listing": return `Create new listing "${c.listing.name}"`;
     case "set_phone": return `Change phone to ${c.value}`;
     case "set_address": return `Change address to ${c.value}`;
+    case "set_name": return `Change business name to ${c.value}`;
     case "set_hours": return "Change weekly opening hours";
     case "set_holiday": return `Set special day ${c.holiday.start}..${c.holiday.end}`;
     case "remove_holiday": return `Remove special day ${c.start}..${c.end}`;

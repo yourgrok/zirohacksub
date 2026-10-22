@@ -3,8 +3,10 @@ import { today } from "../core/clock.js";
 import type { Business, FieldState, HolidayException, WeeklyHours } from "../core/types.js";
 import type { Change } from "../mock/changes.js";
 import type { PublicRead } from "./reader.js";
+import { nameTokens } from "../onboarding/similarity.js";
 
 export interface Normalised {
+  name: string;
   phone: string | null;
   address: string;
   hours: WeeklyHours;
@@ -21,7 +23,7 @@ export function normalisePublic(p: PublicRead): Normalised {
     if (h) holidays.push({ ...h, canon: canonHoliday(h) });
     else unparsed.push(l);
   }
-  return { phone: p.phone ? normalisePhone(p.phone) : null, address: normaliseAddress(p.address ?? ""), hours, hoursCanon: canonHours(hours), holidays, unparsed };
+  return { name: nameTokens(p.name ?? "").join(" "), phone: p.phone ? normalisePhone(p.phone) : null, address: normaliseAddress(p.address ?? ""), hours, hoursCanon: canonHours(hours), holidays, unparsed };
 }
 
 export type CmpState = Extract<FieldState, "MATCH" | "FORMAT_ONLY_EQUIVALENT" | "MISMATCH">;
@@ -44,6 +46,17 @@ const exHoliday = (e: HolidayException): ParsedHoliday => ({ start: e.start, end
 /** Compare meaning, not formatting. Returns one result per field that matters for this listing. */
 export function compareAll(biz: Business, exceptions: HolidayException[], raw: PublicRead, n: Normalised): Comparison[] {
   const out: Comparison[] = [];
+
+  // business name (accents, "&"/"and", case and legal words are formatting; a different name is a real difference)
+  const wantName = nameTokens(biz.name).join(" ");
+  const rawName = raw.name ?? "";
+  let nState: CmpState, nNote: string;
+  if (n.name === wantName) {
+    nState = rawName.trim() === biz.name.trim() ? "MATCH" : "FORMAT_ONLY_EQUIVALENT";
+    nNote = nState === "MATCH" ? "identical" : "same name, different spelling/formatting — no change needed";
+  } else { nState = "MISMATCH"; nNote = "different business name"; }
+  out.push({ key: "name", label: "Business name", state: nState, currentRaw: rawName, currentNorm: n.name, intendedNorm: wantName,
+    intendedDisplay: biz.name, change: nState === "MISMATCH" ? { action: "set_name", value: biz.name } : null, exceptionId: null, note: nNote });
 
   // phone
   const wantPhone = normalisePhone(biz.phone)!;
@@ -104,6 +117,7 @@ export function showsIntended(key: string, change: Change, n: Normalised): boole
   switch (change.action) {
     case "set_phone": return n.phone === normalisePhone(change.value);
     case "set_address": return n.address === normaliseAddress(change.value);
+    case "set_name": return n.name === nameTokens(change.value).join(" ");
     case "set_hours": return hoursEqual(n.hours, change.hours) && n.unparsed.length === 0;
     case "set_holiday": {
       const w = { start: change.holiday.start, end: change.holiday.end, kind: change.holiday.kind, open: change.holiday.open, close: change.holiday.close };
@@ -119,6 +133,7 @@ export function changeKey(c: Change): string {
   switch (c.action) {
     case "set_phone": return `phone:${normalisePhone(c.value)}`;
     case "set_address": return `address:${normaliseAddress(c.value)}`;
+    case "set_name": return `name:${nameTokens(c.value).join(" ")}`;
     case "set_hours": return `hours:${canonHours(c.hours)}`;
     case "set_holiday": return `holiday:${canonHoliday({ start: c.holiday.start, end: c.holiday.end, kind: c.holiday.kind, open: c.holiday.open, close: c.holiday.close })}`;
     case "remove_holiday": return `remove:${c.start}..${c.end}`;

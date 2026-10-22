@@ -205,3 +205,19 @@ describe("activation on first login", () => {
     expect(again.sites.find((x: any) => x.platformId === "site_a").status).toBe("auto");
   });
 });
+
+describe("reset really wipes everything", () => {
+  it("resetAndSeed leaves no rows of deleted businesses behind (matches, drafts, change log)", async () => {
+    const c = new Client(s.url);
+    const d = await start(c);
+    await confirmAC(c, d);
+    await start(new Client(s.url)); // an open draft
+    expect(count("SELECT COUNT(*) c FROM site_matches")).toBeGreaterThan(0);
+    expect(count("SELECT COUNT(*) c FROM onboarding_drafts")).toBeGreaterThan(0);
+    resetAndSeed();
+    for (const t of ["site_matches", "onboarding_drafts"]) expect(count(`SELECT COUNT(*) c FROM ${t}`), t).toBe(0);
+    expect(count("SELECT COUNT(*) c FROM change_log WHERE business_id <> 'biz_sunrise_001'")).toBe(0); // only the re-created demo business has a log
+    expect(count("SELECT COUNT(*) c FROM business")).toBe(1);
+  });
+});
+const count = (sql: string) => (getDb().prepare(sql).get() as any).c as number;

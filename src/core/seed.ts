@@ -1,4 +1,5 @@
 import { getDb, wipeAll } from "./db.js";
+import { logChange } from "./store.js";
 import { nowTs } from "./clock.js";
 import { DEMO_PIN, hashPin } from "../auth/pin.js";
 import type { Business, Platform, PlatformListing, WeeklyHours } from "./types.js";
@@ -104,6 +105,7 @@ export function resetAndSeed() {
     }
   });
   tx();
+  logChange(BUSINESS_ID, "system", "record", "Demo business created", null, `${BUSINESS.name} · ${BUSINESS.phone}`, "seeded demo record");
   // keep the browser session of whoever pressed "reset" (the demo owner), drop sessions of businesses that no longer exist
   db.exec("DELETE FROM sessions WHERE business_id NOT IN (SELECT id FROM business)");
 }

@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE TABLE IF NOT EXISTS trace (
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, at TEXT, tool TEXT, input TEXT, output_summary TEXT,
   duration_ms INTEGER, decider TEXT, note TEXT, business_id TEXT);
+CREATE TABLE IF NOT EXISTS change_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, business_id TEXT NOT NULL, at TEXT, actor TEXT, kind TEXT, subject TEXT, old_value TEXT, new_value TEXT, note TEXT);
 CREATE TABLE IF NOT EXISTS sessions (
   id_hash TEXT PRIMARY KEY, business_id TEXT NOT NULL, created_at TEXT, expires_at TEXT);
 CREATE TABLE IF NOT EXISTS site_matches (
@@ -118,6 +120,7 @@ function migrate(d: DB) {
   d.exec(`UPDATE trace SET business_id='${LEGACY_BIZ}' WHERE business_id IS NULL AND run_id IN (SELECT id FROM runs WHERE business_id='${LEGACY_BIZ}')`);
   d.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_business_pin ON business(pin_hmac)");
   d.exec("CREATE INDEX IF NOT EXISTS idx_sessions_biz ON sessions(business_id)");
+  d.exec("CREATE INDEX IF NOT EXISTS idx_changelog_biz ON change_log(business_id, id)");
   d.exec("CREATE INDEX IF NOT EXISTS idx_fields_biz ON field_states(business_id, platform_id)");
 }
 
@@ -142,7 +145,7 @@ export function closeDb() {
 
 const TABLES = [
   "business", "exceptions", "platforms", "platform_listings", "field_states", "state_history", "audit_log",
-  "runs", "trace", "mock_listings", "mock_queue", "mock_writes",
+  "runs", "trace", "change_log", "site_matches", "onboarding_drafts", "mock_listings", "mock_queue", "mock_writes",
 ];
 
 export function wipeAll() {

@@ -1,6 +1,7 @@
 import { getDb } from "./db.js";
 import { nowTs } from "./clock.js";
 import { assertTransition, type Actor } from "./states.js";
+import { describeHoliday } from "./normalise.js";
 import type { Business, FieldState, HolidayException, Platform, PlatformListing, WeeklyHours } from "./types.js";
 
 /**
@@ -40,22 +41,36 @@ export function listExceptions(bizId: string, includeRemoved = true): HolidayExc
     .filter((e) => includeRemoved || e.status === "active");
 }
 
+/** What changed in the owner's record, and when. Shown in the Change Log tab. */
+export function logChange(bizId: string, actor: string, kind: "details" | "holiday" | "record", subject: string, from: string | null, to: string | null, note?: string) {
+  getDb().prepare("INSERT INTO change_log (business_id,at,actor,kind,subject,old_value,new_value,note) VALUES (?,?,?,?,?,?,?,?)")
+    .run(bizId, nowTs(), actor, kind, subject, from, to, note ?? null);
+}
+
+const actorOf = (source: HolidayException["source"]) =>
+  source === "natural-language" ? "owner (typed it)" : source === "foresight" ? "owner (accepted a suggestion)" : "owner";
+const holidaySubject = (e: Pick<HolidayException, "reason">) => `Holiday / special day${e.reason ? ` (${e.reason})` : ""}`;
+
 let exSeq = 0;
 export function addException(bizId: string, e: Omit<HolidayException, "id" | "status">): HolidayException {
+  if (e.source !== "seed") logChange(bizId, actorOf(e.source), "holiday", holidaySubject(e), "(none)", describeHoliday(e));
   const id = `ex_${Date.now().toString(36)}${(exSeq++).toString(36)}`;
   getDb().prepare("INSERT INTO exceptions (id,business_id,start_date,end_date,kind,open,close,reason,source,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
     .run(id, bizId, e.start, e.end, e.kind, e.open, e.close, e.reason, e.source, "active", nowTs());
   return { ...e, id, status: "active" };
 }
 
-export function removeException(bizId: string, id: string) {
+export function removeException(bizId: string, id: string, actor = "owner") {
+  const e = listExceptions(bizId).find((x) => x.id === id && x.status === "active");
   getDb().prepare("UPDATE exceptions SET status='removed' WHERE id=? AND business_id=?").run(id, bizId);
+  if (e) logChange(bizId, actor, "holiday", holidaySubject(e), describeHoliday(e), "(cancelled)");
 }
 
 /** Create an exception, or update the one that already covers exactly the same dates (re-activating it if it was removed). */
 export function upsertException(bizId: string, e: Omit<HolidayException, "id" | "status">): HolidayException {
   const found = listExceptions(bizId).find((x) => x.start === e.start && x.end === e.end);
   if (!found) return addException(bizId, e);
+  logChange(bizId, actorOf(e.source), "holiday", holidaySubject(e), found.status === "active" ? describeHoliday(found) : "(cancelled)", describeHoliday(e));
   getDb().prepare("UPDATE exceptions SET kind=?, open=?, close=?, reason=?, source=?, status='active' WHERE id=? AND business_id=?")
     .run(e.kind, e.open, e.close, e.reason, e.source, found.id, bizId);
   return { ...e, id: found.id, status: "active" };

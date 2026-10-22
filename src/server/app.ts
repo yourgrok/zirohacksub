@@ -11,6 +11,9 @@ import { ApprovalError, NotFoundError, approveAllForPlatform, approveField, curr
 import { buildMatchRows, buildRows, latestRunSummary, matchesToCsv, templateSummary, toCsv } from "../agent/report.js";
 import { CreateListingError, proposeCreateListing } from "../agent/createListing.js";
 import { coverageOf } from "../onboarding/coverage.js";
+import { buildChangeLog } from "../agent/changelog.js";
+import { DetailsError, hoursToText, updateBusinessDetails } from "../core/details.js";
+import { removeException } from "../core/store.js";
 import { readerMode } from "../agent/reader.js";
 import { acceptDraft, foresight } from "../foresight/index.js";
 import { IntentError, confirmIntent, preview, refine } from "../nl/index.js";
@@ -76,6 +79,23 @@ export function createApp() {
     };
   };
   api.get("/state", (req, res) => res.json(state(bizOf(req))));
+
+  /* ── edit the owner-approved record (nothing is sent to any site; a scan then offers approval cards) ── */
+  api.get("/business", (req, res) => { const b = getBusiness(bizOf(req)); res.json({ id: b.id, name: b.name, address: b.address, phone: b.phone, hoursText: hoursToText(b.hours), hours: b.hours }); });
+  api.put("/business", wrap((req, res) => {
+    const bizId = bizOf(req);
+    if (isBusy(bizId) || starting.has(bizId)) return res.status(409).json({ error: "The agent is working right now. Please try again in a moment." });
+    res.json(updateBusinessDetails(bizId, req.body));
+  }));
+  api.post("/exceptions/:id/cancel", wrap((req, res) => {
+    const bizId = bizOf(req);
+    if (isBusy(bizId) || starting.has(bizId)) return res.status(409).json({ error: "The agent is working right now. Please try again in a moment." });
+    const e = listExceptions(bizId).find((x) => x.id === String(req.params.id) && x.status === "active");
+    if (!e) return res.status(404).json({ error: "No such saved holiday or special day." });
+    removeException(bizId, e.id);
+    res.json({ ok: true });
+  }));
+  api.get("/changelog", (req, res) => res.json({ entries: buildChangeLog(bizOf(req)) }));
 
   api.post("/reset", requireDemo, wrap((_req, res) => {
     if (anyRunning() || testRunning) return res.status(409).json({ error: "A run is in progress." });
@@ -176,7 +196,7 @@ export function createApp() {
   }
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err instanceof ApprovalError || err instanceof NotFoundError || err instanceof IntentError || err instanceof CreateListingError ? (err as any).status : (err as any).status ?? 500;
+    const status = err instanceof ApprovalError || err instanceof NotFoundError || err instanceof IntentError || err instanceof CreateListingError || err instanceof DetailsError ? (err as any).status : (err as any).status ?? 500;
     const msg = String(err.message ?? err).replaceAll(process.env.GEMINI_API_KEY ?? "\u0000", "[redacted]");
     res.status(status).json({ error: msg });
   });

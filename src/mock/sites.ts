@@ -21,8 +21,8 @@ function load(site: string, id: string): MockListing | undefined {
   return { ...r, hours: JSON.parse(r.hours_json), holidays: JSON.parse(r.holidays_json) };
 }
 function save(l: MockListing) {
-  getDb().prepare("UPDATE mock_listings SET address=?, phone=?, hours_json=?, holidays_json=? WHERE site=? AND listing_id=?")
-    .run(l.address, l.phone, JSON.stringify(l.hours), JSON.stringify(l.holidays), l.site, l.listing_id);
+  getDb().prepare("UPDATE mock_listings SET display_name=?, address=?, phone=?, hours_json=?, holidays_json=? WHERE site=? AND listing_id=?")
+    .run(l.display_name, l.address, l.phone, JSON.stringify(l.hours), JSON.stringify(l.holidays), l.site, l.listing_id);
 }
 
 /** Apply a change directly to the stored mock listing (used on approval or for non-moderated sites). */
@@ -30,6 +30,7 @@ export function applyChange(l: MockListing, c: Change) {
   switch (c.action) {
     case "set_phone": l.phone = c.value; break;
     case "set_address": l.address = c.value; break;
+    case "set_name": l.display_name = c.value; break;
     case "set_hours": l.hours = c.hours; break;
     case "set_holiday":
       l.holidays = l.holidays.filter((h) => !(h.start === c.holiday.start && h.end === c.holiday.end));

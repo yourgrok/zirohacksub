@@ -7,7 +7,8 @@ import { baseUrl } from "../agent/reader.js";
 import { getDb } from "../core/db.js";
 import { nowTs } from "../core/clock.js";
 import { displayPhone, normalisePhone, parseHoursText } from "../core/normalise.js";
-import { audit, findBusiness, linkListing, listPlatforms } from "../core/store.js";
+import { audit, findBusiness, linkListing, listPlatforms, logChange } from "../core/store.js";
+import { AddressZ, HoursTextZ, NameZ, PhoneZ } from "../core/details.js";
 import type { WeeklyHours } from "../core/types.js";
 import { DRAFT_TTL_MS, MAX_BUSINESSES, PENDING_BUSINESS_TTL_MS, THRESHOLDS } from "./config.js";
 import { matchAllSites, type SiteMatch } from "./discover.js";
@@ -17,14 +18,7 @@ export class OnboardingError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
 
-const clean = (s: string) => s.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
-
-export const DetailsZ = z.object({
-  name: z.string().transform(clean).pipe(z.string().min(2, "Please enter the business name.").max(80)),
-  address: z.string().transform(clean).pipe(z.string().min(8, "Please enter the full address.").max(200)),
-  phone: z.string().transform(clean).pipe(z.string().max(25).refine((v) => normalisePhone(v) !== null, "That phone number does not look right.")),
-  hours: z.string().transform(clean).pipe(z.string().max(300)).optional(),
-});
+export const DetailsZ = z.object({ name: NameZ, address: AddressZ, phone: PhoneZ, hours: HoursTextZ.optional() });
 export type Details = z.infer<typeof DetailsZ>;
 
 /** Typical hours used only when the owner entered none and nothing confirmed gives any. Shown to the owner. */
@@ -40,7 +34,7 @@ const rid = (bytes: number) => randomBytes(bytes).toString("base64url");
 export function deleteBusinessData(bizId: string) {
   const d = getDb();
   d.prepare("DELETE FROM state_history WHERE field_id IN (SELECT id FROM field_states WHERE business_id=?)").run(bizId);
-  for (const t of ["field_states", "exceptions", "platform_listings", "site_matches", "sessions", "audit_log", "trace", "runs"]) {
+  for (const t of ["field_states", "exceptions", "platform_listings", "site_matches", "sessions", "audit_log", "change_log", "trace", "runs"]) {
     d.prepare(`DELETE FROM ${t} WHERE business_id=?`).run(bizId);
   }
   d.prepare("DELETE FROM business WHERE id=?").run(bizId);
@@ -177,6 +171,7 @@ export function confirmOnboarding(draftId: string, rawDecisions: unknown): Creat
     if (needsDecision(m)) logEvent(draft.runId, "owner_confirm", { site: m.platformId }, c ? `owner confirmed ${c.listingId} (score ${c.score})` : "owner rejected the match");
   }
   logEvent(draft.runId, "create_business", { business: bizId }, `business created (pending first login); ${chosen.size} listing(s) confirmed`);
+  logChange(bizId, "owner", "record", "Business set up", null, `${draft.details.name} · ${draft.details.phone}`, `${chosen.size} listing(s) confirmed`);
   audit(bizId, "owner", "onboarding-confirm", null, null, { confirmed: [...chosen.values()].map((c) => c.listingId) });
   return { pin: formatPin(pin), businessName: draft.details.name, expiresInMinutes: Math.round(PENDING_BUSINESS_TTL_MS / 60000), confirmed: chosen.size, hoursAssumed };
 }
