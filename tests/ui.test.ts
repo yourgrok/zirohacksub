@@ -57,7 +57,10 @@ describe("tabbed console (browser)", () => {
   run("scan fills Approvals; the consistency table is compact; the change log records an edit", async () => {
     if (!browser) return;
     await page.click("button:has-text('Scan listings')"); await idle();
-    expect(await page.locator("#tab-approvals .tabcount").count()).toBe(1);
+    await page.waitForSelector(".nudge"); // the scan tells the owner what it found
+    expect(await page.locator(".nudge h2").innerText()).toMatch(/change.* to review/);
+    expect(await page.locator("#tab-approvals .tabcount:not(.pend)").count()).toBe(1);
+    await page.click(".nudge button:has-text('Later')");
     await page.click("#tab-consistency");
     const h = await page.locator("table.compact tbody tr").first().evaluate((e) => e.getBoundingClientRect().height);
     expect(h).toBeLessThan(34);
