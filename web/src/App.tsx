@@ -120,7 +120,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
         <div className="busy-slot" aria-live="polite">
           {st.busy && (
             <button type="button" className="busy-pill" onClick={() => go("trace")} title="Open the Agent Trace to see each step as it happens">
-              <span className="emo" aria-hidden>🤖</span>
+              <img className="busy-robot" src="/robot.png" alt="" aria-hidden draggable={false} />
               <span className="busy-text">
                 <b>Agent is working<span className="dots" aria-hidden /></b>
                 <span className="busy-sub">{tab === "trace" ? "You're watching it live below" : "Click here to check progress"}</span>
@@ -139,7 +139,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
           <button className={`btn stepbtn ${next === 2 ? "primary next" : ""}`} disabled={st.busy || proposedCount === 0} onClick={() => go("approvals")} title={proposedCount === 0 ? "Nothing waiting for your review" : "Review what the agent found"}><span className="stepno">2</span><span className="steptxt">Review &amp; approve{proposedCount > 0 ? ` (${proposedCount})` : ""}<small>{proposedCount > 0 ? "your decision" : "nothing to review"}</small></span></button>
           <span className="steparrow" aria-hidden>›</span>
           <button className={`btn stepbtn ${next === 3 ? "primary next" : ""}`} disabled={st.busy || approvedCount + pendingMod === 0} onClick={runExecute} title={approvedCount > 0 ? "Sends only what you approved, then reloads each page to check" : pendingMod > 0 ? "Reloads the sites that were waiting for a moderator and checks whether the change is live now" : "Approve at least one change first"}><span className="stepno">3</span><span className="steptxt">{approvedCount > 0 ? `Apply approved & verify (${approvedCount})` : pendingMod > 0 ? `Re-check pending sites (${pendingMod})` : "Apply approved & verify"}<small>{approvedCount > 0 ? "press this to send" : pendingMod > 0 ? "did the site approve it?" : "approve something first"}</small></span></button>
-          {st.busy && <button type="button" className="spin linkish-btn" onClick={() => go("trace")} title="Open the Agent Trace">🤖 Working… view progress</button>}
+          {st.busy && <button type="button" className="spin linkish-btn" onClick={() => go("trace")} title="Open the Agent Trace"><img className="spin-robot" src="/robot.png" alt="" aria-hidden draggable={false} /> Working… view progress</button>}
         </div>
         <div className="tabs" role="tablist" aria-label="Sections" onKeyDown={onTabKey}>
           {TAB_DEFS.map((t, i) => (

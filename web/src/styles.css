@@ -248,3 +248,12 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 @keyframes pop { from { opacity: 0; transform: translateX(-50%) scale(.7); } }
 .say-word { font-weight: 600; color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .mspeech { animation: none; } }
+
+/* the pink robot: bigger in the header pill, small in the sticky bar, and on the trace map */
+.busy-pill { min-height: 76px; padding: 6px 22px 6px 12px; gap: 14px; }
+.busy-pill .busy-robot { width: 62px; height: 62px; object-fit: contain; animation: bob .8s ease-in-out infinite; filter: drop-shadow(0 3px 4px #0003); user-select: none; }
+.busy-text b { font-size: 17px; } .busy-sub { font-size: 14px; }
+.spin-robot { width: 26px; height: 26px; object-fit: contain; vertical-align: middle; }
+.mbot-img { width: 64px; }
+@media (max-width: 560px) { .busy-pill { min-height: 64px; } .busy-pill .busy-robot { width: 48px; height: 48px; } .busy-text b { font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .busy-pill .busy-robot { animation: none; } }

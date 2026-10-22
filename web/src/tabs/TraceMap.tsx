@@ -39,7 +39,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
       if (face.current && Math.abs(dx) > 2) face.current.style.transform = `scaleX(${dx < 0 ? -1 : 1})`;
       raf.current = requestAnimationFrame(draw);
     }
-    if (bot.current) bot.current.style.transform = `translate(${pos.current.x - 27}px, ${pos.current.y - 44}px)`;
+    if (bot.current) bot.current.style.transform = `translate(${pos.current.x - 32}px, ${pos.current.y - 52}px)`;
   };
   const kick = () => { if (raf.current === null) raf.current = requestAnimationFrame(draw); };
   const goTo = (i: number) => { idx.current = i; setFocus(i); if (pts[i]) { target.current = { ...pts[i] }; kick(); } };
@@ -53,7 +53,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
     const last = n - 1;
     idx.current = last; setFocus(last);
     target.current = { ...pts[last] }; pos.current = { ...pts[last] };
-    if (bot.current) bot.current.style.transform = `translate(${pts[last].x - 27}px, ${pts[last].y - 44}px)`;
+    if (bot.current) bot.current.style.transform = `translate(${pts[last].x - 32}px, ${pts[last].y - 52}px)`;
     box.current?.scrollTo({ left: Math.max(0, pts[last].x - (box.current?.clientWidth ?? 600) / 2) });
   }, [n, pts]);
 
@@ -112,7 +112,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
             );
           })}
           <div className="mbot" ref={bot} aria-hidden>
-            <span className="mspeech" key={`${focus}-${say(t)}`}>{say(t)}</span><img ref={face} className="mbot-img" src="/agent.png" alt="" draggable={false} /></div>
+            <span className="mspeech" key={`${focus}-${say(t)}`}>{say(t)}</span><img ref={face} className="mbot-img" src="/robot.png" alt="" draggable={false} /></div>
         </div>
       </div>
       {t && (
