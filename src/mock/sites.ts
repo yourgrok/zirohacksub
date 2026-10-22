@@ -86,7 +86,7 @@ export function renderPublic(cfg: SiteCfg, l: MockListing): string {
 <p>☎ <span class="${cls(s.phone)}">${esc(l.phone)}</span></p>
 <h2>Opening hours</h2>${hoursHtml(cfg, l.hours)}
 <h2>Special days</h2>${holidaysHtml(cfg, l.holidays)}`;
-  return page(cfg, l.display_name, `<div data-listing-id="${l.listing_id}">${body}</div>`);
+  return page(cfg, l.display_name, `<div data-listing-id="${l.listing_id}" data-claim-state="${l.owner_account ? "claimed" : "unclaimed"}">${body}</div>`);
 }
 
 function renderDashboard(cfg: SiteCfg, l: MockListing, account: string | null): string {

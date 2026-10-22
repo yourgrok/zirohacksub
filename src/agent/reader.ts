@@ -74,6 +74,8 @@ function htmlToLines(inner: string | null): string[] {
 
 export interface PublicRead {
   listingId: string | null;
+  /** "claimed" (an owner account exists) or "unclaimed" — shown publicly by real listing sites ("Claim this business") */
+  claimState: string | null;
   name: string | null;
   address: string | null;
   phone: string | null;
@@ -87,6 +89,7 @@ export function parsePublic(slug: string, html: string): PublicRead {
   const t = (sel: string) => { const el = $(sel).first(); return el.length ? el.text().replace(/\s+/g, " ").trim() : null; };
   return {
     listingId: $("[data-listing-id]").first().attr("data-listing-id") ?? null,
+    claimState: $("[data-claim-state]").first().attr("data-claim-state") ?? null,
     name: t(cfg.sel.name),
     address: t(cfg.sel.address),
     phone: t(cfg.sel.phone),
@@ -112,4 +115,15 @@ export function parseDashboard(html: string): DashboardRead {
     return { summary: $(el).text().replace(/\s+/g, " ").trim(), change };
   }).get();
   return { listingId: root.attr("data-listing-id") ?? null, canEdit, claimedByOther: $(".claim-banner").attr("data-claim") === "other", pending };
+}
+
+/** The site's search/index page: every listing it shows (including look-alikes), by listing id. */
+export function parseIndex(html: string): { listingId: string; name: string }[] {
+  const $ = cheerio.load(html);
+  const out: { listingId: string; name: string }[] = [];
+  $('a[href*="/listing/"]').each((_, el) => {
+    const id = ($(el).attr("href") ?? "").split("/listing/")[1]?.split(/[?#]/)[0];
+    if (id && !out.some((o) => o.listingId === id)) out.push({ listingId: id, name: $(el).text().trim() });
+  });
+  return out;
 }

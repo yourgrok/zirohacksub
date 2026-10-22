@@ -7,6 +7,7 @@ export const BUSINESS_ID = "biz_sunrise_001";
 export const OWNER_ACCOUNT = "acct_sunrise_owner";
 export const OTHER_ACCOUNT = "acct_someone_else";
 export const DECOY_ACCOUNT = "acct_decoy_owner";
+export const OTHER_BIZ_ACCOUNT = "acct_other_biz";
 
 export const RECORD_HOURS: WeeklyHours = {
   mon: { open: "09:00", close: "21:00" }, tue: { open: "09:00", close: "21:00" }, wed: { open: "09:00", close: "21:00" },
@@ -48,6 +49,15 @@ export const DECOY = {
   } as WeeklyHours,
 };
 
+/**
+ * A second, fictional business used to demo onboarding. It is NOT in the registry of any account:
+ * its listings exist on the mock sites (some unclaimed, one claimed by someone else, one look-alike) and are found by score matching.
+ */
+export const GREEN_LEAF = {
+  name: "Green Leaf Cafe", address: "8 Lotus Street, Baner, Pune, Maharashtra 411045", phone: "+91 90000 00031",
+  hours: { mon: { open: "08:00", close: "22:00" }, tue: { open: "08:00", close: "22:00" }, wed: { open: "08:00", close: "22:00" }, thu: { open: "08:00", close: "22:00" }, fri: { open: "08:00", close: "22:00" }, sat: { open: "08:00", close: "22:00" }, sun: { open: "08:00", close: "22:00" } } as WeeklyHours,
+};
+
 export const DIWALI = { id: "ex_seed_diwali", start: "2026-11-08", end: "2026-11-08", kind: "special", open: "10:00", close: "14:00", reason: "Diwali" } as const;
 const diwaliShown = { start: DIWALI.start, end: DIWALI.end, kind: "special", open: "10:00", close: "14:00", reason: "Diwali" };
 
@@ -81,6 +91,13 @@ export function resetAndSeed() {
       if (p.id === "site_d") { owner = OTHER_ACCOUNT; phone = "+91 90000 00099"; } // TC3 (claimed by someone else, stale phone)
       if (p.id === "site_e") hours = { ...RECORD_HOURS, sun: null }; // TC4 (moderation site, Sunday wrong)
       insML.run(p.id, OURS_LISTING[p.id], BUSINESS.name, address, phone, JSON.stringify(hours), JSON.stringify(holidays), owner, 0);
+      // onboarding demo data (see GREEN_LEAF)
+      const gl = (id: string, name: string, address: string, phone: string, owner: string | null) =>
+        insML.run(p.id, id, name, address, phone, JSON.stringify(GREEN_LEAF.hours), "[]", owner, 0);
+      if (p.id === "site_a") gl("LST-A-4001", "Green Leaf Cafe", GREEN_LEAF.address, GREEN_LEAF.phone, null); // unclaimed, exact
+      if (p.id === "site_c") gl("LST-C-4001", "Green Leaf Café", "8 Lotus St., Baner, Pune - 411045", "090000 00031", null); // unclaimed, formatting differs
+      if (p.id === "site_b") gl("LST-B-4002", "Green Leaf Cafe & Bakery", "52 Willow Road, Kothrud, Pune, Maharashtra 411038", "+91 90000 00032", OTHER_BIZ_ACCOUNT); // look-alike
+      if (p.id === "site_d") gl("LST-D-4001", "Green Leaf Cafe", GREEN_LEAF.address, GREEN_LEAF.phone, OTHER_BIZ_ACCOUNT); // really theirs, but claimed by someone else
       // look-alike decoy
       insML.run(p.id, DECOY_LISTING[p.id], DECOY.name, DECOY.address, DECOY.phone, JSON.stringify(DECOY.hours),
         JSON.stringify([{ ...diwaliShown, kind: "closed", open: null, close: null }]), DECOY_ACCOUNT, 1);
