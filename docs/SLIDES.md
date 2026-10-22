@@ -20,6 +20,6 @@
 
 **10. New owner: PIN login + score matching** — no username; a view-once PIN; the agent scores every listing on every site (phone 40 · address 35 · name 25), look-alike *Sunrise Sweet House* scores 37.7 vs 100, a good match owned by someone else is flagged, the owner confirms each match, and missing sites are added only after approval and verified (`evidence/onboarding-demo.md`). Every business is isolated from the others.
 
-**11. Results** — Deterministic TC1–TC6: 6/6 pass from a fresh reset. 223/223 automated tests pass. One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
+**11. Results** — Deterministic TC1–TC6: 6/6 pass from a fresh reset. 273/273 automated tests pass. One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
 
 **12. Limitations (honest)** — Mock sites only · claiming a listing is a mock (no OTP) · a lost PIN means redoing onboarding · festival dates must be owner-confirmed · free-host DB resets (app reseeds on boot) · LLM is optional and guarded · live Gemini evidence needs the owner's key · Docker/Render not built in the build sandbox.

@@ -138,7 +138,7 @@ export const TOOLS: Record<ToolName, ToolDef> = {
           n++;
         }
       }
-      audit(st.bizId, "agent", "flag", platform, null, { flagged: n, reason: reason ?? "permission denied" });
+      if (n > 0) audit(st.bizId, "agent", "flag", platform, null, { flagged: n, reason: reason ?? "permission denied" }); // a repeat scan that flags nothing new is not an event
       return { summary: `${n} field(s) flagged: not the listing owner; no edit attempted` };
     },
   },

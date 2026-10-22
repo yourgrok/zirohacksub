@@ -1,7 +1,7 @@
 # Test evidence summary
 
-Generated: 2026-10-22T08:59:38.162Z  
-Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **http** · mock data only.
+Generated: 2026-10-22T12:41:03.206Z  
+Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **auto** · mock data only.
 
 Every run starts from a fresh reset of the seeded demo data. The deterministic run uses `LLM_PROVIDER=none` so results cannot fail randomly because of rate limits or model changes.
 
@@ -42,6 +42,8 @@ Field state history:
 
 - site_b / Holiday 2026-11-08 (Diwali): MISMATCH → PROPOSED → APPROVED → APPLIED → VERIFIED (original “8 Nov 2026: Closed” → intended “8 Nov 2026: 10:00 AM – 2:00 PM”)
 
+Screenshots: `evidence/screenshots/TC1-siteB-before.png`, `evidence/screenshots/TC1-siteB-after.png`
+
 Trace: 31 tool calls recorded (see `TC1.json`).
 
 ## TC2 — Phone formatted differently but identical
@@ -66,6 +68,8 @@ Field state history:
 - site_c / Phone: FORMAT_ONLY_EQUIVALENT (original “090000 00001” → intended “+91 90000 00001”)
 - site_c / Address: FORMAT_ONLY_EQUIVALENT (original “42 Marigold Ln., Koregaon Park, Pune, MH - 411001” → intended “42 Marigold Lane, Koregaon Park, Pune, Maharashtra 411001”)
 
+Screenshots: `evidence/screenshots/TC2-siteC.png`
+
 Trace: 25 tool calls recorded (see `TC2.json`).
 
 ## TC3 — Listing claimed by someone else
@@ -89,6 +93,8 @@ Trace: 25 tool calls recorded (see `TC2.json`).
 Field state history:
 
 - site_d / Phone: MISMATCH → FLAGGED_NOT_OWNER (original “+91 90000 00099” → intended “+91 90000 00001”)
+
+Screenshots: `evidence/screenshots/TC3-siteD.png`
 
 Trace: 25 tool calls recorded (see `TC3.json`).
 
@@ -115,6 +121,8 @@ Field state history:
 
 - site_e / Regular hours: MISMATCH → PROPOSED → APPROVED → APPLIED → PENDING_MODERATION → VERIFIED (original “Mon to Sat: 9:00 AM to 9:00 PM; Sun: Closed” → intended “Mon-Sat 09:00-21:00; Sun 10:00-14:00”)
 
+Screenshots: `evidence/screenshots/TC4-siteE-pending.png`, `evidence/screenshots/TC4-siteE-approved.png`
+
 Trace: 33 tool calls recorded (see `TC4.json`).
 
 ## TC5 — Plain-language closure flows through approval
@@ -131,7 +139,7 @@ Trace: 33 tool calls recorded (see `TC4.json`).
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjb871j1 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvjj4smv0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -144,6 +152,8 @@ Field state history:
 - site_c / Holiday 2026-12-26: MISMATCH → PROPOSED → APPROVED → APPLIED → VERIFIED (original “(not listed)” → intended “26 Dec 2026: Closed”)
 - site_d / Holiday 2026-12-26: MISMATCH → FLAGGED_NOT_OWNER (original “(not listed)” → intended “26 Dec 2026: Closed”)
 - site_e / Holiday 2026-12-26: MISMATCH → PROPOSED → APPROVED → APPLIED → PENDING_MODERATION (original “(not listed)” → intended “26 Dec 2026: Closed”)
+
+Screenshots: `evidence/screenshots/TC5-siteA-after.png`
 
 Trace: 35 tool calls recorded (see `TC5.json`).
 

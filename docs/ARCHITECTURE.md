@@ -267,3 +267,39 @@ stateDiagram-v2
 | PIN page refreshed before it was saved | the business was still pending: it expires unused and onboarding can be redone | `onboarding/service.ts` |
 | A matching listing appears after "Add my business" was approved | blocked right before sending; nothing created | `agent/createListing.ts` |
 | Moderator rejects a created listing | card goes back to a failed state (never "verified"); the owner may ask again | `agent/createListing.ts` |
+
+
+---
+
+# Console tabs and the text box
+
+## 13. Text box routing
+
+```mermaid
+flowchart TD
+  T[owner types a sentence] --> Q{starts like a question?<br/>what / which / when / is / show ...}
+  Q -->|yes| A[answer from the owner's own data<br/>record, per-site checks, coverage, pending, change log, holidays]
+  Q -->|no| E{has a new value for<br/>phone / address / name / weekly hours?}
+  E -->|yes| D[preview old -> new, Save this change<br/>updateBusinessDetails + change log]
+  E -->|no| X{a date, closure or special hours?}
+  X -->|yes| C[date parser chrono + rules<br/>Gemini double-checks if a key is set]
+  X -->|no| H[one question: what I can do]
+  D --> P[stale approvals for the old value go back to review]
+  P --> S[scan: every site compared with the new record]
+  C --> S
+  S --> AP[approval cards in the Approvals tab]
+```
+Questions and detail edits never leave the server (only date requests may be cross-checked by a model).
+
+## 14. What each tab reads
+
+| Tab | Data it uses |
+|---|---|
+| My Details, Listings & Sites, Approvals, Consistency | `GET /api/state` (record, coverage, matches, report rows), approvals via `/api/fields/:id/approve|reject`, `/api/platforms/:id/approve-all` |
+| Edit & Ask | `POST /api/nl/preview|refine|confirm`, `GET/PUT /api/business`, `POST /api/exceptions/:id/cancel` |
+| Change Log | `GET /api/changelog` (change_log table + audit_log, newest first) |
+| Agent Trace | `GET /api/trace` (latest run, or `?all=1` incl. login and older runs) |
+| Holidays | `GET /api/foresight`, `POST /api/foresight/:id/accept` |
+| Add Business | the public `/api/onboarding/*` routes, then `/api/auth/login` with the new PIN (switches business) |
+
+Every endpoint is scoped to the logged-in business; the tab never sends a business id.

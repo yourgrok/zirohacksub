@@ -42,7 +42,7 @@ export function buildChangeLog(bizId: string, limit = 400): LogEntry[] {
       case "verify": out.push({ ...base, kind: "verified", kindLabel: KIND_LABEL.verified, what: d.result === "VERIFIED" ? `Verified after reload: ${label(a.platform_id, a.field_key)}` : `Checked after reload: ${label(a.platform_id, a.field_key)} is ${String(d.result ?? "").toLowerCase().replace(/_/g, " ")}`, from: null, to: null }); break;
       case "propose-create": out.push({ ...base, kind: "approval", kindLabel: KIND_LABEL.approval, what: "Proposed adding the business to this site", from: null, to: null }); break;
       case "create-blocked": out.push({ ...base, kind: "site", kindLabel: KIND_LABEL.site, what: "Adding the business was blocked: a matching listing exists", from: null, to: null }); break;
-      case "flag": out.push({ ...base, kind: "site", kindLabel: KIND_LABEL.site, what: `Flagged as not yours${d.reason ? ` (${d.reason})` : ""}`, from: null, to: null }); break;
+      case "flag": if (!d.flagged) break; out.push({ ...base, kind: "site", kindLabel: KIND_LABEL.site, what: `Flagged as not yours${d.reason ? ` (${d.reason})` : ""}`, from: null, to: null }); break;
       case "onboarding-activate": out.push({ ...base, kind: "setup", kindLabel: KIND_LABEL.setup, what: `First login: ${d.linked ?? 0} confirmed listing(s) claimed and linked`, from: null, to: null, site: null }); break;
       default: break; // proposals, plain-language confirmations (logged in change_log), etc. are not repeated here
     }

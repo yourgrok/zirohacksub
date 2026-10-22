@@ -48,7 +48,7 @@ function Login({ onLoggedIn, onNew, notice }: { onLoggedIn: () => void; onNew: (
 }
 
 /* ───────────── screen 2: details ───────────── */
-function Details({ onBack, onFound }: { onBack: () => void; onFound: (d: any) => void }) {
+export function Details({ onBack, onFound, backLabel = "← Back to log in" }: { onBack: () => void; onFound: (d: any) => void; backLabel?: string }) {
   const [f, setF] = useState({ name: "", address: "", phone: "", hours: "" });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,7 +71,7 @@ function Details({ onBack, onFound }: { onBack: () => void; onFound: (d: any) =>
       <input id="h" value={f.hours} onChange={set("hours")} placeholder="Mon-Sat 9am-9pm; Sun 10am-2pm" />
       {err && <p className="err" role="alert">{err}</p>}
       <button className="btn primary wide" disabled={busy}>{busy ? "Checking the listing sites…" : "Find my listings"}</button>
-      <p className="gate-alt"><button type="button" className="linkish" onClick={onBack}>← Back to log in</button></p>
+      <p className="gate-alt"><button type="button" className="linkish" onClick={onBack}>{backLabel}</button></p>
     </form>
   );
 }
@@ -79,7 +79,7 @@ function Details({ onBack, onFound }: { onBack: () => void; onFound: (d: any) =>
 /* ───────────── screen 3: is this you? ───────────── */
 type Choice = { action: "confirm" | "reject"; listingId?: string };
 
-function Matches({ draft, onBack, onDone }: { draft: any; onBack: () => void; onDone: (c: any) => void }) {
+export function Matches({ draft, onBack, onDone }: { draft: any; onBack: () => void; onDone: (c: any) => void }) {
   const [choice, setChoice] = useState<Record<string, Choice>>({});
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -171,7 +171,7 @@ function Choose({ a, b, onYes, onNo }: { a: boolean; b: boolean; onYes: () => vo
 }
 
 /* ───────────── screen 4: view-once PIN ───────────── */
-function PinReveal({ created, onLoggedIn }: { created: { pin: string; businessName: string; hoursAssumed: boolean; confirmed: number }; onLoggedIn: () => void }) {
+export function PinReveal({ created, onLoggedIn, adding = false }: { created: { pin: string; businessName: string; hoursAssumed: boolean; confirmed: number }; onLoggedIn: () => void; adding?: boolean }) {
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -207,8 +207,9 @@ function PinReveal({ created, onLoggedIn }: { created: { pin: string; businessNa
       <div className="alert a-red"><b>This PIN will not be shown again.</b> We only keep a scrambled version, so nobody can look it up for you. Don't refresh this page.</div>
       {created.hoursAssumed && <p className="muted small">You didn't enter opening hours, so we used typical hours (Mon–Sat 9am–6pm, Sun closed).</p>}
       <label className="check"><input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} /> I have saved my PIN</label>
+      {adding && <p className="muted small">When you continue you are switched to <b>{created.businessName}</b>. To come back to your other business, log out and use its own PIN.</p>}
       {err && <p className="err" role="alert">{err}</p>}
-      <button className="btn primary wide" disabled={!saved || busy} onClick={go}>{busy ? "Logging in…" : "Continue"}</button>
+      <button className="btn primary wide" disabled={!saved || busy} onClick={go}>{busy ? "Opening…" : adding ? `Open ${created.businessName}` : "Continue"}</button>
     </div>
   );
 }

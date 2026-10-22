@@ -58,3 +58,20 @@ Done: tenant-scoped data layer (required `bizId`, in-place migration of old DBs)
 
 ### Fix: PIN invalid after a server restart
 Reproduced: with a file database and `PIN_SECRET` empty (the `.env.example` default) every boot generated a new random secret, so a PIN whose business was still in the database no longer verified. Now an auto-generated secret is persisted once in `data/.pin_secret` (git-ignored, mode 600); `PIN_SECRET` still wins when set; `tests/secret.test.ts` covers restart, env-var priority, in-memory and unwritable-disk cases. On a free host the whole database (and this file) is wiped on restart, so onboarded businesses disappear there: documented in the README.
+
+## Tabbed console, edit details, change log, smarter text box (added after the PIN work)
+
+Done: 9-tab console with hash routing and keyboard navigation (sticky Scan / Review / Apply bar), compact consistency table with filters, Approvals tab with filters and approve-all, Listings & Sites table, My Details, Edit & Ask (text box + form + saved holidays), Change Log, Agent Trace with a hover "walker", Holidays, Add Business inside the console.
+Backend: `PUT /api/business` (validated, resets stale approvals, writes the change log), business **name** is now a compared field (`set_name` change), `GET /api/changelog`, `POST /api/exceptions/:id/cancel`, text box intents (`src/nl/intent.ts`).
+
+### Decisions
+- Adding a business from inside the console creates a separate business with its own PIN and switches to it (activation needs that first login). There is no single login that owns several businesses yet.
+- Editing the record never touches a listing site; it only makes the next scan propose fixes (all behind approvals). Approvals given for an old value are returned to review.
+- Questions and record edits are handled locally and are never sent to Gemini; only date requests are cross-checked.
+- The trace walker follows the pointer; after the pointer rests about a second it walks on by itself. With reduced-motion it only jumps to the step you point at.
+- Fixed while building: `Reset demo data` did not clear `site_matches` / `onboarding_drafts` (an earlier edit had silently not applied); repeated scans no longer write identical "flagged" lines into the log.
+
+### Known limitations
+- No PIN recovery and no phone verification yet (discussed; not built).
+- Editing the phone number does not verify ownership of the new number.
+- The change log shows record edits and approval/apply/verify events; it does not store a full before/after copy of every listing page.

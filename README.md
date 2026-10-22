@@ -2,7 +2,7 @@
 
 An agent that keeps a local business's **address, phone and hours** consistent across listing sites — and **asks for your approval before changing anything**. Built for the Agentic AI Hackathon 2026 (Ziro.Digital), industry *Business & Productivity AI*. **Mock listing sites and synthetic data only** (fictional "Sunrise Sweets & Bakery", Pune).
 
-![Console after an approved run](docs/screenshots/04-after-apply.png)
+![My Details tab](docs/screenshots/20-tab-details.png)
 
 ## What it does
 
@@ -14,9 +14,9 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 6. **New owners** log in with a PIN only (no username, no password). A new owner types their details, the agent finds their listings on every site by **score matching**, the owner confirms each match, and a **view-once PIN** is issued. Sites where the business is not listed can be added with the same approve → apply → verify safety.
 7. Extras: **Holiday Foresight** (90-day look-ahead, alerts at 30/14/7 days, readiness score) and **plain-language closures** ("we are closed on 26th December").
 
-| Live preview of a plain-language change | Tests page (TC1–TC6) | Phone |
+| Edit & Ask | Agent Trace | Phone |
 |---|---|---|
-| ![](docs/screenshots/02-live-preview.png) | ![](docs/screenshots/06-tests-page.png) | ![](docs/screenshots/05-mobile.png) |
+| ![](docs/screenshots/24-tab-edit-ask.png) | ![](docs/screenshots/26-tab-trace.png) | ![](docs/screenshots/29-mobile-tabs.png) |
 
 The agent works with **no API key** (deterministic planner). With `GEMINI_API_KEY` set, Gemini picks each next tool through the Interactions API; code-level guardrails still block anything unsafe, and any failure falls back to the deterministic planner (all visible in the agent trace).
 
@@ -105,6 +105,36 @@ GitHub will ask you to sign in in the browser the first time (Git Credential Man
 | **Innovation (15)** | Holiday Foresight (chips, 30/14/7 alerts, readiness formula, never-auto-applied drafts); plain-language closures with live preview, relative-date resolution, one clarifying question, Gemini cross-check where the owner breaks ties; visible "Blocked by guardrail" proof with a rogue-planner demo | `src/foresight/index.ts`, `src/nl/`, `/tests` page |
 | **UX (10)** | One console: record, holidays, change box, run buttons, approval cards, before/after table (CSV/print), trace; distinct colours and plain-English reasons for pending/flagged; responsive (checked at 390 px, no horizontal scroll); accessible labels, focus rings, light/dark | `web/src/App.tsx`, `web/src/styles.css` |
 | **Presentation (10)** | Self-contained written evidence (no links needed), real-run evidence with screenshots, Mermaid architecture, slide outline built from run data, honest limitations | `evidence/SUMMARY.md`, `docs/` |
+
+## The console: nine tabs
+
+A sticky bar on every tab holds the three steps (**① Scan listings → ② Review → ③ Apply approved & verify**). Tabs open directly by click, keyboard (← → Home End) or link (`/#/approvals`, `/#/trace`, …).
+
+| Tab | What you do there |
+|---|---|
+| 🏠 **My Details** | See your current name, address, phone, weekly hours, saved holidays, settings, and an at-a-glance count of sites, approvals and verified fields |
+| 🌐 **Listings & Sites** | One row per site: listed or not, listing ID, how it was linked (score), per-site check counts, **Add my business here** where you are missing |
+| ✅ **Approvals** | Approve or reject each proposed fix (filters: needs approval / pending site / not yours / done), **Approve all** per site or overall; the badge shows how many are waiting |
+| 📊 **Consistency** | The compact before / after table (site, field, original, intended, approval, verified), filters, CSV export and a printable view |
+| ✏️ **Edit & Ask** | The smart text box, a plain edit form for name / address / phone / hours, and cancel buttons for saved holidays |
+| 🕘 **Change Log** | What changed, who did it and when (Indian time): detail edits (from → to), holidays, approvals, what was sent to which site, what was verified |
+| 🤖 **Agent Trace** | Every real tool call with its decider badge. Hover: a small 🤖 follows your pointer from step to step, and if you rest on a step it keeps walking through the next ones |
+| 📅 **Holidays** | Upcoming holidays with chips, 30/14/7-day alerts, readiness score, drafts |
+| ➕ **Add Business** | Set up another business (details → "Is this you?" → view-once PIN); you are switched to it, and each business has its own PIN and data |
+
+### The text box (Edit & Ask)
+
+One box understands three kinds of request. Nothing is saved until you press the button, and nothing reaches a listing site until you approve it.
+
+| You type | What happens |
+|---|---|
+| `change my phone to 98765 43210` · `our address is 12 MG Road, Pune 411001` · `rename the shop to Sunrise Sweets` | A preview (old → new). **Save this change** updates your record (and the change log); a scan then offers an approval card on every site. Approvals you gave for the *old* value go back to review, so the old value is never sent |
+| `open 9 to 8 Monday to Saturday` · `we are closed on Sundays` · `we close at 8pm on weekdays` | Changes your **weekly** hours the same way |
+| `closed on 26th December` · `open 10 to 2 on Diwali` · `closing early at 3pm this Friday` · `ignore that, we are open on the 26th` | Closures / special hours for dates (as before; Gemini double-checks these when a key is set) |
+| `what are my hours?` · `which sites am I listed on?` · `what's waiting for my approval?` · `what changed recently?` · `what holidays are coming up?` · `how am I doing?` | **Answers** from your own data, with a link to the right tab. Read-only; never sent to a model; it never reveals a PIN |
+| anything else | One short question listing what it can do |
+
+The business **name** is now a compared field too, so a rename is proposed, approved and verified on every site like phone, address and hours.
 
 ## Login: PIN only
 

@@ -149,3 +149,15 @@ describe("change log", () => {
     expect(log.find((e) => e.kind === "holiday")).toMatchObject({ who: "You (typed it)", from: "(none)", to: expect.stringContaining("26 Dec 2026") });
   });
 });
+
+describe("change log is not noisy", () => {
+  it("scanning again does not repeat the same 'flagged' line", async () => {
+    const c = await login();
+    await c.post("/api/runs/scan?wait=1");
+    await c.post("/api/runs/scan?wait=1");
+    await c.post("/api/runs/scan?wait=1");
+    const flags = ((await c.get("/api/changelog")).body.entries as any[]).filter((e) => /Flagged as not yours/.test(e.what));
+    expect(flags).toHaveLength(1);
+    expect(flags[0].site).toBe("NearbyNow");
+  });
+});

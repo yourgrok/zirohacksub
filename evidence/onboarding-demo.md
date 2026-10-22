@@ -1,6 +1,6 @@
 # New-owner onboarding demo (real run)
 
-Run: 2026-10-22T08:58:30.877Z · mock sites and synthetic data only · in-memory database · the PIN is masked everywhere in this log.
+Run: 2026-10-22T12:40:44.849Z · mock sites and synthetic data only · in-memory database · the PIN is masked everywhere in this log.
 
 ## 1. Not logged in: nothing is reachable
 
@@ -33,7 +33,7 @@ PIN issued: `•••••-•••••` (masked here; shown to the owner e
 
 ## 4. Owner logs in with only the PIN
 
-- ✅ login with the PIN works (no username, no password) — business biz_7db3d240b9f8
+- ✅ login with the PIN works (no username, no password) — business biz_ab75cb006fb9
 - ✅ first login claimed and linked the two confirmed listings — LST-A-4001, LST-C-4001
 | Site | Status | Note |
 |---|---|---|

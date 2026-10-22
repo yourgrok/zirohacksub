@@ -1,6 +1,6 @@
 # Test cases
 
-Copied from the latest deterministic run (2026-10-22T08:58:32.792Z; date pinned to 2026-10-21 IST; fresh reset before every test). Full per-check evidence: `evidence/SUMMARY.md` and `evidence/TC*.json`.
+Copied from the latest deterministic run (2026-10-22T12:40:46.845Z; date pinned to 2026-10-21 IST; fresh reset before every test). Full per-check evidence: `evidence/SUMMARY.md` and `evidence/TC*.json`.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
@@ -84,7 +84,7 @@ Copied from the latest deterministic run (2026-10-22T08:58:32.792Z; date pinned 
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjb70c50 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvjj4smv0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |

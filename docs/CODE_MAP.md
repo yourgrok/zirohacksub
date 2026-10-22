@@ -37,13 +37,18 @@
 │   │                              discover.ts (read every listing on every site), service.ts (start/confirm/PIN/activation), coverage.ts (listed / not listed on)
 │   ├── agent/createListing.ts     "add my business to this site": propose, apply (duplicate re-check), verify
 │   ├── foresight/index.ts         90-day holiday scan, chips, alerts 30/14/7, readiness, drafts
-│   ├── nl/parse.ts                deterministic plain-language parser (chrono-node + rules)
+│   ├── nl/parse.ts                deterministic date parser (chrono-node + rules)
+│   ├── nl/intent.ts               the text box brain: edit details, weekly hours, answer questions, or fall back to dates
+│   ├── core/details.ts            validated edit of the owner-approved record (+ resets stale approvals), shared validators
+│   ├── agent/changelog.ts         merges record edits and audit events into one readable change log
 │   ├── nl/index.ts                preview, Gemini cross-check (refine), confirm
 │   ├── runner/                    tc.ts (TC1-TC6 + guardrail demo), evidence.ts (JSON + SUMMARY.md), cli.ts, docs.ts, demo-onboarding.ts (new-owner journey over HTTP)
 │   └── server/                    app.ts (routes, all scoped to the logged-in business), auth.ts (login/logout/requireAuth/origin check), onboarding.ts (public routes), registry.ts, index.ts (boot, reseed-if-empty)
-├── web/src/                       React: main.tsx (auth gate), Gate.tsx (PIN login, details, "Is this you?", view-once PIN), App.tsx (console), Tests.tsx, api.tsx, styles.css
+├── web/src/                       React: main.tsx (auth gate), Gate.tsx (PIN login, details, "Is this you?", view-once PIN), App.tsx (shell: header, sticky action bar, tabs, hash routing),
+│   │                              shared.tsx (tab list, helpers), tabs/ (DetailsTab, SitesTab, ApprovalsTab, ConsistencyTab, EditTab, ChangeLogTab, TraceTab, HolidaysTab, AddBusinessTab), Tests.tsx, api.tsx, styles.css
 └── tests/                         Vitest: normalise, states, mock sites, reader, agent (TC1-4), gemini (mocked), foresight, nl, nl-flow (TC5), api (+TC1-6 runner),
-                                   pin, limiter, auth (isolation/IDOR/rate limit), matching (scoring + look-alikes + thresholds), onboarding (e2e), addlisting, migration
+                                   pin, limiter, secret, auth (isolation/IDOR/rate limit), matching (scoring + look-alikes + thresholds), onboarding (e2e), addlisting, migration,
+                                   edit (details, name field, change log), intent (text box), drift, ui (real browser: tabs, text box, trace walker, add business)
 ```
 
 ## Module responsibilities in one line each
