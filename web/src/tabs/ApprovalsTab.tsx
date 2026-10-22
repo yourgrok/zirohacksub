@@ -71,7 +71,7 @@ function Card({ r, busy, act }: { r: Row; busy: boolean; act: Ctx["act"] }) {
         </div>
       )}
       {r.state === "REJECTED" && <div className="actions"><span className="muted">You rejected this change; nothing will be sent.</span><button className="btn small ghost" disabled={busy} onClick={() => act(() => api(`/api/fields/${r.fieldId}/approve`, {}))}>Approve after all</button></div>}
-      {r.state === "APPROVED" && <div className="actions"><span className="muted">Approved — it is sent when you press “Apply approved &amp; verify”.</span><button className="btn small ghost" onClick={() => act(() => api(`/api/fields/${r.fieldId}/reject`, {}))}>Reject instead</button></div>}
+      {r.state === "APPROVED" && <div className="actions"><span className={busy ? "applying" : "muted"}>{busy ? "Applying now… sending it, then reloading the page to check" : "Approved — it is sent when you press “Apply approved & verify” (step 3 at the top)."}</span><button className="btn small ghost" disabled={busy} onClick={() => act(() => api(`/api/fields/${r.fieldId}/reject`, {}))}>Reject instead</button></div>}
       {r.state === "FLAGGED_NOT_OWNER" && <p className="note red">Manual step for you: this listing is claimed by another account, so the agent did not try to edit it. Ask the owner of that account to release it, or claim it on the site yourself (any OTP/CAPTCHA is yours to complete), then scan again.</p>}
       {r.state === "PENDING_MODERATION" && <p className="note clay">The site accepted the edit but its moderator has not approved it yet, so the public page still shows the old value. (Demo: approve it at <a href="/mock/admin" target="_blank" rel="noreferrer">/mock/admin</a>, then press “Apply approved &amp; verify” to re-check.)</p>}
     </div>

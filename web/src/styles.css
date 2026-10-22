@@ -195,3 +195,20 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
   .card:not(.printable) { display: none; } .printable { border: none; } .tablewrap { max-height: none; overflow: visible; border: none; } table.rep { min-width: 0; } table.compact td { max-width: none; white-space: normal; }
   .pill { border: 1px solid #999; background: #fff !important; color: #000 !important; }
 }
+
+/* step buttons: bigger, with the next one to press highlighted */
+.actionbar { gap: 6px; }
+.btn.stepbtn { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 18px; font-size: 16px; font-weight: 600; border-radius: 12px; text-align: left; }
+.stepbtn .stepno { width: 28px; height: 28px; font-size: 15px; flex: none; }
+.stepbtn .steptxt { display: flex; flex-direction: column; line-height: 1.2; }
+.stepbtn .steptxt small { font-weight: 400; font-size: 12px; opacity: .8; }
+.steparrow { color: var(--muted); font-size: 22px; }
+.btn.stepbtn.next { box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent); animation: nextpulse 1.8s ease-in-out infinite; }
+@keyframes nextpulse { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--brand) 12%, transparent); } }
+.btn.big { padding: 12px 22px; font-size: 16px; min-height: 48px; }
+.applying { color: var(--brand-text); font-weight: 600; }
+.nudge-back { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.45); display: grid; place-items: center; padding: 16px; }
+.nudge { background: var(--card); color: var(--ink); border-radius: 14px; padding: 22px 24px; max-width: 460px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+.nudge h2 { margin: 0 0 8px; font-size: 19px; } .nudge p { margin: 0 0 16px; line-height: 1.45; }
+@media (max-width: 640px) { .steparrow { display: none; } .btn.stepbtn { flex: 1 1 100%; } }
+@media (prefers-reduced-motion: reduce) { .btn.stepbtn.next { animation: none; } }
