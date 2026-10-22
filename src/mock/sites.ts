@@ -180,6 +180,24 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
     res.send(renderDashboard(cfg, l, mockAccountOf(req)));
   });
 
+  /** Mock stand-in for "claim this business". Real sites verify ownership first (OTP, postcard, phone call) —
+   *  that step is always a human's; nothing here automates or bypasses it. */
+  r.post("/:slug/claim/:id", (req, res) => {
+    const cfg = SITE_CFG[req.params.slug];
+    const l = load(cfg.slug, req.params.id);
+    const acct = mockAccountOf(req);
+    const log = (code: number) =>
+      getDb().prepare("INSERT INTO mock_writes (site,listing_id,at,account,action,result_code) VALUES (?,?,?,?,?,?)")
+        .run(`site_${cfg.slug}`, req.params.id, nowTs(), acct ?? "anonymous", "claim", code);
+    if (!acct) { log(401); return res.status(401).json({ error: "login_required" }); }
+    if (!l) { log(404); return res.status(404).json({ error: "listing not found" }); }
+    if (l.owner_account) { log(409); return res.status(409).json({ error: "already_claimed" }); }
+    const info = getDb().prepare("UPDATE mock_listings SET owner_account=? WHERE site=? AND listing_id=? AND owner_account IS NULL").run(acct, l.site, l.listing_id);
+    if (!Number(info.changes)) { log(409); return res.status(409).json({ error: "already_claimed" }); } // someone claimed it a moment ago
+    log(200);
+    res.json({ status: "claimed" });
+  });
+
   r.post("/:slug/dashboard/:id/update", (req, res) => {
     const cfg = SITE_CFG[req.params.slug];
     const l = load(cfg.slug, req.params.id);

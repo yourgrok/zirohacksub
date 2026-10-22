@@ -16,6 +16,8 @@ import { evidenceDir, writeGuardrail, writeResults } from "../runner/evidence.js
 import { listTests, runAllTcs, runGuardrailDemo, runTc, TC_IDS, TEST_DATE, type TcMode, type TcResult } from "../runner/tc.js";
 import { geminiEnabled } from "../agent/llm.js";
 import { bizOf, login, logout, me, requireAuth, requireDemo, sameOrigin } from "./auth.js";
+import { publicRouteMounts } from "./registry.js";
+import "./onboarding.js"; // registers the public onboarding routes
 
 const pkg = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
 
@@ -53,7 +55,7 @@ export function createApp() {
   app.get("/api/auth/me", me);
 
   /* ── public onboarding routes are mounted by mountOnboarding() ── */
-  for (const m of onboardingMounts) m(app);
+  for (const m of publicRouteMounts) m(app);
 
   /* ── everything below needs a logged-in business; every query is scoped to it ── */
   const api = express.Router();
@@ -172,7 +174,3 @@ export function createApp() {
   });
   return app;
 }
-
-/** Other modules (onboarding) register their public routes here. */
-const onboardingMounts: ((app: express.Express) => void)[] = [];
-export function registerPublicRoutes(fn: (app: express.Express) => void) { onboardingMounts.push(fn); }

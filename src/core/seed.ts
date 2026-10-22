@@ -95,7 +95,7 @@ export function resetAndSeed() {
       const gl = (id: string, name: string, address: string, phone: string, owner: string | null) =>
         insML.run(p.id, id, name, address, phone, JSON.stringify(GREEN_LEAF.hours), "[]", owner, 0);
       if (p.id === "site_a") gl("LST-A-4001", "Green Leaf Cafe", GREEN_LEAF.address, GREEN_LEAF.phone, null); // unclaimed, exact
-      if (p.id === "site_c") gl("LST-C-4001", "Green Leaf Café", "8 Lotus St., Baner, Pune - 411045", "090000 00031", null); // unclaimed, formatting differs
+      if (p.id === "site_c") gl("LST-C-4001", "Green Leaf Café", "8 Lotus St., Baner, Pune, MH - 411045", "090000 00031", null); // unclaimed, formatting differs
       if (p.id === "site_b") gl("LST-B-4002", "Green Leaf Cafe & Bakery", "52 Willow Road, Kothrud, Pune, Maharashtra 411038", "+91 90000 00032", OTHER_BIZ_ACCOUNT); // look-alike
       if (p.id === "site_d") gl("LST-D-4001", "Green Leaf Cafe", GREEN_LEAF.address, GREEN_LEAF.phone, OTHER_BIZ_ACCOUNT); // really theirs, but claimed by someone else
       // look-alike decoy
