@@ -97,6 +97,10 @@ An **audit log** records who approved what and when, and the exact payload sent 
 | Decoy listing is never read as ours or edited | identity assertion in \`read_listing\`; guard blocks other listing IDs | \`tests/agent.test.ts\` (decoys unchanged, 0 writes to \`*-2002\`) |
 | Re-running never double-applies | read-before-write check + state machine | TC1 re-run check |
 | API key never in git, logs, \`/health\`, trace or evidence | \`.gitignore\`, redaction in \`llm.ts\`, \`/health\` has no key field | \`tests/api.test.ts\`, \`tests/gemini.test.ts\` |
+| One business can never read or change another's data | every query takes a required business id taken only from the session; foreign ids answer 404 | \`tests/auth.test.ts\` (IDOR attempts on approve/reject/trace/report/audit) |
+| Login PINs are never stored, are hard to guess, and brute force is slowed | HMAC-SHA256 with a server secret as lookup key, constant-time compare, CSPRNG 50-bit PINs, 5 failures then a doubling cool-down, one generic error | \`tests/pin.test.ts\`, \`tests/limiter.test.ts\`, \`tests/auth.test.ts\` (PIN absent from every table and trace) |
+| A look-alike or someone else's listing can never be linked or duplicated | score matching + claimed-by-another-account flag; create-listing re-checks the site right before sending | \`tests/matching.test.ts\`, \`tests/onboarding.test.ts\`, \`tests/addlisting.test.ts\` |
+| A new listing is never created without an approval click and is never reported verified while pending | create goes through the same approve/apply/verify states | \`tests/addlisting.test.ts\`, \`evidence/onboarding-demo.md\` |
 | Nothing from plain-language input is saved before Confirm; Confirm still goes through approval | \`nl/index.ts\` (\`preview\` is read-only; \`confirmIntent\` only creates a *record* exception) | TC5 |
 
 ### Guardrail demonstration (simulated rogue planner — scripted, not an LLM)
@@ -110,6 +114,14 @@ ${resultsTable}
 
 ${unit ? `Unit/integration suite: **${unit.numPassedTests}/${unit.numTotalTests} tests passed** across ${unit.testResults.length} files.\n` : ""}
 Per-check detail with raw and normalised values, state histories and screenshots: \`evidence/SUMMARY.md\`.
+
+### New-owner onboarding with PIN login (added after the first submission pack)
+
+- **PIN-only login:** no username or password. A system-generated PIN (10 characters from an alphabet without 0/O/1/I, CSPRNG) maps to the business uid; only an HMAC of it is stored; wrong guesses are throttled; a session cookie is httpOnly. After login every record, listing, approval, report and trace is scoped to that uid.
+- **Score matching:** the agent reads every listing (look-alikes included) on all five sites and scores each against the details the owner typed: phone 40 + address 35 + name 25 (all weights/thresholds in one config file). Strong and clear matches are proposed, unclear ones are put to the owner, weak ones are ignored, and good matches **owned by another account are flagged and never linked** (TC3 behaviour). Real scores: the look-alike *Sunrise Sweet House* gets 37.7 against the true listing's 100.
+- **"Is this you?" and a view-once PIN:** nothing is linked without the owner's confirmation; the PIN is shown once and cannot be recovered.
+- **Adding the business where it is not listed:** an approval card shows the exact fields and destination; after approval the agent creates the listing, reloads the page and reports VERIFIED, or PENDING_MODERATION on a moderated site; it refuses to create duplicates.
+- The whole journey is reproducible with \`npm run demo:onboarding\` (evidence in \`evidence/onboarding-demo.md\`).
 
 ## 6. Innovation
 
@@ -126,6 +138,7 @@ Per-check detail with raw and normalised values, state histories and screenshots
 - Docker images and the Render deployment were written but not built in the build environment; see README for what to check.
 - The optional mock-OTP dashboard step was not built; instead flagged listings show a manual step and the agent never automates OTP/CAPTCHA.
 - Stale special-day entries on a site that are *not* on the owner's record are not detected (only record → site consistency is checked).
+- Claiming an unclaimed mock listing needs no OTP (a mock); on a real site that verification must stay human. Login rate limiting is in memory (per instance, resets on restart). A lost PIN cannot be recovered (only its HMAC is stored); onboarding is redone. There is no screen to edit a business record after onboarding. \`/mock/admin\` (the site's own moderators) is intentionally open.
 `;
 fs.writeFileSync("docs/SUBMISSION_NOTES.md", sn);
 
@@ -149,13 +162,13 @@ const slides = `# Slide outline (11 slides) — built from real run data
 
 **8. Guardrails you can see** — ${guard ? `A simulated rogue planner made ${guard.attempts} unsafe attempts (apply without approval, unapproved fields, verify without apply, decoy listing, flag an editable listing): ${guard.attempts} blocked, ${guard.writesAfter} writes, ${guard.verifiedCount} false VERIFIED.` : "run the guardrail demo."}
 
-**9. Add-on: Holiday Foresight** — 90-day scan, chips, alerts at 30/14/7 days, drafts that never auto-apply, readiness score (${det[5]?.extra && (det[5].extra as any).next ? `Diwali readiness ${(det[5].extra as any).next.readiness}/100 on the seeded data` : "see TC6"}). TC6: "${det[5]?.actual ?? ""}"
+**9. Add-ons: Foresight and plain English** — Holiday Foresight: 90-day scan, chips, alerts at 30/14/7 days, drafts that never auto-apply, readiness score (${det[5]?.extra && (det[5].extra as any).next ? `Diwali readiness ${(det[5].extra as any).next.readiness}/100 on the seeded data` : "see TC6"}); TC6: "${det[5]?.actual ?? ""}". Plain English: "we are closed on 26th December" → live chips → Confirm → normal approval pipeline (TC5: ${det[4]?.actual ?? ""}).
 
-**10. Add-on: say it in plain English** — "we are closed on 26th December" → live chips (Closed · Sat 26 Dec 2026) → Confirm → normal approval pipeline (TC5: ${det[4]?.actual ?? ""}). 23 parser unit tests; Gemini cross-checks and the owner breaks ties.
+**10. New owner: PIN login + score matching** — no username; a view-once PIN; the agent scores every listing on every site (phone 40 · address 35 · name 25), look-alike *Sunrise Sweet House* scores 37.7 vs 100, a good match owned by someone else is flagged, the owner confirms each match, and missing sites are added only after approval and verified (\`evidence/onboarding-demo.md\`). Every business is isolated from the others.
 
 **11. Results** — Deterministic TC1–TC6: ${det.filter((r) => r?.pass).length}/6 pass from a fresh reset. ${unit ? `${unit.numPassedTests}/${unit.numTotalTests} automated tests pass.` : ""} One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
 
-**12. Limitations (honest)** — Mock sites only · festival dates must be owner-confirmed · free-host DB resets (app reseeds on boot) · LLM is optional and guarded · live Gemini evidence needs the owner's key · Docker/Render not built in the build sandbox.
+**12. Limitations (honest)** — Mock sites only · claiming a listing is a mock (no OTP) · a lost PIN means redoing onboarding · festival dates must be owner-confirmed · free-host DB resets (app reseeds on boot) · LLM is optional and guarded · live Gemini evidence needs the owner's key · Docker/Render not built in the build sandbox.
 `;
 fs.writeFileSync("docs/SLIDES.md", slides);
 console.log("docs written from evidence of", when);

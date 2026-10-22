@@ -18,6 +18,12 @@ MOCK listing sites, and asks the owner for approval before changing anything. Al
 "Sunrise Sweets & Bakery", Pune). The judges' AI reads WRITTEN evidence only (it does not open links), so the
 evidence files committed in the repo matter as much as the live URL.
 
+## Login (new)
+The console is behind a PIN-only login (no username, no password). The seeded demo business PIN is
+`7KQ4X-M9PHT` (synthetic, documented in the README). New owners use "Set up my business": the agent matches their
+details against the mock listing sites, they confirm, and they get a view-once PIN. Only the owner of the demo
+business can open `/tests` or reset the data.
+
 ## Repo and code state (already built and tested)
 - GitHub repo: https://github.com/yourgrok/zirohacksub
 - The ONLY branch that exists on GitHub is `claude/determined-goldberg-qj02eh` (there is no `main` yet).
@@ -59,6 +65,7 @@ problem: Railway, Fly.io or Koyeb, all of which also run the same Dockerfile.
 | `LLM_PROVIDER` | `gemini` (or `none` to force the no-LLM mode) | default is fine |
 | `READER_MODE` | `http` on Render (Dockerfile sets it); `auto` locally | do not change on Render |
 | `DEMO_NOW` | optional, e.g. `2026-10-21`; fixes "today" (header then shows "(demo date)") | only if I want a stable demo date |
+| `PIN_SECRET` | a long random string used to scramble login PINs. Render can generate it (blueprint does; for a manual service click "Generate" on the value field) | Render -> Environment. If you leave it out the app still starts, but PINs of newly created businesses stop working after every restart |
 | `PORT` | Render sets it itself; the app reads it | do nothing |
 
 ## The plan, in order (walk me through each, one at a time)
@@ -114,8 +121,10 @@ temporary and wiped on every restart, which is fine because the app reseeds the 
 512 MB RAM, which is why the deployed reader mode is `http` (no browser).
 
 **Step 8, verify the live service (browser).** Open `https://<service>.onrender.com/health` (expect
-`"status":"ok"`, `readerMode":"http"`, `plannerMode":"gemini"`), then `/` (console), then `/tests` and press
-"Run all" (expect 6 of 6 passed; with a key there is also a "With Gemini" option). Also try the "Run guardrail demo"
+`"status":"ok"`, `readerMode":"http"`, `plannerMode":"gemini"`), then `/` (it now shows a PIN login screen; the demo
+business PIN is `7KQ4X-M9PHT`, synthetic and public on purpose), log in, then `/tests` and press
+"Run all" (expect 6 of 6 passed; with a key there is also a "With Gemini" option). Also try "Set up my business"
+with: Green Leaf Cafe / 8 Lotus Street, Baner, Pune, Maharashtra 411045 / +91 90000 00031 to see the new-owner flow. Also try the "Run guardrail demo"
 button on `/tests` (it uses a SIMULATED rogue planner; it should show every unsafe attempt blocked).
 
 **Step 9, final submission pack.** Help me collect: the live URL, the GitHub repo URL and branch,

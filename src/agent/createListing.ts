@@ -120,7 +120,8 @@ export async function verifyCreate(st: RunState, platformId: string, f: FieldRow
     if (problems.length) { transition(f.id, "MISMATCH", "verifier", `the new listing exists but ${problems.join(", ")}`, patch); return `${CREATE_KEY}: listing exists but ${problems.join(", ")}`; }
     transition(f.id, "VERIFIED", "verifier", `reloaded public page of ${id} shows the owner's values`, patch);
     linkListing(st.bizId, platformId, platform.slug, id, "created");
-    getDb().prepare("UPDATE site_matches SET status='created', listing_id=?, confirmed_at=? WHERE business_id=? AND platform_id=?").run(id, nowTs(), st.bizId, platformId);
+    // a created listing has no match score: the best listing found before was a different business
+    getDb().prepare("UPDATE site_matches SET status='created', listing_id=?, confirmed_at=?, score=NULL, breakdown_json=NULL WHERE business_id=? AND platform_id=?").run(id, nowTs(), st.bizId, platformId);
     audit(st.bizId, "verifier", "verify", platformId, f.field_key, { result: "VERIFIED", listingId: id });
     return `${CREATE_KEY}: VERIFIED as ${id}`;
   }

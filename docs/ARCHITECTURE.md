@@ -172,3 +172,98 @@ Example: "we are closed on 26th December" (today 2026-10-21) → Closed · Sat 2
 | Same step re-run | Read-before-write skips an already-correct value; only `APPROVED` rows are sent, so no double apply | `tools.ts` |
 | Free host restarts, SQLite wiped | App reseeds on boot | `seed.ts`, `server/index.ts` |
 | Another run in progress | API returns 409 | `app.ts` |
+
+---
+
+# Multi-business access, onboarding and PIN login
+
+## 9. Login and tenant isolation
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant S as Server
+  participant DB as SQLite
+  B->>S: POST /api/auth/login {pin}
+  S->>S: rate-limit check (5 failures per IP, then cool-down)
+  S->>S: normalise PIN, HMAC-SHA256(PIN_SECRET, PIN)
+  S->>DB: SELECT business WHERE pin_hmac = hmac
+  S->>S: constant-time compare, one generic "Invalid PIN." on any failure
+  alt pending business (first login)
+    S->>S: activate: claim + link the confirmed listings
+  end
+  S->>DB: store sha256(random session id) -> business uid
+  S-->>B: Set-Cookie sid (httpOnly, SameSite=Lax, Secure over https)
+  B->>S: any /api/... request with the cookie
+  S->>S: requireAuth -> req.biz (uid); every query takes that uid
+```
+
+- Every store/agent/report function takes the business id as a **required argument** (no "current business" default), so a missing uid is a compile error, not a data leak. Rows in `field_states`, `exceptions`, `platform_listings`, `runs`, `trace`, `audit_log`, `site_matches` carry `business_id`.
+- Looking up someone else's field id answers **404** exactly like a missing one (`getOwnedField`).
+- Global operations (reset, `/tests`, evidence) require the demo business.
+- The mock listing sites accept dashboard reads/edits only with a **server-signed delegated credential** (`x-mock-account` + HMAC token), simulating the owner's login on a real platform.
+
+## 10. New-owner onboarding
+
+```mermaid
+flowchart TD
+  D[owner enters name, address, phone, hours?] --> R[read every listing on every site<br/>index page + each listing page, look-alikes included]
+  R --> S[score each listing 0-100<br/>phone 40 + address 35 + name 25]
+  S --> P{per site: top listing}
+  P -->|claimed by another account| F[FLAGGED: never linked, manual step]
+  P -->|score below LOW 45| N[no listing found here]
+  P -->|HIGH 75+ and MARGIN 15+ ahead| A[proposed: owner must still confirm]
+  P -->|in between / too close| Q[owner picks one of top 3, or none]
+  A --> C{owner: Yes, that's me?}
+  Q --> C
+  C -->|yes| K[confirmed]
+  C -->|no| X[rejected]
+  K --> B[create PENDING business + PIN<br/>PIN shown once, only HMAC stored]
+  X --> B
+  F --> B
+  N --> B
+  B --> L[first login with the PIN]
+  L --> M[claim confirmed listings on the sites, link them, business becomes ACTIVE]
+  B -.->|PIN never used for 30 min| E[discarded; nothing was ever claimed]
+```
+
+Score examples (real, from the seeded data):
+
+| Entered | Listing | phone | address | name | Score | Decision |
+|---|---|---|---|---|---|---|
+| Sunrise Sweets & Bakery … +91 90000 00001 | the true Sunrise listing | 40 | 35 | 25 | **100** | claimed by another account → flagged |
+| same | look-alike *Sunrise Sweet House* (17 Maple Road, +91 90000 00077) | 0 | 18 | 19.7 | **37.7** | below LOW → no match |
+| same | Sunrise listing with an old phone | 0 | 35 | 25 | **60** | between LOW and HIGH → owner chooses |
+| Green Leaf Cafe … +91 90000 00031 | *Green Leaf Café*, `8 Lotus St., Baner, Pune, MH - 411045`, `090000 00031` | 40 | 35 | 25 | **100** | strong match |
+| same | look-alike *Green Leaf Cafe & Bakery*, Kothrud, +91 90000 00032 | 0 | 8.2 | 22.4 | **30.6** | below LOW → no match |
+
+## 11. Add my business to a site where it is not listed
+
+```mermaid
+stateDiagram-v2
+  [*] --> PROPOSED: owner presses "Add my business here"<br/>(re-checks the site for a matching listing first)
+  PROPOSED --> APPROVED: owner approves the exact fields + destination
+  PROPOSED --> REJECTED: owner rejects
+  APPROVED --> PROPOSED: a matching listing appeared meanwhile - blocked, nothing created
+  APPROVED --> APPLIED: site created it (200) or queued it (202)
+  APPLIED --> VERIFIED: public page reloaded and shows the owner's values
+  APPLIED --> PENDING_MODERATION: page does not exist yet, but it is in the site's queue
+  PENDING_MODERATION --> VERIFIED: moderator approves, page reloaded
+  PENDING_MODERATION --> MISMATCH: moderator rejects
+  VERIFIED --> [*]: listing linked, now part of every later scan
+```
+
+## 12. Added failure handling
+
+| Failure | What happens | Where |
+|---|---|---|
+| Wrong, malformed or empty PIN | same generic "Invalid PIN."; counted toward the lock-out | `server/auth.ts` |
+| 5 wrong PINs from one client | 429 with Retry-After; even the right PIN is refused during the cool-down | `auth/limiter.ts` |
+| Browser sends a business's field id belonging to another business | 404, nothing changes | `core/store.ts` `getOwnedField` |
+| Another origin posts to the API | 403 | `server/auth.ts` `sameOrigin` |
+| Site cannot be read during matching | reported, nothing matched or created there | `onboarding/discover.ts` |
+| Best match is claimed by another account | flagged, cannot be confirmed, no duplicate may be created | `onboarding/score.ts`, `agent/createListing.ts` |
+| Two owners confirm the same listing | the first login claims it; the second is told it was taken and it is not linked | `onboarding/service.ts` |
+| PIN page refreshed before it was saved | the business was still pending: it expires unused and onboarding can be redone | `onboarding/service.ts` |
+| A matching listing appears after "Add my business" was approved | blocked right before sending; nothing created | `agent/createListing.ts` |
+| Moderator rejects a created listing | card goes back to a failed state (never "verified"); the owner may ask again | `agent/createListing.ts` |

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, Pill } from "./api";
+import { api, Pill, type Me } from "./api";
 
 type Row = { fieldId: number; platform: string; platformId: string; field: string; fieldKey: string; original: string; intended: string; approval: string; verified: string; state: string; reason: string; current: string; currentNorm: string };
 const HIDE_CARD = new Set(["MATCH", "FORMAT_ONLY_EQUIVALENT"]);
@@ -18,7 +18,7 @@ function hoursText(h: any): string {
   return out.join(" · ");
 }
 
-export default function App() {
+export default function App({ me, onLogout }: { me: Me; onLogout: () => void }) {
   const [st, setSt] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
   const [trace, setTrace] = useState<any[]>([]);
@@ -58,10 +58,12 @@ export default function App() {
           <span className="badge" title={st.demoNow ? "Date fixed with DEMO_NOW" : "Real current date"}>Today: {st.today} IST{st.demoNow ? " (demo date)" : ""}</span>
           <span className={`badge ${st.plannerMode === "gemini" ? "b-gem" : ""}`}>Planner: {st.plannerMode === "gemini" ? "Gemini" : "Deterministic"}</span>
           <span className="badge">Reader: {st.readerMode}</span>
-          <a className="btn small" href="/tests">Tests</a>
+          {me.business?.isDemo && <a className="btn small" href="/tests">Tests</a>}
           <a className="btn small" href="/mock/" target="_blank" rel="noreferrer">Mock sites</a>
           <a className="btn small" href="/mock/admin" target="_blank" rel="noreferrer">Mock admin</a>
-          <button className="btn small ghost" disabled={st.busy} onClick={() => act(async () => { if (confirm("Reset all demo data to the seeded state?")) await api("/api/reset", {}); })}>Reset demo data</button>
+          {me.business?.isDemo && <button className="btn small ghost" disabled={st.busy} onClick={() => act(async () => { if (confirm("Reset ALL demo data (every business) to the seeded state?")) await api("/api/reset", {}); })}>Reset demo data</button>}
+          <span className="badge who" title="Logged in with your PIN">{me.business?.name}</span>
+          <button className="btn small ghost" onClick={onLogout}>Log out</button>
         </div>
       </header>
 
@@ -69,7 +71,7 @@ export default function App() {
       {st.lastError && <div className="alert a-red">Last run failed: {st.lastError}</div>}
 
       <div className="grid2">
-        <BusinessCard st={st} />
+        <BusinessCard st={st} act={act} />
         <Holidays fs={fs} act={act} />
       </div>
 
@@ -95,7 +97,7 @@ export default function App() {
   );
 }
 
-function BusinessCard({ st }: { st: any }) {
+function BusinessCard({ st, act }: { st: any; act: (f: () => Promise<unknown>) => Promise<void> }) {
   const b = st.business;
   return (
     <section className="card">
@@ -117,11 +119,19 @@ function BusinessCard({ st }: { st: any }) {
           </li>
         ))}
       </ul>
-      <h3>Listings (stable IDs)</h3>
+      <h3>Your listings</h3>
+      <p className="muted small">
+        <b>Listed on:</b> {st.coverage.filter((c: any) => c.status === "listed").map((c: any) => c.name.replace(/ \(.*\)/, "")).join(", ") || "none yet"}
+        {st.coverage.some((c: any) => c.status !== "listed") && <> · <b>Not listed on:</b> {st.coverage.filter((c: any) => c.status !== "listed").map((c: any) => c.name.replace(/ \(.*\)/, "")).join(", ")}</>}
+      </p>
       <ul className="plain small">
-        {st.platforms.map((p: any) => (
-          <li key={p.id}><b>{p.name}</b> — <a href={p.listing.publicPath} target="_blank" rel="noreferrer"><code>{p.listing.listingId}</code></a>
-            <span className="muted"> · look-alike “Sunrise Sweet House” (<code>{p.listing.listingId.replace("1001", "2002")}</code>) exists here and is never touched</span></li>
+        {st.coverage.map((c: any) => (
+          <li key={c.platformId}>
+            <b>{c.name}</b> —{" "}
+            {c.status === "listed" ? <><a href={`/mock/${c.platformId.replace("site_", "")}/listing/${c.listingId}`} target="_blank" rel="noreferrer"><code>{c.listingId}</code></a><span className="muted"> · look-alikes on this site are never touched</span></>
+              : <span className={c.status === "flagged" ? "err" : "muted"}>{c.note}</span>}
+            {c.canAdd && <button className="btn tiny" style={{ marginLeft: 8 }} disabled={st.busy} onClick={() => act(() => api(`/api/listings/${c.platformId}/propose`, {}))}>Add my business here</button>}
+          </li>
         ))}
       </ul>
     </section>
@@ -243,9 +253,9 @@ function Approvals({ st, rows, act }: { st: any; rows: Row[]; act: (f: () => Pro
     <section className="card">
       <h2>Approval cards</h2>
       {rows.length === 0 && <p className="muted">Run a scan to see what needs your attention.</p>}
-      {st.platforms.map((p: any) => {
-        const mine = rows.filter((r) => r.platformId === p.id);
-        if (!mine.length) return null;
+      {[...new Set(rows.map((r) => r.platformId))].map((pid) => {
+        const mine = rows.filter((r) => r.platformId === pid);
+        const p = { id: pid, name: mine[0].platform, listing: st.platforms.find((x: any) => x.id === pid)?.listing ?? { listingId: "not listed yet" } };
         const cards = mine.filter((r) => !HIDE_CARD.has(r.state));
         const calm = mine.filter((r) => HIDE_CARD.has(r.state));
         const proposed = mine.filter((r) => r.state === "PROPOSED").length;
@@ -259,7 +269,9 @@ function Approvals({ st, rows, act }: { st: any; rows: Row[]; act: (f: () => Pro
             {cards.map((r) => (
               <div key={r.fieldId} className={`fcard f-${r.state}`}>
                 <div className="fc-top"><b>{r.field}</b><Pill state={r.state} /></div>
-                <div className="fc-diff"><div><span className="lbl">Listing shows</span><div>{r.original || "—"}</div></div><div className="arrow">→</div><div><span className="lbl">Your record says</span><div>{r.intended}</div></div></div>
+                {r.fieldKey === "listing:create"
+                  ? <div className="fc-create"><span className="lbl">Exactly what will be sent</span><div className="pre">{r.intended}</div></div>
+                  : <div className="fc-diff"><div><span className="lbl">Listing shows</span><div>{r.original || "—"}</div></div><div className="arrow">→</div><div><span className="lbl">Your record says</span><div>{r.intended}</div></div></div>}
                 <p className="reason">{r.reason}</p>
                 {r.state === "PROPOSED" && (
                   <div className="actions">
@@ -303,13 +315,31 @@ function Report({ st, rows }: { st: any; rows: Row[] }) {
           <tbody>
             {rows.map((r) => (
               <tr key={r.fieldId} className={`row-${r.state}`}>
-                <td>{r.platform}</td><td>{r.field}</td><td>{r.original}</td><td>{r.intended}</td><td>{r.approval}</td><td><Pill state={r.state} /> <span className="muted small">{r.verified}</span></td>
+                <td>{r.platform}</td><td>{r.field}</td><td>{r.original}</td><td className="pre">{r.intended}</td><td>{r.approval}</td><td><Pill state={r.state} /> <span className="muted small">{r.verified}</span></td>
               </tr>
             ))}
             {rows.length === 0 && <tr><td colSpan={6} className="muted">Nothing scanned yet.</td></tr>}
           </tbody>
         </table>
       </div>
+      {st.matches.length > 0 && (
+        <>
+          <div className="plat-h"><h3>How your listings were matched</h3><a className="btn small noprint" href="/api/report-matches.csv">Export CSV</a></div>
+          <div className="tablewrap">
+            <table className="rep">
+              <thead><tr><th>Site</th><th>Matched listing</th><th>Score</th><th>Owner confirmation</th><th>Created listing</th></tr></thead>
+              <tbody>
+                {st.matches.map((m: any) => (
+                  <tr key={m.platformId}>
+                    <td>{m.platform}</td><td><code>{m.listingId}</code></td><td title={m.why}>{m.score ?? "—"}</td><td>{m.confirmation}</td>
+                    <td>{m.created ? <><span className="pre">{m.created.intended}</span><div><Pill state={m.created.state} /> <span className="muted small">{m.created.approval} · {m.created.verified}</span></div></> : <span className="muted">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -34,10 +34,10 @@
       "detail": "readiness=92"
     }
   ],
-  "startedAt": "2026-10-22T08:51:44.495Z",
-  "durationMs": 712,
+  "startedAt": "2026-10-22T08:59:38.146Z",
+  "durationMs": 12,
   "testDate": "2026-10-21",
-  "readerMode": "auto",
+  "readerMode": "http",
   "runs": [],
   "trace": [],
   "fallbacks": [],

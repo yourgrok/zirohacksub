@@ -15,7 +15,8 @@
     "test:tc": "cross-env LLM_PROVIDER=none tsx src/runner/cli.ts deterministic",
     "test:tc:llm": "cross-env LLM_PROVIDER=gemini tsx src/runner/cli.ts llm",
     "docs": "tsx src/runner/docs.ts",
-    "test:unit-json": "vitest run --reporter=json --outputFile=evidence/unit-tests.json"
+    "test:unit-json": "vitest run --reporter=json --outputFile=evidence/unit-tests.json",
+    "demo:onboarding": "cross-env LLM_PROVIDER=none tsx src/runner/demo-onboarding.ts"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",

@@ -60,6 +60,10 @@ An **audit log** records who approved what and when, and the exact payload sent 
 | Decoy listing is never read as ours or edited | identity assertion in `read_listing`; guard blocks other listing IDs | `tests/agent.test.ts` (decoys unchanged, 0 writes to `*-2002`) |
 | Re-running never double-applies | read-before-write check + state machine | TC1 re-run check |
 | API key never in git, logs, `/health`, trace or evidence | `.gitignore`, redaction in `llm.ts`, `/health` has no key field | `tests/api.test.ts`, `tests/gemini.test.ts` |
+| One business can never read or change another's data | every query takes a required business id taken only from the session; foreign ids answer 404 | `tests/auth.test.ts` (IDOR attempts on approve/reject/trace/report/audit) |
+| Login PINs are never stored, are hard to guess, and brute force is slowed | HMAC-SHA256 with a server secret as lookup key, constant-time compare, CSPRNG 50-bit PINs, 5 failures then a doubling cool-down, one generic error | `tests/pin.test.ts`, `tests/limiter.test.ts`, `tests/auth.test.ts` (PIN absent from every table and trace) |
+| A look-alike or someone else's listing can never be linked or duplicated | score matching + claimed-by-another-account flag; create-listing re-checks the site right before sending | `tests/matching.test.ts`, `tests/onboarding.test.ts`, `tests/addlisting.test.ts` |
+| A new listing is never created without an approval click and is never reported verified while pending | create goes through the same approve/apply/verify states | `tests/addlisting.test.ts`, `evidence/onboarding-demo.md` |
 | Nothing from plain-language input is saved before Confirm; Confirm still goes through approval | `nl/index.ts` (`preview` is read-only; `confirmIntent` only creates a *record* exception) | TC5 |
 
 ### Guardrail demonstration (simulated rogue planner — scripted, not an LLM)
@@ -74,7 +78,7 @@ The rogue planner tried to apply with no approval, apply fields nobody approved,
 
 ## 5. Test results (copied from the latest run)
 
-Run: 2026-10-21T10:11:19.828Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
+Run: 2026-10-22T08:58:32.792Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
@@ -85,9 +89,17 @@ Run: 2026-10-21T10:11:19.828Z, date pinned to 2026-10-21 IST, every test starts 
 | TC5 — Plain-language closure flows through approval | PASS | not run (no API key in build environment) | 35 | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
 | TC6 — Foresight alert for a holiday with no exception | PASS | not run (no API key in build environment) | 0 | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
 
-Unit/integration suite: **119/119 tests passed** across 10 files.
+Unit/integration suite: **223/223 tests passed** across 17 files.
 
 Per-check detail with raw and normalised values, state histories and screenshots: `evidence/SUMMARY.md`.
+
+### New-owner onboarding with PIN login (added after the first submission pack)
+
+- **PIN-only login:** no username or password. A system-generated PIN (10 characters from an alphabet without 0/O/1/I, CSPRNG) maps to the business uid; only an HMAC of it is stored; wrong guesses are throttled; a session cookie is httpOnly. After login every record, listing, approval, report and trace is scoped to that uid.
+- **Score matching:** the agent reads every listing (look-alikes included) on all five sites and scores each against the details the owner typed: phone 40 + address 35 + name 25 (all weights/thresholds in one config file). Strong and clear matches are proposed, unclear ones are put to the owner, weak ones are ignored, and good matches **owned by another account are flagged and never linked** (TC3 behaviour). Real scores: the look-alike *Sunrise Sweet House* gets 37.7 against the true listing's 100.
+- **"Is this you?" and a view-once PIN:** nothing is linked without the owner's confirmation; the PIN is shown once and cannot be recovered.
+- **Adding the business where it is not listed:** an approval card shows the exact fields and destination; after approval the agent creates the listing, reloads the page and reports VERIFIED, or PENDING_MODERATION on a moderated site; it refuses to create duplicates.
+- The whole journey is reproducible with `npm run demo:onboarding` (evidence in `evidence/onboarding-demo.md`).
 
 ## 6. Innovation
 
@@ -104,3 +116,4 @@ Per-check detail with raw and normalised values, state histories and screenshots
 - Docker images and the Render deployment were written but not built in the build environment; see README for what to check.
 - The optional mock-OTP dashboard step was not built; instead flagged listings show a manual step and the agent never automates OTP/CAPTCHA.
 - Stale special-day entries on a site that are *not* on the owner's record are not detected (only record → site consistency is checked).
+- Claiming an unclaimed mock listing needs no OTP (a mock); on a real site that verification must stay human. Login rate limiting is in memory (per instance, resets on restart). A lost PIN cannot be recovered (only its HMAC is stored); onboarding is redone. There is no screen to edit a business record after onboarding. `/mock/admin` (the site's own moderators) is intentionally open.

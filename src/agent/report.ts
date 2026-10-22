@@ -72,10 +72,12 @@ export function buildMatchRows(bizId: string): MatchRow[] {
   return rows.map((m) => {
     const bd = m.breakdown_json ? JSON.parse(m.breakdown_json) : null;
     const f = listFields(bizId, m.platform_id).find((x) => x.field_key === CREATE_KEY);
+    // "no listing found" must not show the unrelated best-scoring look-alike as if it were a match
+    const noMatch = m.status === "none" || m.status === "unreadable";
     return {
-      platformId: m.platform_id, platform: names.get(m.platform_id) ?? m.platform_id, listingId: m.listing_id ?? "—", score: m.score ?? null,
+      platformId: m.platform_id, platform: names.get(m.platform_id) ?? m.platform_id, listingId: noMatch ? "—" : m.listing_id ?? "—", score: noMatch ? null : m.score ?? null,
       confirmation: CONFIRM_TEXT[m.status] ?? m.status, status: m.status, note: m.note ?? "",
-      why: bd ? `phone ${bd.phone.points}/${bd.phone.max} · address ${bd.address.points}/${bd.address.max} · name ${bd.name.points}/${bd.name.max}` : "",
+      why: bd && !noMatch ? `phone ${bd.phone.points}/${bd.phone.max} · address ${bd.address.points}/${bd.address.max} · name ${bd.name.points}/${bd.name.max}` : "",
       created: f ? { intended: f.intended_display ?? "", approval: approvalOf(f.state), verified: verifiedOf(f.state), state: f.state } : null,
     };
   });

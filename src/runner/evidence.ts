@@ -81,6 +81,10 @@ export function writeSummary() {
     guard.blocked.forEach((b) => L.push(`- \`${b.tool}\` → ${b.output_summary}`));
     L.push("");
   } else L.push("_Not run yet — `npm run test:tc` includes it._", "");
+  L.push("## New-owner onboarding demo", "");
+  L.push(fs.existsSync(path.join(dir, "onboarding-demo.md"))
+    ? "A narrated end-to-end run (PIN login, score matching, \"Is this you?\", view-once PIN, adding missing sites with approval, verified report, isolation checks, then TC1-TC6 again) is in `evidence/onboarding-demo.md`."
+    : "_Not run yet — `npm run demo:onboarding` writes `evidence/onboarding-demo.md`._", "");
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "SUMMARY.md"), L.join("\n"));
 }

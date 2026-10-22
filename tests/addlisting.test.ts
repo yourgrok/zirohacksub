@@ -174,7 +174,8 @@ describe("approve -> create -> reload -> verify", () => {
     const matchRows = Object.fromEntries((rep.matches as any[]).map((m) => [m.platformId, m]));
     expect(matchRows.site_a).toMatchObject({ listingId: "LST-A-4001", score: 100, confirmation: "Confirmed by owner" });
     expect(matchRows.site_d).toMatchObject({ listingId: "LST-D-4001", confirmation: "Flagged: claimed by another account (not linked)" });
-    expect(matchRows.site_b).toMatchObject({ listingId: "LST-B-5001", confirmation: "Created by the agent after owner approval" });
+    expect(matchRows.site_b).toMatchObject({ listingId: "LST-B-5001", score: null, confirmation: "Created by the agent after owner approval" }); // no match score: nothing matched
+    expect(matchRows.site_e).toMatchObject({ listingId: "—", score: null, confirmation: "No listing found" }); // the look-alike is not reported as a match
     expect(matchRows.site_b.created).toMatchObject({ approval: "Approved", state: "VERIFIED" });
     expect(matchRows.site_b.created.intended).toContain("Create a new listing");
     const csv = (await c.get("/api/report-matches.csv")).body as string;

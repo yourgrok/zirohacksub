@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { api } from "./api";
+import { api, type Me } from "./api";
 
 type Check = { name: string; pass: boolean; detail: string };
 type Result = { id: string; title: string; mode: string; input: string; expected: string; actual: string; pass: boolean; explanation: string; checks: Check[]; durationMs: number; trace: any[]; fallbacks: any[]; blocked: any[]; screenshots: string[]; testDate: string };
 
-export default function TestsPage() {
+export default function TestsPage({ me, onLogout }: { me: Me; onLogout: () => void }) {
   const [info, setInfo] = useState<any>(null);
   const [mode, setMode] = useState<"deterministic" | "llm">("deterministic");
   const [results, setResults] = useState<Record<string, Result>>({});
@@ -20,7 +20,7 @@ export default function TestsPage() {
     for (const [k, v] of Object.entries(i.results as Record<string, Result>)) if (k.startsWith(mode + ":")) m[k.split(":")[1]] = v;
     setResults((prev) => ({ ...m, ...prev }));
   }, [mode]);
-  useEffect(() => { load().catch((e) => setErr(e.message)); }, [load]);
+  useEffect(() => { if (me.business?.isDemo) load().catch((e) => setErr(e.message)); }, [load, me.business?.isDemo]);
 
   const run = async (id: string) => {
     setErr(null); setRunning(id);
@@ -32,13 +32,20 @@ export default function TestsPage() {
     setRunning(null);
   };
 
+  if (!me.business?.isDemo) {
+    return (
+      <div className="wrap"><div className="card"><h2>Test cases TC1–TC6</h2>
+        <p>The test page resets the shared demo data, so only the <b>demo business</b> can open it. Log out and log in with the demo PIN (see the README).</p>
+        <div className="actions"><a className="btn small" href="/">← Console</a><button className="btn small" onClick={onLogout}>Log out</button></div></div></div>
+    );
+  }
   if (!info) return <div className="wrap"><p>Loading…</p>{err && <p className="err">{err}</p>}</div>;
   const done = Object.values(results).filter((r) => r.mode === mode);
   return (
     <div className="wrap">
       <header className="top">
         <div><h1>Test cases TC1–TC6</h1><p className="sub">One click each, or run all. Every run starts from a fresh reset, records input, expected, actual and evidence. Running a test resets the demo data.</p></div>
-        <div className="badges"><a className="btn small" href="/">← Console</a><a className="btn small" href="/api/evidence/summary" target="_blank" rel="noreferrer">evidence/SUMMARY.md</a></div>
+        <div className="badges"><a className="btn small" href="/">← Console</a><button className="btn small ghost" onClick={onLogout}>Log out</button><a className="btn small" href="/api/evidence/summary" target="_blank" rel="noreferrer">evidence/SUMMARY.md</a></div>
       </header>
       <section className="card">
         <div className="actions">

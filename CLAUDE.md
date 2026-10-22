@@ -20,6 +20,9 @@ Zod, Vitest, Playwright (optional reader) + fetch/cheerio fallback, chrono-node,
   only the verifier may set VERIFIED (and only after reload + visible values equal approved values).
 - Never weaken a test to pass it.
 - Decoy listings are never read as ours or edited.
+- Multi-business: login is PIN-only (HMAC of the PIN is the only thing stored; PIN shown once at onboarding). Every store/agent function takes a REQUIRED `bizId`; API routes get it only from the session (`req.biz`). Never add a default business id.
+- Never log or return a PIN except the single onboarding response; never put it in a URL. Match weights/thresholds live only in `src/onboarding/config.ts`.
+- Demo business PIN (synthetic): `7KQ4X-M9PHT`. Only the demo business may reset data or open /tests.
 
 ## Field states
 MATCH, FORMAT_ONLY_EQUIVALENT, MISMATCH, PROPOSED, APPROVED, REJECTED, APPLIED, VERIFIED, PENDING_MODERATION, FLAGGED_NOT_OWNER
@@ -31,6 +34,7 @@ MATCH, FORMAT_ONLY_EQUIVALENT, MISMATCH, PROPOSED, APPROVED, REJECTED, APPLIED, 
 - `npm run typecheck` / `npm test`
 - `npm run test:tc` — TC1-TC6 deterministic -> evidence/
 - `npm run test:tc:llm` — TC1-TC6 with Gemini -> evidence/llm/ (needs GEMINI_API_KEY in .env)
+- `npm run demo:onboarding` — new-owner journey end to end (+ TC1-TC6) -> evidence/onboarding-demo.md
 
 ## Layout
 See docs/CODE_MAP.md. Architecture: docs/ARCHITECTURE.md.

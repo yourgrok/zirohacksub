@@ -35,3 +35,23 @@
 ### Decisions (M4)
 - Playwright 1.64 wants a newer Chromium than the container's pre-installed build; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` (reader honours it). `READER_MODE=auto` falls back to HTTP+cheerio if launch fails.
 - Seed fix: site C address reordered words ("Pune, MH - 411001") because word *order* changes are real differences, not formatting.
+
+
+## Multi-business access, PIN login and onboarding (added after M9)
+
+Done: tenant-scoped data layer (required `bizId`, in-place migration of old DBs), PIN-only login (HMAC, constant-time compare, per-IP throttling, httpOnly session cookie, logout), score-matching onboarding with look-alike protection, view-once PIN with pending-then-activate business, adding the business to missing sites through approve/apply/verify (incl. moderation), matching section in the report, trace events for login/matching, simple UI screens, `npm run demo:onboarding`.
+
+### Decisions
+- No destructive schema change was needed: old databases are migrated in place (rows copied into the new `field_states`, old rows assigned to `biz_sunrise_001`; `tests/migration.test.ts` proves it). "Reset demo data" still wipes everything, as before, and is now demo-business-only.
+- `bizId` is a required parameter everywhere (no default) so forgetting it is a compile error.
+- PIN: 10 chars from a 32-char alphabet (50 bits). Lookup key = HMAC-SHA256(PIN_SECRET, PIN). Demo PIN `7KQ4X-M9PHT` is re-hashed on every boot.
+- A new business is created `pending` and only claims listings on its first login, so a PIN lost before first use costs nothing: it expires after 30 min and onboarding can be repeated.
+- The mock sites now require a server-signed credential for dashboards/edits/claims/creates; the old unauthenticated `/mock/_reset` and `/mock/_writes` endpoints were removed (they were a hole on a public deploy).
+- Address comparison for consistency stays strict (a listing that omits the state is a real difference and gets a proposal), while matching scores tolerate it.
+
+### Known issues / limitations
+- Claiming an unclaimed mock listing needs no OTP (mock). Real sites verify ownership (OTP/postcard); that step must stay human.
+- Login/onboarding rate limiters are in memory: reset on restart, per instance.
+- No screen to edit a business record after onboarding (hours default to Mon-Sat 9-6 when the owner enters none, and the owner is told).
+- `/mock/admin` (the site's moderators) is intentionally open.
+- Not run on Windows or deployed; Gemini path still only unit-tested with a mocked client.
