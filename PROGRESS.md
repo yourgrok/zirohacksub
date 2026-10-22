@@ -75,3 +75,10 @@ Backend: `PUT /api/business` (validated, resets stale approvals, writes the chan
 - No PIN recovery and no phone verification yet (discussed; not built).
 - Editing the phone number does not verify ownership of the new number.
 - The change log shows record edits and approval/apply/verify events; it does not store a full before/after copy of every listing page.
+
+## Calmer UI (follow-up)
+
+Request: drop the blue, use a gentler colour, remove the emojis, make the first visit less overwhelming.
+Done: new palette in `web/src/styles.css` (warm off-white, deep teal-green accent; four status colours only: green = done, amber = needs you, teal = in progress, red = blocked; every text/background pair checked at 4.5:1 or better, light and dark). All emojis and symbol icons removed from the console and from the mock listing pages (Address / Phone labels instead); the only one left is the small robot in the Agent Trace walker. Header is the business name and Log out; demo links moved into a collapsed "Settings and demo tools" panel; a "Start here" card with one button shows until the first scan; step numbers are CSS circles; tabs are grouped (four everyday tabs, a thin divider, quieter secondary tabs); copy shortened; consistency table columns narrowed so the status labels fit. UI test updated for the new button/heading text (no assertion weakened).
+Note: the mock listing sites keep their own themes (Site A is blue on purpose: it stands in for a third-party company site, not our console).
+Observed once: `tests/ui.test.ts` (the long scan + edit + change-log test) timed out/failed in one full run right after `tsc`; not reproduced in three later runs (1 isolated, 2 full, 273/273). If it recurs, raise that test's 30 s limit; the failure message was not captured.

@@ -103,24 +103,26 @@ GitHub will ask you to sign in in the browser the first time (Git Credential Man
 | **Agentic capability (25)** | Planner + 8-tool registry; deterministic and Gemini planners share it; per-step decisions; visible timestamped trace with decider badges; human-in-the-loop `ask_owner`; guardrails in code; fallback on every LLM failure; idempotent apply, re-verify loop | `src/agent/tools.ts`, `planners.ts`, `geminiPlanner.ts`, `guard.ts`, `loop.ts` |
 | **Technical implementation (20)** | TypeScript end to end; Express + React/Vite + SQLite; Zod everywhere; per-field state machine with enforced transitions; Playwright + HTTP readers; Gemini Interactions API with queue/cache/retry/timeout; 100+ automated tests; Docker + `/health`; works without a key | `src/core/states.ts`, `src/agent/llm.ts`, `src/agent/reader.ts`, `tests/`, `Dockerfile` |
 | **Innovation (15)** | Holiday Foresight (chips, 30/14/7 alerts, readiness formula, never-auto-applied drafts); plain-language closures with live preview, relative-date resolution, one clarifying question, Gemini cross-check where the owner breaks ties; visible "Blocked by guardrail" proof with a rogue-planner demo | `src/foresight/index.ts`, `src/nl/`, `/tests` page |
-| **UX (10)** | One console: record, holidays, change box, run buttons, approval cards, before/after table (CSV/print), trace; distinct colours and plain-English reasons for pending/flagged; responsive (checked at 390 px, no horizontal scroll); accessible labels, focus rings, light/dark | `web/src/App.tsx`, `web/src/styles.css` |
+| **UX (10)** | One console: record, holidays, change box, run buttons, approval cards, before/after table (CSV/print), trace; distinct colours and plain-English reasons for pending/flagged; responsive (checked at 390 px, no horizontal scroll); accessible labels, focus rings, calm teal-green palette (no blue), light/dark | `web/src/App.tsx`, `web/src/styles.css` |
 | **Presentation (10)** | Self-contained written evidence (no links needed), real-run evidence with screenshots, Mermaid architecture, slide outline built from run data, honest limitations | `evidence/SUMMARY.md`, `docs/` |
 
 ## The console: nine tabs
 
-A sticky bar on every tab holds the three steps (**① Scan listings → ② Review → ③ Apply approved & verify**). Tabs open directly by click, keyboard (← → Home End) or link (`/#/approvals`, `/#/trace`, …).
+The four everyday tabs (My Details, Listings & Sites, Approvals, Edit & Ask) come first; a thin divider separates the secondary ones. A first-time owner sees a single "Start here" card with one button; demo links and settings sit in a collapsed "Settings and demo tools" panel.
+
+A sticky bar on every tab holds the three steps (**1 Scan listings, 2 Review, 3 Apply approved & verify**). Tabs open directly by click, keyboard (← → Home End) or link (`/#/approvals`, `/#/trace`, …).
 
 | Tab | What you do there |
 |---|---|
-| 🏠 **My Details** | See your current name, address, phone, weekly hours, saved holidays, settings, and an at-a-glance count of sites, approvals and verified fields |
-| 🌐 **Listings & Sites** | One row per site: listed or not, listing ID, how it was linked (score), per-site check counts, **Add my business here** where you are missing |
-| ✅ **Approvals** | Approve or reject each proposed fix (filters: needs approval / pending site / not yours / done), **Approve all** per site or overall; the badge shows how many are waiting |
-| 📊 **Consistency** | The compact before / after table (site, field, original, intended, approval, verified), filters, CSV export and a printable view |
-| ✏️ **Edit & Ask** | The smart text box, a plain edit form for name / address / phone / hours, and cancel buttons for saved holidays |
-| 🕘 **Change Log** | What changed, who did it and when (Indian time): detail edits (from → to), holidays, approvals, what was sent to which site, what was verified |
-| 🤖 **Agent Trace** | Every real tool call with its decider badge. Hover: a small 🤖 follows your pointer from step to step, and if you rest on a step it keeps walking through the next ones |
-| 📅 **Holidays** | Upcoming holidays with chips, 30/14/7-day alerts, readiness score, drafts |
-| ➕ **Add Business** | Set up another business (details → "Is this you?" → view-once PIN); you are switched to it, and each business has its own PIN and data |
+| **My Details** | See your current name, address, phone, weekly hours, saved holidays, settings, and an at-a-glance count of sites, approvals and verified fields |
+| **Listings & Sites** | One row per site: listed or not, listing ID, how it was linked (score), per-site check counts, **Add my business here** where you are missing |
+| **Approvals** | Approve or reject each proposed fix (filters: needs approval / pending site / not yours / done), **Approve all** per site or overall; the badge shows how many are waiting |
+| **Consistency** | The compact before / after table (site, field, original, intended, approval, verified), filters, CSV export and a printable view |
+| **Edit & Ask** | The smart text box, a plain edit form for name / address / phone / hours, and cancel buttons for saved holidays |
+| **Change Log** | What changed, who did it and when (Indian time): detail edits (from → to), holidays, approvals, what was sent to which site, what was verified |
+| **Agent Trace** | Every real tool call with its decider badge. Hover: a small robot follows your pointer from step to step, and if you rest on a step it keeps walking through the next ones |
+| **Holidays** | Upcoming holidays with chips, 30/14/7-day alerts, readiness score, drafts |
+| **Add Business** | Set up another business (details → "Is this you?" → view-once PIN); you are switched to it, and each business has its own PIN and data |
 
 ### The text box (Edit & Ask)
 

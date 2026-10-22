@@ -3,16 +3,17 @@ import type { Me } from "./api";
 
 export type TabId = "details" | "sites" | "approvals" | "consistency" | "edit" | "changelog" | "trace" | "holidays" | "add";
 
-export const TAB_DEFS: { id: TabId; label: string; icon: string; hint: string }[] = [
-  { id: "details", label: "My Details", icon: "🏠", hint: "Your current business details and settings" },
-  { id: "sites", label: "Listings & Sites", icon: "🌐", hint: "Where your business is listed" },
-  { id: "approvals", label: "Approvals", icon: "✅", hint: "Review and approve pending changes" },
-  { id: "consistency", label: "Consistency", icon: "📊", hint: "Before / after table" },
-  { id: "edit", label: "Edit & Ask", icon: "✏️", hint: "Change your details, or ask a question" },
-  { id: "changelog", label: "Change Log", icon: "🕘", hint: "What changed, and when" },
-  { id: "trace", label: "Agent Trace", icon: "🤖", hint: "Every step the agent took" },
-  { id: "holidays", label: "Holidays", icon: "📅", hint: "Upcoming holidays and special days" },
-  { id: "add", label: "Add Business", icon: "➕", hint: "Set up another business" },
+/** The four everyday tabs come first; the rest sit after a thin divider and are visually quieter. */
+export const TAB_DEFS: { id: TabId; label: string; hint: string; more?: boolean }[] = [
+  { id: "details", label: "My Details", hint: "Your current business details" },
+  { id: "sites", label: "Listings & Sites", hint: "Where your business is listed" },
+  { id: "approvals", label: "Approvals", hint: "Review and approve pending changes" },
+  { id: "edit", label: "Edit & Ask", hint: "Change your details, or ask a question" },
+  { id: "consistency", label: "Consistency", hint: "Before / after table", more: true },
+  { id: "changelog", label: "Change Log", hint: "What changed, and when", more: true },
+  { id: "trace", label: "Agent Trace", hint: "Every step the agent took", more: true },
+  { id: "holidays", label: "Holidays", hint: "Upcoming holidays and special days", more: true },
+  { id: "add", label: "Add Business", hint: "Set up another business", more: true },
 ];
 
 export type Row = {
@@ -43,8 +44,8 @@ export const whenIST = (iso: string) =>
   new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 export const timeIST = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata" });
 
-export function EmptyState({ icon, title, children }: { icon: string; title: string; children?: React.ReactNode }) {
-  return <div className="empty"><div className="empty-ic" aria-hidden>{icon}</div><b>{title}</b>{children && <div className="muted">{children}</div>}</div>;
+export function EmptyState({ title, children }: { title: string; children?: React.ReactNode }) {
+  return <div className="empty"><b>{title}</b>{children && <div className="muted">{children}</div>}</div>;
 }
 
 export const useReducedMotion = () =>

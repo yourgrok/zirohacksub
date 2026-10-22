@@ -203,7 +203,7 @@ export function PinReveal({ created, onLoggedIn, adding = false }: { created: { 
       <h1>Your PIN</h1>
       <p className="muted">This is how <b>{created.businessName}</b> logs in. There is no username or password.</p>
       <div className="pin-show" ref={pinRef} aria-label="Your PIN">{created.pin}</div>
-      <button type="button" className="btn small" onClick={copy}>{copied ? "Copied ✓" : "Copy PIN"}</button>
+      <button type="button" className="btn small" onClick={copy}>{copied ? "Copied" : "Copy PIN"}</button>
       <div className="alert a-red"><b>This PIN will not be shown again.</b> We only keep a scrambled version, so nobody can look it up for you. Don't refresh this page.</div>
       {created.hoursAssumed && <p className="muted small">You didn't enter opening hours, so we used typical hours (Mon–Sat 9am–6pm, Sun closed).</p>}
       <label className="check"><input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)} /> I have saved my PIN</label>

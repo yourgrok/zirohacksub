@@ -2,7 +2,6 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { Ctx, EmptyState, timeIST, useReducedMotion } from "../shared";
 
-const ICON: Record<string, string> = { Gemini: "🤖", Deterministic: "⚙️", Fallback: "↩️", Blocked: "⛔" };
 type Dec = "all" | "Gemini" | "Deterministic" | "Fallback" | "Blocked";
 
 export default function TraceTab({ rev }: Ctx) {
@@ -54,13 +53,13 @@ export default function TraceTab({ rev }: Ctx) {
     <section className="card">
       <div className="plat-h">
         <h2>Agent trace</h2>
-        <label className="muted small"><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> include login &amp; older runs</label>
+        <label className="muted small"><input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> include login and older runs</label>
       </div>
-      <p className="muted small">Every real tool call, timestamped (Indian time). The badge says who decided: <b>Gemini</b>, <b>Deterministic</b>, <b>Fallback</b> (Gemini failed, so rules took over) or <b>Blocked</b> (a code guardrail refused the action).</p>
-      <div className="chipbar">{(["all", "Gemini", "Deterministic", "Fallback", "Blocked"] as Dec[]).map((d) => <button key={d} className={`fchip ${dec === d ? "on" : ""}`} onClick={() => setDec(d)}>{d === "all" ? "All steps" : `${ICON[d]} ${d}`} <span className="cnt">{count(d)}</span></button>)}</div>
-      {shown.length > 1 && <p className="muted small hint">{reduced ? "Hover or focus a step to see where the agent is." : "👆 Hover over the trace: the agent follows your pointer from step to step, and if you rest on a step it keeps walking through the next ones. Move the mouse to take over again."}</p>}
+      <p className="muted">Each step the agent took. The badge shows who decided: Gemini, Deterministic (fixed rules), Fallback (rules took over) or Blocked (stopped by a safety rule).</p>
+      <div className="chipbar">{(["all", "Gemini", "Deterministic", "Fallback", "Blocked"] as Dec[]).map((d) => <button key={d} className={`fchip ${dec === d ? "on" : ""}`} onClick={() => setDec(d)}>{d === "all" ? "All steps" : d} <span className="cnt">{count(d)}</span></button>)}</div>
+      {shown.length > 1 && <p className="muted small hint">{reduced ? "Hover or focus a step to see where the agent is." : "Hover over the steps: the little agent follows your pointer, and walks on by itself when you rest."}</p>}
 
-      {loaded && shown.length === 0 && <EmptyState icon="🤖" title="No steps yet">Press “Scan listings” and the agent’s steps will appear here.</EmptyState>}
+      {loaded && shown.length === 0 && <EmptyState title="No steps yet">Press “Scan listings” and the agent’s steps will appear here.</EmptyState>}
 
       {shown.length > 0 && (
         <div className="trace-scroll" ref={scroller} onMouseMove={wake} onMouseLeave={() => { stop(); setPinned(null); }}>
@@ -78,7 +77,7 @@ export default function TraceTab({ rev }: Ctx) {
               onMouseEnter={() => { setPinned(i); setAt(i); wake(); }} onMouseLeave={() => setPinned(null)}
               onFocus={() => { setPinned(i); setAt(i); wake(); }} onBlur={() => { setPinned(null); stop(); }}
             >
-              <span className={`dot d-${t.decider}`} aria-hidden>{ICON[t.decider]}</span>
+              <span className={`dot d-${t.decider}`} aria-hidden />
               <div className="tbody">
                 <div className="thead">
                   <span className="tno">#{i + 1}</span>

@@ -22,7 +22,7 @@ export default function ChangeLogTab({ rev }: Ctx) {
       <p className="muted small">What changed in your business record and on your listings, who did it, and when (Indian time). Newest first.</p>
       <div className="chipbar">{KINDS.map((k) => <button key={k.id} className={`fchip ${kind === k.id ? "on" : ""}`} onClick={() => setKind(k.id)}>{k.label} <span className="cnt">{n(k.id)}</span></button>)}</div>
       {err && <p className="err">{err}</p>}
-      {entries && shown.length === 0 && <EmptyState icon="🕘" title="No changes here yet">Edit your details or approve a fix and it will show up here.</EmptyState>}
+      {entries && shown.length === 0 && <EmptyState title="No changes here yet">Edit your details or approve a fix and it will show up here.</EmptyState>}
       {shown.length > 0 && (
         <div className="tablewrap">
           <table className="rep compact log">

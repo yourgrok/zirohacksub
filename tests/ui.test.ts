@@ -21,7 +21,7 @@ beforeAll(async () => {
 afterAll(async () => { await browser?.close(); await s.close(); });
 
 const run = built ? it : it.skip;
-const idle = async () => { await page.waitForTimeout(400); await page.waitForFunction(() => !document.body.innerText.includes("Agent is working"), null, { timeout: 30000 }); await page.waitForTimeout(400); };
+const idle = async () => { await page.waitForTimeout(400); await page.waitForFunction(() => !document.body.innerText.includes("Working…"), null, { timeout: 30000 }); await page.waitForTimeout(400); };
 
 describe("tabbed console (browser)", () => {
   run("logs in, shows 9 tabs, deep links and navigates by click and keyboard", async () => {
@@ -56,7 +56,7 @@ describe("tabbed console (browser)", () => {
 
   run("scan fills Approvals; the consistency table is compact; the change log records an edit", async () => {
     if (!browser) return;
-    await page.click("button:has-text('① Scan listings')"); await idle();
+    await page.click("button:has-text('Scan listings')"); await idle();
     expect(await page.locator("#tab-approvals .tabcount").count()).toBe(1);
     await page.click("#tab-consistency");
     const h = await page.locator("table.compact tbody tr").first().evaluate((e) => e.getBoundingClientRect().height);
@@ -99,7 +99,7 @@ describe("tabbed console (browser)", () => {
     await page.click("button:has-text('Continue')"); await page.waitForSelector("text=This PIN will not be shown again");
     await page.check("input[type=checkbox]"); await page.click("button:has-text('Open Green Leaf Cafe')");
     await page.waitForSelector("#tab-details[aria-selected=true]");
-    expect(await page.locator(".sub").innerText()).toContain("Green Leaf Cafe");
+    expect(await page.locator("h1").first().innerText()).toContain("Green Leaf Cafe");
     await page.click("button:has-text('Log out')"); await page.waitForSelector("text=Your PIN");
     await page.fill("#pin", "7KQ4X-M9PHT"); await page.click("button:has-text('Log in')"); await page.waitForSelector("[role=tablist]");
     expect(await page.locator("#panel-details").innerText()).toContain("Sunrise Sweets");

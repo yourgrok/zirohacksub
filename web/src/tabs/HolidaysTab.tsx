@@ -18,7 +18,7 @@ export default function HolidaysTab({ st, act, rev }: Ctx) {
       {fs.next && (
         <div className="ready" title={fs.formula}>
           <div className="meter" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={r ?? 0}><div style={{ width: `${r ?? 0}%` }} /></div>
-          <span><b>Readiness for {fs.next.holiday.name}: {r}/100</b> <span className="info" tabIndex={0} aria-label={fs.formula} title={fs.formula}>ⓘ formula</span></span>
+          <span><b>Readiness for {fs.next.holiday.name}: {r}/100</b> <span className="info" tabIndex={0} aria-label={fs.formula} title={fs.formula}>How is this worked out?</span></span>
         </div>
       )}
       <ul className="hol tall">

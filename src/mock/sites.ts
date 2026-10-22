@@ -84,8 +84,8 @@ export function renderPublic(cfg: SiteCfg, l: MockListing): string {
   const cls = (x: string) => x.split(" ")[0].slice(1);
   const body = `<h1 class="${cls(s.name)}">${esc(l.display_name)}</h1>
 <p>Listing ID: <code data-field="listing-id">${l.listing_id}</code></p>
-<p>📍 <span class="${cls(s.address)}">${esc(l.address)}</span></p>
-<p>☎ <span class="${cls(s.phone)}">${esc(l.phone)}</span></p>
+<p>Address: <span class="${cls(s.address)}">${esc(l.address)}</span></p>
+<p>Phone: <span class="${cls(s.phone)}">${esc(l.phone)}</span></p>
 <h2>Opening hours</h2>${hoursHtml(cfg, l.hours)}
 <h2>Special days</h2>${holidaysHtml(cfg, l.holidays)}`;
   return page(cfg, l.display_name, `<div data-listing-id="${l.listing_id}" data-claim-state="${l.owner_account ? "claimed" : "unclaimed"}">${body}</div>`);

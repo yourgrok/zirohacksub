@@ -2,10 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { Ctx, TabId } from "../shared";
 
-const EXAMPLES = [
-  "change my phone to 98765 43210", "closed on 26th December", "open 9 to 8 Monday to Saturday", "we are closed on Sundays",
-  "what are my hours?", "which sites am I listed on?", "what's waiting for my approval?", "what changed recently?",
-];
+const EXAMPLES = ["change my phone to 98765 43210", "closed on 26th December", "we are closed on Sundays", "what are my hours?"];
 
 export default function EditTab(ctx: Ctx) {
   return (
@@ -60,8 +57,8 @@ function AskBox({ st, act, go }: Ctx) {
   return (
     <section className="card">
       <h2>Tell me what to change — or ask me something</h2>
-      <label htmlFor="nl" className="muted small">Change your phone, address, name or opening hours · set a closure or special hours · or ask a question.</label>
-      <textarea id="nl" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. change my phone to 98765 43210 · closed on 26th December · what are my hours?" />
+      <label htmlFor="nl" className="muted">Change your phone, address, name or hours, set a closure, or ask a question.</label>
+      <textarea id="nl" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder="Type here, for example: closed on 26th December" />
       <div className="examples">{EXAMPLES.map((x) => <button key={x} type="button" className="ex" onClick={() => setText(x)}>{x}</button>)}</div>
 
       {pv?.status === "ok" && <Chips chips={pv.chips} />}
@@ -70,11 +67,11 @@ function AskBox({ st, act, go }: Ctx) {
         <div className="answer" aria-live="polite">
           <b>{pv.title}</b>
           <ul>{pv.lines.map((l: string, i: number) => <li key={i}>{l}</li>)}</ul>
-          {pv.links?.length > 0 && <div className="actions">{pv.links.map((l: any) => <button key={l.tab} className="btn tiny" onClick={() => go(l.tab)}>{l.label} →</button>)}</div>}
+          {pv.links?.length > 0 && <div className="actions">{pv.links.map((l: any) => <button key={l.tab} className="btn tiny" onClick={() => go(l.tab)}>{l.label}</button>)}</div>}
         </div>
       )}
-      {pv?.status === "ask" && <div className="alert a-amber" aria-live="polite">❓ {pv.question}</div>}
-      {ref?.verdict === "agree" && <p className="muted small">✓ {ref.note}</p>}
+      {pv?.status === "ask" && <div className="alert a-amber" aria-live="polite">{pv.question}</div>}
+      {ref?.verdict === "agree" && <p className="muted small">{ref.note}</p>}
       {ref?.verdict === "conflict" && (
         <div className="alert a-amber">
           <b>The two readers disagree — which is right?</b>
@@ -94,7 +91,7 @@ function AskBox({ st, act, go }: Ctx) {
           <span className="muted small">Nothing is saved until you press the button, and nothing reaches a listing until you approve it.</span>
         </div>
       )}
-      {msg && <p className={msg.tab ? "ok" : "err"}>{msg.text} {msg.tab && <button className="linkish" onClick={() => go(msg.tab!)}>Open Approvals →</button>}</p>}
+      {msg && <p className={msg.tab ? "ok" : "err"}>{msg.text} {msg.tab && <button className="linkish" onClick={() => go(msg.tab!)}>Open Approvals</button>}</p>}
     </section>
   );
 }
@@ -145,7 +142,7 @@ function DetailsForm({ st, act, go, rev }: Ctx) {
         <div className="actions">
           <button className="btn primary" disabled={!changed || st.busy}>Save changes</button>
           <button type="button" className="btn ghost" disabled={!changed} onClick={() => { setF(orig); setDirty(false); setMsg(null); }}>Undo my edits</button>
-          {msg?.ok && <button type="button" className="linkish" onClick={() => go("approvals")}>Review the fixes →</button>}
+          {msg?.ok && <button type="button" className="linkish" onClick={() => go("approvals")}>Review the fixes</button>}
         </div>
         {msg && <p className={msg.ok ? "ok" : "err"} role={msg.ok ? "status" : "alert"}>{msg.text}</p>}
       </form>

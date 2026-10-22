@@ -13,10 +13,10 @@ export default function AddBusinessTab({ st, onSwitched }: Ctx) {
         <div>
           <h2>Add a business</h2>
           <p>Set up another business with its own PIN. The agent finds its listings on every site, you confirm which ones are yours, and you get a PIN that is shown once.</p>
-          <ul className="plain small">
-            <li>🔑 Each business has its own PIN and its own data. They never see each other.</li>
-            <li>🔍 Nothing is linked until you confirm each match.</li>
-            <li>↔️ When you finish you are switched to the new business. To come back to <b>{st.business.name}</b>, log out and log in with its PIN.</li>
+          <ul className="plain">
+            <li>Each business has its own PIN and its own data. They never see each other.</li>
+            <li>Nothing is linked until you confirm each match.</li>
+            <li>When you finish you are switched to the new business. To come back to <b>{st.business.name}</b>, log out and log in with its PIN.</li>
           </ul>
           <button className="btn primary" onClick={() => setScreen("details")}>Start</button>
         </div>

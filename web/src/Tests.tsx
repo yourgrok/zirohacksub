@@ -73,7 +73,7 @@ export default function TestsPage({ me, onLogout }: { me: Me; onLogout: () => vo
                 {open === t.id && (
                   <div>
                     <table className="mini"><thead><tr><th>Check</th><th></th><th>Detail</th></tr></thead>
-                      <tbody>{r.checks.map((c, i) => <tr key={i}><td>{c.name}</td><td>{c.pass ? "✅" : "❌"}</td><td>{c.detail}</td></tr>)}</tbody></table>
+                      <tbody>{r.checks.map((c, i) => <tr key={i}><td>{c.name}</td><td><span className={c.pass ? "meter-ok" : "meter-bad"}>{c.pass ? "Pass" : "Fail"}</span></td><td>{c.detail}</td></tr>)}</tbody></table>
                     {(r.fallbacks.length > 0 || r.blocked.length > 0) && <p className="note amber">{r.fallbacks.length} fallback(s), {r.blocked.length} guardrail block(s) in this run.</p>}
                     <div className="trace">{r.trace.map((x) => <div key={x.id} className={`tr tr-${x.decider}`}><span className={`dbadge d-${x.decider}`}>{x.decider}</span><code className="tool">{x.tool}</code><span className="tout">{x.output_summary}</span></div>)}</div>
                     {r.screenshots.length > 0 && <p className="muted small">Screenshots saved: {r.screenshots.join(", ")}</p>}
@@ -90,7 +90,7 @@ export default function TestsPage({ me, onLogout }: { me: Me; onLogout: () => vo
           <button className="btn small primary" disabled={!!running} onClick={async () => { setRunning("guard"); try { setGuard(await api("/api/tests/guardrail-demo", {})); } catch (e: any) { setErr(e.message); } setRunning(null); }}>{running === "guard" ? "Running…" : "Run guardrail demo"}</button></div>
         <p className="muted">A <b>simulated</b> rogue planner (scripted, not an LLM) tries to apply without approval, apply unapproved fields, verify without applying, edit the look-alike decoy and flag an editable listing. The code blocks every attempt.</p>
         {guard && (<><p className="summary">{guard.attempts} attempts blocked · {guard.writesAfter} writes sent · unapproved change still only PROPOSED: {String(guard.unapprovedStillProposed)} · {guard.verifiedCount} fields marked VERIFIED</p>
-          <div className="trace">{guard.blocked.map((x: any) => <div key={x.id} className="tr tr-Blocked"><span className="dbadge d-Blocked">⛔ Blocked</span><code className="tool">{x.tool}</code><span className="tout">{x.output_summary}</span></div>)}</div></>)}
+          <div className="trace">{guard.blocked.map((x: any) => <div key={x.id} className="tr tr-Blocked"><span className="dbadge d-Blocked">Blocked</span><code className="tool">{x.tool}</code><span className="tout">{x.output_summary}</span></div>)}</div></>)}
       </section>
     </div>
   );

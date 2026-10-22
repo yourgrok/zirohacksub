@@ -67,37 +67,31 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
     <div className="wrap">
       <header className="top">
         <div>
-          <h1>Business Listing Consistency Agent</h1>
-          <p className="sub">{me.business?.name} — keeps your details the same on every listing site, and asks before changing anything.</p>
+          <h1>{me.business?.name}</h1>
+          <p className="sub">Listing Consistency Agent: keeps your details the same everywhere, and asks before changing anything.</p>
         </div>
-        <div className="badges">
-          <span className="badge" title={st.demoNow ? "Date fixed with DEMO_NOW" : "Real current date"}>Today: {st.today} IST{st.demoNow ? " (demo date)" : ""}</span>
-          <span className={`badge ${st.plannerMode === "gemini" ? "b-gem" : ""}`}>Planner: {st.plannerMode === "gemini" ? "Gemini" : "Deterministic"}</span>
-          {me.business?.isDemo && <a className="btn small" href="/tests">Tests</a>}
-          <a className="btn small" href="/mock/" target="_blank" rel="noreferrer">Mock sites</a>
-          <a className="btn small" href="/mock/admin" target="_blank" rel="noreferrer">Mock admin</a>
-          {me.business?.isDemo && <button className="btn small ghost" disabled={st.busy} onClick={() => act(async () => { if (confirm("Reset ALL demo data (every business) to the seeded state?")) await api("/api/reset", {}); })}>Reset demo data</button>}
-          <button className="btn small ghost" onClick={onLogout}>Log out</button>
-        </div>
+        <button className="btn small ghost" onClick={onLogout}>Log out</button>
       </header>
 
       <div className="sticky">
         <div className="actionbar" role="region" aria-label="Run the agent">
-          <button className="btn primary small" disabled={st.busy} onClick={() => act(() => api("/api/runs/scan", {}))} title="Reads every listing page and dashboard and compares meaning, not formatting">① Scan listings</button>
-          <button className="btn small" disabled={st.busy || waiting === 0} onClick={() => go("approvals")} title="Review what the agent found">② Review{waiting > 0 ? ` (${waiting})` : ""}</button>
-          <button className="btn primary small" disabled={st.busy} onClick={() => act(() => api("/api/runs/execute", {}))} title="Sends only what you approved, then reloads each page to check">③ Apply approved &amp; verify</button>
-          {st.busy && <span className="spin" aria-live="polite">🤖 Agent is working…</span>}
-          <span className="ab-summary" title={st.summary ?? ""} aria-live="polite">{st.summary ?? "No scan yet — press “Scan listings”."}</span>
+          <button className="btn primary small" disabled={st.busy} onClick={() => act(() => api("/api/runs/scan", {}))} title="Reads every listing site and compares meaning, not formatting"><span className="stepno">1</span>Scan listings</button>
+          <button className="btn small" disabled={st.busy || waiting === 0} onClick={() => go("approvals")} title="Review what the agent found"><span className="stepno">2</span>Review{waiting > 0 ? ` (${waiting})` : ""}</button>
+          <button className="btn small" disabled={st.busy} onClick={() => act(() => api("/api/runs/execute", {}))} title="Sends only what you approved, then reloads each page to check"><span className="stepno">3</span>Apply approved &amp; verify</button>
+          {st.busy && <span className="spin" aria-live="polite">Working…</span>}
         </div>
         <div className="tabs" role="tablist" aria-label="Sections" onKeyDown={onTabKey}>
-          {TAB_DEFS.map((t) => (
-            <button
-              key={t.id} id={`tab-${t.id}`} role="tab" aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1}
-              className={`tab ${tab === t.id ? "on" : ""}`} title={t.hint} onClick={() => go(t.id)}
-            >
-              <span aria-hidden>{t.icon}</span> {t.label}
-              {t.id === "approvals" && waiting > 0 && <span className="tabcount" aria-label={`${waiting} waiting`}>{waiting}</span>}
-            </button>
+          {TAB_DEFS.map((t, i) => (
+            <React.Fragment key={t.id}>
+              {t.more && !TAB_DEFS[i - 1]?.more && <span className="tabsep" aria-hidden />}
+              <button
+                id={`tab-${t.id}`} role="tab" aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1}
+                className={`tab ${t.more ? "more" : ""} ${tab === t.id ? "on" : ""}`} title={t.hint} onClick={() => go(t.id)}
+              >
+                {t.label}
+                {t.id === "approvals" && waiting > 0 && <span className="tabcount" aria-label={`${waiting} waiting`}>{waiting}</span>}
+              </button>
+            </React.Fragment>
           ))}
         </div>
       </div>

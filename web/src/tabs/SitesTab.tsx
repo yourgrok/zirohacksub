@@ -34,7 +34,7 @@ export default function SitesTab({ st, act, go }: Ctx) {
                     <td><b>{siteShort(c.name)}</b><div className="muted small">{c.name.match(/\((.*)\)/)?.[1]}</div></td>
                     <td><span className={`pill ${s.cls}`}>{s.text}</span><div className="muted small">{c.status === "listed" ? "" : c.note}</div></td>
                     <td>{c.listingId ? <a href={`/mock/${slug}/listing/${c.listingId}`} target="_blank" rel="noreferrer"><code>{c.listingId}</code></a> : <span className="muted">—</span>}</td>
-                    <td>{k.total === 0 ? <span className="muted">not checked</span> : <span className="chk"><span title="fine or verified">✓ {k.ok}</span> <span title="need action">⚠ {k.todo}</span> <span title="pending moderation">⏳ {k.pend}</span> <span title="flagged">⛔ {k.flag}</span></span>}</td>
+                    <td>{k.total === 0 ? <span className="muted">not checked</span> : <span className="small">{[`${k.ok} fine`, k.todo ? `${k.todo} to review` : "", k.pend ? `${k.pend} pending` : "", k.flag ? `${k.flag} flagged` : ""].filter(Boolean).join(" · ")}</span>}</td>
                     <td className="small">{m ? <>{m.confirmation}{m.score != null && <span className="muted"> · score {m.score}</span>}</> : c.status === "listed" ? <span className="muted">linked at setup</span> : <span className="muted">—</span>}</td>
                     <td className="right">
                       {c.canAdd && <button className="btn tiny primary" disabled={st.busy} onClick={() => act(async () => { await api(`/api/listings/${c.platformId}/propose`, {}); go("approvals"); })}>Add my business here</button>}

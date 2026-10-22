@@ -28,13 +28,13 @@ export default function ApprovalsTab({ st, act }: Ctx) {
         <h2>Approvals</h2>
         {proposed.length > 0 && <button className="btn small primary" disabled={st.busy} onClick={() => act(async () => { for (const pid of new Set(proposed.map((r) => r.platformId))) await api(`/api/platforms/${pid}/approve-all`, {}); })}>Approve all {proposed.length} waiting</button>}
       </div>
-      <p className="muted small">Nothing is sent to a site until you approve it here and press “Apply approved &amp; verify”.</p>
+      <p className="muted">Nothing is sent to a site until you approve it here and press “Apply approved &amp; verify”.</p>
       <div className="chipbar" role="tablist" aria-label="Filter approvals">
         {FILTERS.map((x) => <button key={x.id} role="tab" aria-selected={f === x.id} className={`fchip ${f === x.id ? "on" : ""}`} onClick={() => setF(x.id)}>{x.label} <span className="cnt">{count(x.id)}</span></button>)}
       </div>
 
       {shown.length === 0 && (
-        <EmptyState icon={f === "action" ? "🎉" : "🗂️"} title={f === "action" ? "Nothing needs your approval" : "Nothing here"}>
+        <EmptyState title={f === "action" ? "Nothing needs your approval" : "Nothing here"}>
           {rows.length === 0 ? "Press “Scan listings” to check every site." : "Try another filter above."}
         </EmptyState>
       )}
