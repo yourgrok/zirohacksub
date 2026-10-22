@@ -13,7 +13,7 @@ export default function HolidaysTab({ st, act, rev }: Ctx) {
     <section className="card">
       <h2>Upcoming holidays <span className="muted">(next {fs.windowDays} days)</span></h2>
       {fs.alerts.map((a: any) => (
-        <div key={a.holidayId} className={`alert ${a.milestone === 7 ? "a-red" : a.milestone === 14 ? "a-amber" : "a-blue"}`}><b>{a.milestone}-day alert:</b> {a.message}</div>
+        <div key={a.holidayId} className={`alert ${a.milestone === 7 ? "a-red" : a.milestone === 14 ? "a-clay" : "a-soft"}`}><b>{a.milestone}-day alert:</b> {a.message}</div>
       ))}
       {fs.next && (
         <div className="ready" title={fs.formula}>

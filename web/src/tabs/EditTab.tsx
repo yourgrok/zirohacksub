@@ -70,10 +70,10 @@ function AskBox({ st, act, go }: Ctx) {
           {pv.links?.length > 0 && <div className="actions">{pv.links.map((l: any) => <button key={l.tab} className="btn tiny" onClick={() => go(l.tab)}>{l.label}</button>)}</div>}
         </div>
       )}
-      {pv?.status === "ask" && <div className="alert a-amber" aria-live="polite">{pv.question}</div>}
+      {pv?.status === "ask" && <div className="alert a-clay" aria-live="polite">{pv.question}</div>}
       {ref?.verdict === "agree" && <p className="muted small">{ref.note}</p>}
       {ref?.verdict === "conflict" && (
-        <div className="alert a-amber">
+        <div className="alert a-clay">
           <b>The two readers disagree — which is right?</b>
           {(["deterministic", "gemini"] as const).map((k) => (
             <label key={k} className="radio">

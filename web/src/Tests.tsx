@@ -74,7 +74,7 @@ export default function TestsPage({ me, onLogout }: { me: Me; onLogout: () => vo
                   <div>
                     <table className="mini"><thead><tr><th>Check</th><th></th><th>Detail</th></tr></thead>
                       <tbody>{r.checks.map((c, i) => <tr key={i}><td>{c.name}</td><td><span className={c.pass ? "meter-ok" : "meter-bad"}>{c.pass ? "Pass" : "Fail"}</span></td><td>{c.detail}</td></tr>)}</tbody></table>
-                    {(r.fallbacks.length > 0 || r.blocked.length > 0) && <p className="note amber">{r.fallbacks.length} fallback(s), {r.blocked.length} guardrail block(s) in this run.</p>}
+                    {(r.fallbacks.length > 0 || r.blocked.length > 0) && <p className="note clay">{r.fallbacks.length} fallback(s), {r.blocked.length} guardrail block(s) in this run.</p>}
                     <div className="trace">{r.trace.map((x) => <div key={x.id} className={`tr tr-${x.decider}`}><span className={`dbadge d-${x.decider}`}>{x.decider}</span><code className="tool">{x.tool}</code><span className="tout">{x.output_summary}</span></div>)}</div>
                     {r.screenshots.length > 0 && <p className="muted small">Screenshots saved: {r.screenshots.join(", ")}</p>}
                   </div>
