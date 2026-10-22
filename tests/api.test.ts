@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { startTestServer } from "./helpers.js";
+import { Client, startTestServer } from "./helpers.js";
 import { runAllTcs, runGuardrailDemo } from "../src/runner/tc.js";
 import { writeGuardrail, writeResults } from "../src/runner/evidence.js";
 
@@ -11,8 +11,10 @@ const SECRET = "AIza-SHOULD-NEVER-APPEAR-987";
 beforeAll(async () => { process.env.GEMINI_API_KEY = SECRET; process.env.LLM_PROVIDER = "none"; s = await startTestServer(); });
 afterAll(async () => { delete process.env.GEMINI_API_KEY; await s.close(); });
 
-const j = async (p: string, init?: RequestInit) => { const r = await fetch(s.url + p, { headers: { "content-type": "application/json" }, ...init }); return { status: r.status, body: await r.json().catch(() => null), res: r }; };
-const post = (p: string, body?: unknown) => j(p, { method: "POST", body: JSON.stringify(body ?? {}) });
+let c: Client;
+const j = (p: string) => c.get(p);
+const post = (p: string, body?: unknown) => c.post(p, body ?? {});
+beforeAll(async () => { c = new Client(s.url); expect((await c.login()).status).toBe(200); });
 
 describe("HTTP API", () => {
   it("/health shows version, reader mode, planner mode and db — never the key", async () => {
@@ -33,7 +35,7 @@ describe("HTTP API", () => {
     await post("/api/runs/execute?wait=1");
     st = (await j("/api/state")).body;
     expect(st.rows.find((r: any) => r.fieldId === row.fieldId).state).toBe("VERIFIED");
-    const csv = await (await fetch(s.url + "/api/report.csv")).text();
+    const csv = (await c.get("/api/report.csv")).body as string;
     expect(csv.split("\r\n")[0]).toBe('"Platform","Field","Original value","Intended value","Approval status","Verified status"');
     expect(csv).toContain("VERIFIED");
     expect(JSON.stringify(st)).not.toContain(SECRET);

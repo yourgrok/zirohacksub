@@ -22,6 +22,7 @@ export type Stage = "unread" | "read" | "normalised" | "compared" | "decided" | 
 
 export interface RunState {
   runId: string;
+  bizId: string;
   phase: "scan" | "execute";
   reads: Map<string, { pub: PublicRead; dash: DashboardRead; via: string }>;
   norms: Map<string, Normalised>;

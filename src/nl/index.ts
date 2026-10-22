@@ -8,18 +8,18 @@ import { IntentZ, intentKey, parseChange, type Chip, type Intent, type NlContext
 import { prettyDate, prettyDateWithDay } from "../core/clock.js";
 import { fmt12 } from "../core/normalise.js";
 
-export function liveContext(): NlContext {
+export function liveContext(bizId: string): NlContext {
   return {
     today: today(),
-    hours: getBusiness().hours,
-    exceptions: listExceptions(),
+    hours: getBusiness(bizId).hours,
+    exceptions: listExceptions(bizId),
     holidays: loadHolidays().map((h) => ({ id: h.id, name: h.name, date: h.date })),
   };
 }
 
 /** Instant, always available, never blocks on an LLM. */
-export function preview(text: string): NlResult {
-  return parseChange(text, liveContext());
+export function preview(bizId: string, text: string): NlResult {
+  return parseChange(text, liveContext(bizId));
 }
 
 export function chipsFor(i: Intent): Chip[] {
@@ -57,9 +57,9 @@ Return JSON: {"status":"ok"|"ask","action":"closed"|"special"|"reopen","start":"
 - If the date is in the past, unclear, or the action is ambiguous, answer status "ask" with exactly one short question.
 - Never invent dates. end equals start for a single day.`;
 
-export async function refine(text: string): Promise<Refinement> {
+export async function refine(bizId: string, text: string): Promise<Refinement> {
   if (!geminiEnabled()) return { verdict: "skipped", note: "No Gemini key — deterministic parser only." };
-  const ctx = liveContext();
+  const ctx = liveContext(bizId);
   const det = parseChange(text, ctx);
   if (det.status === "empty") return { verdict: "skipped", note: "empty" };
   try {
@@ -88,22 +88,22 @@ export async function refine(text: string): Promise<Refinement> {
 export class IntentError extends Error { status = 400; }
 
 /** Nothing is saved until the owner presses Confirm — this is the only place an NL change is persisted. */
-export function confirmIntent(raw: unknown): HolidayException {
+export function confirmIntent(bizId: string, raw: unknown): HolidayException {
   const parsed = IntentZ.safeParse(raw);
   if (!parsed.success) throw new IntentError("That change is not valid.");
   const i = parsed.data;
   const t = today();
   if (i.end < i.start) throw new IntentError("End date is before start date.");
   if (i.action === "reopen") {
-    const target = listExceptions().find((e) => e.id === i.targetExceptionId && e.status === "active");
+    const target = listExceptions(bizId).find((e) => e.id === i.targetExceptionId && e.status === "active");
     if (!target) throw new IntentError("There is no saved change to cancel.");
-    removeException(target.id);
-    audit("owner", "nl-reopen", null, `holiday:${target.id}`, { cancelled: target });
+    removeException(bizId, target.id);
+    audit(bizId, "owner", "nl-reopen", null, `holiday:${target.id}`, { cancelled: target });
     return { ...target, status: "removed" };
   }
   if (i.start < t) throw new IntentError(`${prettyDate(i.start)} has already passed.`);
   if (i.action === "special" && (!i.open || !i.close || i.close <= i.open)) throw new IntentError("Special hours need an opening time before the closing time.");
-  const ex = upsertException({ start: i.start, end: i.end, kind: i.action === "closed" ? "closed" : "special", open: i.action === "closed" ? null : i.open, close: i.action === "closed" ? null : i.close, reason: i.reason, source: "natural-language" });
-  audit("owner", "nl-confirm", null, `holiday:${ex.id}`, { intent: i });
+  const ex = upsertException(bizId, { start: i.start, end: i.end, kind: i.action === "closed" ? "closed" : "special", open: i.action === "closed" ? null : i.open, close: i.action === "closed" ? null : i.close, reason: i.reason, source: "natural-language" });
+  audit(bizId, "owner", "nl-confirm", null, `holiday:${ex.id}`, { intent: i });
   return ex;
 }

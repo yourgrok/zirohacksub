@@ -1,6 +1,6 @@
 import { nowTs } from "../core/clock.js";
 import { getDb } from "../core/db.js";
-import { getBusiness, listPlatforms } from "../core/store.js";
+import { getBusiness, listLinkedPlatforms, listPlatformsWithWork } from "../core/store.js";
 import { guard } from "./guard.js";
 import { buildView, deterministicPlanner, rogueDecisions } from "./planners.js";
 import { TOOLS } from "./tools.js";
@@ -12,22 +12,31 @@ export interface TraceRow {
 }
 
 let runSeq = 0;
-let active: string | null = null;
-export const activeRun = () => active;
+const activeRuns = new Map<string, string>(); // business id -> run id (one run at a time PER business)
+export const isRunning = (bizId: string) => activeRuns.has(bizId);
 
+/** Trace rows belong to the business of their run (looked up from the runs table). */
 export function recordTrace(runId: string, tool: string, input: unknown, output: string, ms: number, decider: Decider, note?: string) {
-  getDb().prepare("INSERT INTO trace (run_id,at,tool,input,output_summary,duration_ms,decider,note) VALUES (?,?,?,?,?,?,?,?)")
-    .run(runId, nowTs(), tool, JSON.stringify(input), output, Math.round(ms), decider, note ?? null);
+  getDb().prepare("INSERT INTO trace (run_id,at,tool,input,output_summary,duration_ms,decider,note,business_id) VALUES (?,?,?,?,?,?,?,?,(SELECT business_id FROM runs WHERE id=?))")
+    .run(runId, nowTs(), tool, JSON.stringify(input), output, Math.round(ms), decider, note ?? null, runId);
 }
 
+/** Internal: rows of one run, whoever owns it. API code must use getTraceFor. */
 export function getTrace(runId?: string): TraceRow[] {
   return (runId
     ? getDb().prepare("SELECT * FROM trace WHERE run_id=? ORDER BY id").all(runId)
     : getDb().prepare("SELECT * FROM trace ORDER BY id").all()) as TraceRow[];
 }
 
-export function listRuns() {
-  return getDb().prepare("SELECT * FROM runs ORDER BY started_at DESC, rowid DESC").all();
+/** Trace rows visible to one business only. */
+export function getTraceFor(bizId: string, runId?: string): TraceRow[] {
+  return (runId
+    ? getDb().prepare("SELECT * FROM trace WHERE business_id=? AND run_id=? ORDER BY id").all(bizId, runId)
+    : getDb().prepare("SELECT * FROM trace WHERE business_id=? ORDER BY id").all(bizId)) as TraceRow[];
+}
+
+export function listRuns(bizId: string) {
+  return getDb().prepare("SELECT * FROM runs WHERE business_id=? ORDER BY started_at DESC, rowid DESC").all(bizId);
 }
 
 const NEXT_STAGE: Partial<Record<ToolName, Stage>> = {
@@ -48,26 +57,27 @@ export function makeRoguePlanner(platformIds: string[]): Planner {
   };
 }
 
-export interface RunOptions { kind: "scan" | "execute"; planner: Planner; maxSteps?: number }
+export interface RunOptions { bizId: string; kind: "scan" | "execute"; planner: Planner; maxSteps?: number }
 
 export async function runAgent(opts: RunOptions): Promise<{ runId: string; steps: number; blocked: number }> {
-  if (active) throw new Error("A run is already in progress");
+  if (activeRuns.has(opts.bizId)) throw new Error("A run is already in progress");
   const runId = `run_${Date.now().toString(36)}_${++runSeq}`;
-  active = runId;
+  activeRuns.set(opts.bizId, runId);
   const db = getDb();
-  db.prepare("INSERT INTO runs (id,kind,status,planner_mode,started_at) VALUES (?,?,?,?,?)").run(runId, opts.kind, "running", opts.planner.name, nowTs());
+  db.prepare("INSERT INTO runs (id,kind,status,planner_mode,started_at,business_id) VALUES (?,?,?,?,?,?)").run(runId, opts.kind, "running", opts.planner.name, nowTs(), opts.bizId);
   const st: RunState = {
-    runId, phase: opts.kind, reads: new Map(), norms: new Map(), comps: new Map(), stage: new Map(), canEdit: new Map(),
+    runId, bizId: opts.bizId, phase: opts.kind, reads: new Map(), norms: new Map(), comps: new Map(), stage: new Map(), canEdit: new Map(),
     asked: false, geminiCalls: 0, recent: [],
   };
-  const platforms = listPlatforms();
-  const biz = getBusiness();
+  const biz = getBusiness(opts.bizId);
   const business = { name: biz.name, address: biz.address, phone: biz.phone };
   let steps = 0, blocked = 0;
   try {
     const max = opts.maxSteps ?? 80;
     while (steps < max) {
       steps++;
+      // scan reads linked listings only; execute also visits platforms with approved/in-flight work (e.g. a listing being created)
+      const platforms = opts.kind === "scan" ? listLinkedPlatforms(opts.bizId) : listPlatformsWithWork(opts.bizId);
       const view = buildView(st, platforms, business);
       let res: PlannerResult;
       try { res = await opts.planner.next(view, st); }
@@ -115,7 +125,7 @@ export async function runAgent(opts: RunOptions): Promise<{ runId: string; steps
     db.prepare("UPDATE runs SET status='error', finished_at=?, summary=? WHERE id=?").run(nowTs(), (e as Error).message, runId);
     throw e;
   } finally {
-    active = null;
+    activeRuns.delete(opts.bizId);
   }
   return { runId, steps, blocked };
 }
@@ -128,3 +138,5 @@ function toolInput(d: Decision): Record<string, unknown> {
     default: return { platform: d.platform };
   }
 }
+
+export const anyRunning = () => activeRuns.size > 0;

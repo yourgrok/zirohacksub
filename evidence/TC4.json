@@ -39,379 +39,412 @@
       "detail": "MISMATCH → PROPOSED → APPROVED → APPLIED → PENDING_MODERATION → VERIFIED"
     }
   ],
-  "startedAt": "2026-10-21T10:11:26.769Z",
-  "durationMs": 3329,
+  "startedAt": "2026-10-22T08:43:08.179Z",
+  "durationMs": 3334,
   "testDate": "2026-10-21",
   "readerMode": "auto",
   "runs": [
-    "run_mvhycp0y_9",
-    "run_mvhycq5m_10",
-    "run_mvhycr0f_11",
-    "run_mvhycr8i_12"
+    "run_mvjamz9w_9",
+    "run_mvjan0cz_10",
+    "run_mvjan163_11",
+    "run_mvjan1fa_12"
   ],
   "trace": [
     {
       "id": 1,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.044Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.419Z",
       "tool": "read_listing",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "Sunrise Sweets & Bakery [LST-A-1001] via playwright; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
-      "duration_ms": 273,
+      "duration_ms": 238,
       "decider": "Deterministic",
-      "note": "site_a: next step in the fixed workflow is read_listing"
+      "note": "site_a: next step in the fixed workflow is read_listing",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 2,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.044Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.420Z",
       "tool": "normalise",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_a: next step in the fixed workflow is normalise"
+      "note": "site_a: next step in the fixed workflow is normalise",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 3,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.046Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.421Z",
       "tool": "compare",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "4 fields: 4 match, 0 formatting-only, 0 mismatch",
       "duration_ms": 1,
       "decider": "Deterministic",
-      "note": "site_a: next step in the fixed workflow is compare"
+      "note": "site_a: next step in the fixed workflow is compare",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 4,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.046Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.422Z",
       "tool": "propose",
       "input": "{\"platform\":\"site_a\"}",
       "output_summary": "0 proposal(s) created; waiting for owner approval",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_a: next step in the fixed workflow is propose"
+      "note": "site_a: next step in the fixed workflow is propose",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 5,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.311Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.662Z",
       "tool": "read_listing",
       "input": "{\"platform\":\"site_b\"}",
       "output_summary": "Sunrise Sweets & Bakery [LST-B-1001] via playwright; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
-      "duration_ms": 265,
+      "duration_ms": 239,
       "decider": "Deterministic",
-      "note": "site_b: next step in the fixed workflow is read_listing"
+      "note": "site_b: next step in the fixed workflow is read_listing",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 6,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.313Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.662Z",
       "tool": "normalise",
       "input": "{\"platform\":\"site_b\"}",
       "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_b: next step in the fixed workflow is normalise"
+      "note": "site_b: next step in the fixed workflow is normalise",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 7,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.314Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.664Z",
       "tool": "compare",
       "input": "{\"platform\":\"site_b\"}",
       "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
       "duration_ms": 1,
       "decider": "Deterministic",
-      "note": "site_b: next step in the fixed workflow is compare"
+      "note": "site_b: next step in the fixed workflow is compare",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 8,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.315Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.664Z",
       "tool": "propose",
       "input": "{\"platform\":\"site_b\"}",
       "output_summary": "1 proposal(s) created; waiting for owner approval",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_b: next step in the fixed workflow is propose"
+      "note": "site_b: next step in the fixed workflow is propose",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 9,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.628Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.942Z",
       "tool": "read_listing",
       "input": "{\"platform\":\"site_c\"}",
       "output_summary": "Sunrise Sweets & Bakery [LST-C-1001] via playwright; phone=\"090000 00001\"; 1 special day(s); canEdit=true",
-      "duration_ms": 312,
+      "duration_ms": 277,
       "decider": "Deterministic",
-      "note": "site_c: next step in the fixed workflow is read_listing"
+      "note": "site_c: next step in the fixed workflow is read_listing",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 10,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.629Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.943Z",
       "tool": "normalise",
       "input": "{\"platform\":\"site_c\"}",
       "output_summary": "phone 090000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_c: next step in the fixed workflow is normalise"
+      "note": "site_c: next step in the fixed workflow is normalise",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 11,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.633Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.946Z",
       "tool": "compare",
       "input": "{\"platform\":\"site_c\"}",
       "output_summary": "4 fields: 2 match, 2 formatting-only, 0 mismatch",
-      "duration_ms": 3,
+      "duration_ms": 2,
       "decider": "Deterministic",
-      "note": "site_c: next step in the fixed workflow is compare"
+      "note": "site_c: next step in the fixed workflow is compare",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 12,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.636Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:08.946Z",
       "tool": "propose",
       "input": "{\"platform\":\"site_c\"}",
       "output_summary": "0 proposal(s) created; waiting for owner approval",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_c: next step in the fixed workflow is propose"
+      "note": "site_c: next step in the fixed workflow is propose",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 13,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.937Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.256Z",
       "tool": "read_listing",
       "input": "{\"platform\":\"site_d\"}",
       "output_summary": "Sunrise Sweets & Bakery [LST-D-1001] via playwright; phone=\"+91 90000 00099\"; 1 special day(s); canEdit=false",
-      "duration_ms": 300,
+      "duration_ms": 308,
       "decider": "Deterministic",
-      "note": "site_d: next step in the fixed workflow is read_listing"
+      "note": "site_d: next step in the fixed workflow is read_listing",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 14,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.938Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.257Z",
       "tool": "normalise",
       "input": "{\"platform\":\"site_d\"}",
       "output_summary": "phone +91 90000 00099 -> +919000000099; hours Mon-Sat 09:00-21:00; Sun 10:00-14:00; 1 holiday entry",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_d: next step in the fixed workflow is normalise"
+      "note": "site_d: next step in the fixed workflow is normalise",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 15,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.940Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.259Z",
       "tool": "compare",
       "input": "{\"platform\":\"site_d\"}",
       "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
-      "duration_ms": 1,
+      "duration_ms": 2,
       "decider": "Deterministic",
-      "note": "site_d: next step in the fixed workflow is compare"
+      "note": "site_d: next step in the fixed workflow is compare",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 16,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:27.940Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.261Z",
       "tool": "flag_listing",
       "input": "{\"platform\":\"site_d\"}",
       "output_summary": "1 field(s) flagged: not the listing owner; no edit attempted",
-      "duration_ms": 0,
+      "duration_ms": 1,
       "decider": "Deterministic",
-      "note": "site_d: next step in the fixed workflow is flag_listing"
+      "note": "site_d: next step in the fixed workflow is flag_listing",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 17,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.230Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.581Z",
       "tool": "read_listing",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "Sunrise Sweets & Bakery [LST-E-1001] via playwright; phone=\"+91 90000 00001\"; 1 special day(s); canEdit=true",
-      "duration_ms": 289,
+      "duration_ms": 320,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is read_listing"
+      "note": "site_e: next step in the fixed workflow is read_listing",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 18,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.231Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.582Z",
       "tool": "normalise",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "phone +91 90000 00001 -> +919000000001; hours Mon-Sat 09:00-21:00; Sun closed; 1 holiday entry",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is normalise"
+      "note": "site_e: next step in the fixed workflow is normalise",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 19,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.232Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.584Z",
       "tool": "compare",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "4 fields: 3 match, 0 formatting-only, 1 mismatch",
       "duration_ms": 1,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is compare"
+      "note": "site_e: next step in the fixed workflow is compare",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 20,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.233Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.585Z",
       "tool": "propose",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "1 proposal(s) created; waiting for owner approval",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is propose"
+      "note": "site_e: next step in the fixed workflow is propose",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 21,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.233Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.586Z",
       "tool": "ask_owner",
       "input": "{\"question\":\"2 change(s) proposed — please approve or reject each card.\"}",
       "output_summary": "asked owner: 2 change(s) proposed — please approve or reject each card.",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": "scan finished; human approval is required before anything is edited"
+      "note": "scan finished; human approval is required before anything is edited",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 22,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.233Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.586Z",
       "tool": "done",
       "input": "{}",
       "output_summary": "nothing left to do",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 23,
-      "run_id": "run_mvhycp0y_9",
-      "at": "2026-10-21T10:11:28.234Z",
+      "run_id": "run_mvjamz9w_9",
+      "at": "2026-10-22T08:43:09.587Z",
       "tool": "summarise_report",
       "input": "{}",
       "output_summary": "1 need you to reclaim the listing (NearbyNow); 2 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
-      "duration_ms": 0,
+      "duration_ms": 1,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 24,
-      "run_id": "run_mvhycq5m_10",
-      "at": "2026-10-21T10:11:28.791Z",
+      "run_id": "run_mvjan0cz_10",
+      "at": "2026-10-22T08:43:10.196Z",
       "tool": "apply_approved",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "hours: sent (202)",
-      "duration_ms": 556,
+      "duration_ms": 608,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is apply_approved"
+      "note": "site_e: next step in the fixed workflow is apply_approved",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 25,
-      "run_id": "run_mvhycq5m_10",
-      "at": "2026-10-21T10:11:29.103Z",
+      "run_id": "run_mvjan0cz_10",
+      "at": "2026-10-22T08:43:10.467Z",
       "tool": "reload_and_verify",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "hours: PENDING_MODERATION",
-      "duration_ms": 311,
+      "duration_ms": 270,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is reload_and_verify"
+      "note": "site_e: next step in the fixed workflow is reload_and_verify",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 26,
-      "run_id": "run_mvhycq5m_10",
-      "at": "2026-10-21T10:11:29.104Z",
+      "run_id": "run_mvjan0cz_10",
+      "at": "2026-10-22T08:43:10.468Z",
       "tool": "done",
       "input": "{}",
       "output_summary": "nothing left to do",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 27,
-      "run_id": "run_mvhycq5m_10",
-      "at": "2026-10-21T10:11:29.105Z",
+      "run_id": "run_mvjan0cz_10",
+      "at": "2026-10-22T08:43:10.468Z",
       "tool": "summarise_report",
       "input": "{}",
       "output_summary": "1 pending moderation (ShopFront); 1 need you to reclaim the listing (NearbyNow); 1 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 28,
-      "run_id": "run_mvhycr0f_11",
-      "at": "2026-10-21T10:11:29.629Z",
+      "run_id": "run_mvjan163_11",
+      "at": "2026-10-22T08:43:10.959Z",
       "tool": "reload_and_verify",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "hours: PENDING_MODERATION",
-      "duration_ms": 285,
+      "duration_ms": 323,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is reload_and_verify"
+      "note": "site_e: next step in the fixed workflow is reload_and_verify",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 29,
-      "run_id": "run_mvhycr0f_11",
-      "at": "2026-10-21T10:11:29.629Z",
+      "run_id": "run_mvjan163_11",
+      "at": "2026-10-22T08:43:10.960Z",
       "tool": "done",
       "input": "{}",
       "output_summary": "nothing left to do",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 30,
-      "run_id": "run_mvhycr0f_11",
-      "at": "2026-10-21T10:11:29.630Z",
+      "run_id": "run_mvjan163_11",
+      "at": "2026-10-22T08:43:10.961Z",
       "tool": "summarise_report",
       "input": "{}",
       "output_summary": "1 pending moderation (ShopFront); 1 need you to reclaim the listing (NearbyNow); 1 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 31,
-      "run_id": "run_mvhycr8i_12",
-      "at": "2026-10-21T10:11:29.902Z",
+      "run_id": "run_mvjan1fa_12",
+      "at": "2026-10-22T08:43:11.305Z",
       "tool": "reload_and_verify",
       "input": "{\"platform\":\"site_e\"}",
       "output_summary": "hours: VERIFIED",
-      "duration_ms": 268,
+      "duration_ms": 338,
       "decider": "Deterministic",
-      "note": "site_e: next step in the fixed workflow is reload_and_verify"
+      "note": "site_e: next step in the fixed workflow is reload_and_verify",
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 32,
-      "run_id": "run_mvhycr8i_12",
-      "at": "2026-10-21T10:11:29.903Z",
+      "run_id": "run_mvjan1fa_12",
+      "at": "2026-10-22T08:43:11.306Z",
       "tool": "done",
       "input": "{}",
       "output_summary": "nothing left to do",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     },
     {
       "id": 33,
-      "run_id": "run_mvhycr8i_12",
-      "at": "2026-10-21T10:11:29.903Z",
+      "run_id": "run_mvjan1fa_12",
+      "at": "2026-10-22T08:43:11.306Z",
       "tool": "summarise_report",
       "input": "{}",
       "output_summary": "1 site(s) fixed and verified (ShopFront); 1 need you to reclaim the listing (NearbyNow); 1 change(s) waiting for your approval; 2 formatting-only difference(s) ignored.",
       "duration_ms": 0,
       "decider": "Deterministic",
-      "note": null
+      "note": null,
+      "business_id": "biz_sunrise_001"
     }
   ],
   "fallbacks": [],

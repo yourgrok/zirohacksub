@@ -40,12 +40,12 @@ export const geminiPlanner: Planner = {
 const SummaryZ = z.object({ summary: z.string().min(5).max(400) });
 
 /** Plain-English headline for the report. Gemini when available; deterministic template otherwise. */
-export async function summariseReport(): Promise<{ text: string; decider: "Gemini" | "Deterministic" | "Fallback"; note?: string }> {
-  const template = templateSummary();
+export async function summariseReport(bizId: string): Promise<{ text: string; decider: "Gemini" | "Deterministic" | "Fallback"; note?: string }> {
+  const template = templateSummary(bizId);
   if (!geminiEnabled()) {
     return { text: template, decider: "Deterministic" };
   }
-  const rows = buildRows().map((r) => ({ platform: r.platform, field: r.field, state: r.state }));
+  const rows = buildRows(bizId).map((r) => ({ platform: r.platform, field: r.field, state: r.state }));
   try {
     const res = await llmJson(SummaryZ, {
       models: [plannerModel(), fastModel()],

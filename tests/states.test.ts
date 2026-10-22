@@ -36,7 +36,7 @@ describe("state machine table", () => {
 describe("transition() persistence", () => {
   beforeEach(() => resetAndSeed());
   const base = {
-    platform_id: "site_a", field_key: "phone", label: "Phone", state: "MISMATCH" as FieldState,
+    business_id: "biz_sunrise_001", platform_id: "site_a", field_key: "phone", label: "Phone", state: "MISMATCH" as FieldState,
     original_raw: "x", original_norm: "x", current_raw: "x", current_norm: "x", intended: "y", intended_display: "y",
     reason: null, exception_id: null,
   };

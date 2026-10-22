@@ -1,5 +1,6 @@
 import { getDb, wipeAll } from "./db.js";
 import { nowTs } from "./clock.js";
+import { DEMO_PIN, hashPin } from "../auth/pin.js";
 import type { Business, Platform, PlatformListing, WeeklyHours } from "./types.js";
 
 export const BUSINESS_ID = "biz_sunrise_001";
@@ -55,12 +56,13 @@ export function resetAndSeed() {
   wipeAll();
   const db = getDb();
   const tx = db.transaction(() => {
-    db.prepare("INSERT INTO business VALUES (?,?,?,?,?)").run(BUSINESS.id, BUSINESS.name, BUSINESS.address, BUSINESS.phone, JSON.stringify(BUSINESS.hours));
+    db.prepare("INSERT INTO business (id,name,address,phone,hours_json,pin_hmac,mock_account,status,is_demo,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
+      .run(BUSINESS.id, BUSINESS.name, BUSINESS.address, BUSINESS.phone, JSON.stringify(BUSINESS.hours), hashPin(DEMO_PIN), OWNER_ACCOUNT, "active", 1, nowTs());
     db.prepare("INSERT INTO exceptions (id,business_id,start_date,end_date,kind,open,close,reason,source,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
       .run(DIWALI.id, BUSINESS_ID, DIWALI.start, DIWALI.end, DIWALI.kind, DIWALI.open, DIWALI.close, DIWALI.reason, "seed", "active", nowTs());
 
     const insP = db.prepare("INSERT INTO platforms VALUES (?,?,?)");
-    const insPL = db.prepare("INSERT INTO platform_listings VALUES (?,?,?,?,?)");
+    const insPL = db.prepare("INSERT INTO platform_listings (platform_id,business_id,listing_id,public_path,dashboard_path,source,linked_at) VALUES (?,?,?,?,?,?,?)");
     const insML = db.prepare("INSERT INTO mock_listings VALUES (?,?,?,?,?,?,?,?,?)");
     for (const p of PLATFORMS) {
       insP.run(p.id, p.name, p.slug);
@@ -68,7 +70,7 @@ export function resetAndSeed() {
         platformId: p.id, businessId: BUSINESS_ID, listingId: OURS_LISTING[p.id],
         publicPath: `/mock/${p.slug}/listing/${OURS_LISTING[p.id]}`, dashboardPath: `/mock/${p.slug}/dashboard/${OURS_LISTING[p.id]}`,
       };
-      insPL.run(l.platformId, l.businessId, l.listingId, l.publicPath, l.dashboardPath);
+      insPL.run(l.platformId, l.businessId, l.listingId, l.publicPath, l.dashboardPath, "seed", nowTs());
 
       // our listing, per-site conditions
       let address = BUSINESS.address, phone = BUSINESS.phone, hours: WeeklyHours = RECORD_HOURS;
@@ -85,9 +87,17 @@ export function resetAndSeed() {
     }
   });
   tx();
+  // keep the browser session of whoever pressed "reset" (the demo owner), drop sessions of businesses that no longer exist
+  db.exec("DELETE FROM sessions WHERE business_id NOT IN (SELECT id FROM business)");
+}
+
+/** The seeded demo PIN is re-hashed on every boot so a changed PIN_SECRET never locks the demo account out. */
+export function refreshDemoPin() {
+  getDb().prepare("UPDATE business SET pin_hmac=? WHERE id=?").run(hashPin(DEMO_PIN), BUSINESS_ID);
 }
 
 export function seedIfEmpty() {
   const n = (getDb().prepare("SELECT COUNT(*) c FROM business").get() as { c: number }).c;
   if (n === 0) resetAndSeed();
+  else if ((getDb().prepare("SELECT COUNT(*) c FROM business WHERE id=?").get(BUSINESS_ID) as { c: number }).c) refreshDemoPin();
 }

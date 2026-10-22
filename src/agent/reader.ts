@@ -27,14 +27,14 @@ export async function closeReader() {
   pwBrowser = null;
 }
 
-async function viaHttp(url: string): Promise<FetchedPage> {
-  const r = await fetch(url, { cache: "no-store" });
+async function viaHttp(url: string, headers?: Record<string, string>): Promise<FetchedPage> {
+  const r = await fetch(url, { cache: "no-store", headers });
   return { html: await r.text(), status: r.status, via: "http" };
 }
 
-async function viaPlaywright(url: string, screenshotPath?: string): Promise<FetchedPage> {
+async function viaPlaywright(url: string, screenshotPath?: string, headers?: Record<string, string>): Promise<FetchedPage> {
   const b = await getBrowser();
-  const ctx = await b.newContext({ viewport: { width: 1000, height: 900 } });
+  const ctx = await b.newContext({ viewport: { width: 1000, height: 900 }, ...(headers ? { extraHTTPHeaders: headers } : {}) });
   try {
     const page = await ctx.newPage();
     const resp = await page.goto(url, { waitUntil: "load", timeout: 15000 });
@@ -46,16 +46,16 @@ async function viaPlaywright(url: string, screenshotPath?: string): Promise<Fetc
 }
 
 /** Always reloads from the server (no cache). READER_MODE decides the engine; auto falls back to http. */
-export async function fetchPage(path: string, opts: { screenshotPath?: string } = {}): Promise<FetchedPage> {
+export async function fetchPage(path: string, opts: { screenshotPath?: string; headers?: Record<string, string> } = {}): Promise<FetchedPage> {
   const url = path.startsWith("http") ? path : baseUrl() + path;
   const mode = readerMode();
-  if (mode === "http" || (mode === "auto" && pwBroken)) return viaHttp(url);
+  if (mode === "http" || (mode === "auto" && pwBroken)) return viaHttp(url, opts.headers);
   try {
-    return await viaPlaywright(url, opts.screenshotPath);
+    return await viaPlaywright(url, opts.screenshotPath, opts.headers);
   } catch (e) {
     if (mode === "playwright") throw e;
     pwBroken = true;
-    return viaHttp(url);
+    return viaHttp(url, opts.headers);
   }
 }
 

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { nowTs } from "../core/clock.js";
-import { OWNER_ACCOUNT } from "../core/seed.js";
-import { audit, createField, getBusiness, getFieldByKey, getPlatformListing, listExceptions, listFields, listPlatforms, transition, type FieldRow } from "../core/store.js";
+import { audit, createField, getBusiness, getFieldByKey, getPlatformListing, listExceptions, listFields, transition, type FieldRow } from "../core/store.js";
 import { ChangeZ, type Change } from "../mock/changes.js";
+import { mockAuthHeaders } from "../auth/mockCreds.js";
 import { changeKey, compareAll, normalisePublic, showsIntended, type Comparison } from "./compare.js";
 import { baseUrl, fetchPage, parseDashboard, parsePublic } from "./reader.js";
 import { TOOL_NAMES, type RunState, type ToolName } from "./types.js";
@@ -14,10 +14,11 @@ const slugOf = (platformId: string) => platformId.replace("site_", "");
 async function ensureRead(st: RunState, platformId: string, fresh = false) {
   const existing = st.reads.get(platformId);
   if (existing && !fresh) return existing;
-  const l = getPlatformListing(platformId);
+  const l = getPlatformListing(st.bizId, platformId);
   const slug = slugOf(platformId);
   const pubPage = await fetchPage(l.publicPath);
-  const dashPage = await fetchPage(l.dashboardPath);
+  // the dashboard is read with this business's delegated login for the site (the public page needs none)
+  const dashPage = await fetchPage(l.dashboardPath, { headers: mockAuthHeaders(getBusiness(st.bizId).mockAccount) });
   if (pubPage.status !== 200) throw new Error(`Public page returned HTTP ${pubPage.status}`);
   const pub = parsePublic(slug, pubPage.html);
   const dash = parseDashboard(dashPage.html);
@@ -32,14 +33,14 @@ async function ensureRead(st: RunState, platformId: string, fresh = false) {
 }
 
 /** Upsert one comparison into field_states without disturbing in-flight work. */
-function upsertComparison(platformId: string, c: Comparison) {
+function upsertComparison(bizId: string, platformId: string, c: Comparison) {
   const patch = {
     label: c.label, current_raw: c.currentRaw, current_norm: c.currentNorm,
     intended: c.change ? JSON.stringify(c.change) : null, intended_display: c.intendedDisplay, exception_id: c.exceptionId,
   };
-  const ex = getFieldByKey(platformId, c.key);
+  const ex = getFieldByKey(bizId, platformId, c.key);
   if (!ex) {
-    createField({ platform_id: platformId, field_key: c.key, state: c.state, original_raw: c.currentRaw, original_norm: c.currentNorm, reason: c.note, ...patch });
+    createField({ business_id: bizId, platform_id: platformId, field_key: c.key, state: c.state, original_raw: c.currentRaw, original_norm: c.currentNorm, reason: c.note, ...patch });
     return;
   }
   switch (ex.state) {
@@ -96,12 +97,12 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     async run(st, { platform }) {
       const r = await ensureRead(st, platform);
       const n = st.norms.get(platform) ?? normalisePublic(r.pub);
-      const comps = compareAll(getBusiness(), listExceptions(), r.pub, n);
+      const comps = compareAll(getBusiness(st.bizId), listExceptions(st.bizId), r.pub, n);
       st.comps.set(platform, comps);
-      for (const c of comps) upsertComparison(platform, c);
+      for (const c of comps) upsertComparison(st.bizId, platform, c);
       // fields that no longer exist in the comparison (exception cancelled or past) must not stay actionable
       const keys = new Set(comps.map((c) => c.key));
-      for (const f of listFields(platform)) {
+      for (const f of listFields(st.bizId, platform)) {
         if (!keys.has(f.field_key) && ["MISMATCH", "PROPOSED", "REJECTED"].includes(f.state)) {
           transition(f.id, "MATCH", "comparator", "no longer relevant (cancelled or past); nothing to change");
         }
@@ -116,10 +117,10 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     schema: PlatformIn,
     async run(st, { platform }) {
       let n = 0;
-      for (const f of listFields(platform)) {
+      for (const f of listFields(st.bizId, platform)) {
         if (f.state === "MISMATCH" && f.intended) { transition(f.id, "PROPOSED", "planner", "proposed to owner for approval"); n++; }
       }
-      audit("agent", "propose", platform, null, { proposals: n });
+      audit(st.bizId, "agent", "propose", platform, null, { proposals: n });
       return { summary: `${n} proposal(s) created; waiting for owner approval` };
     },
   },
@@ -129,13 +130,13 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     schema: z.object({ platform: z.string(), reason: z.string().optional() }),
     async run(st, { platform, reason }) {
       let n = 0;
-      for (const f of listFields(platform)) {
+      for (const f of listFields(st.bizId, platform)) {
         if (["MISMATCH", "PROPOSED", "APPROVED"].includes(f.state)) {
           transition(f.id, "FLAGGED_NOT_OWNER", "system", reason ?? "listing is claimed by another account — owner must reclaim it manually");
           n++;
         }
       }
-      audit("agent", "flag", platform, null, { flagged: n, reason: reason ?? "permission denied" });
+      audit(st.bizId, "agent", "flag", platform, null, { flagged: n, reason: reason ?? "permission denied" });
       return { summary: `${n} field(s) flagged: not the listing owner; no edit attempted` };
     },
   },
@@ -144,13 +145,14 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     description: "Send ONLY owner-approved fields (state APPROVED in the database) to the platform dashboard.",
     schema: z.object({ platform: z.string(), fields: z.array(z.string()).optional() }),
     async run(st, { platform }) {
-      const l = getPlatformListing(platform);
-      const rows = listFields(platform).filter((f) => f.state === "APPROVED");
+      const l = getPlatformListing(st.bizId, platform);
+      const account = getBusiness(st.bizId).mockAccount;
+      const rows = listFields(st.bizId, platform).filter((f) => f.state === "APPROVED");
       if (!rows.length) return { summary: "no approved fields; nothing sent" };
       const r = await ensureRead(st, platform, true);
       if (!r.dash.canEdit) {
         for (const f of rows) transition(f.id, "FLAGGED_NOT_OWNER", "system", "permission denied on dashboard — flagged, no edit attempted");
-        audit("agent", "flag", platform, null, { reason: "permission denied before apply", fields: rows.length });
+        audit(st.bizId, "agent", "flag", platform, null, { reason: "permission denied before apply", fields: rows.length });
         return { summary: `permission denied: ${rows.length} approved field(s) flagged, 0 writes attempted`, forced: { reason: "permission denied" } };
       }
       const out: string[] = [];
@@ -164,9 +166,9 @@ export const TOOLS: Record<ToolName, ToolDef> = {
           continue;
         }
         const resp = await fetch(baseUrl() + l.dashboardPath + "/update", {
-          method: "POST", headers: { "content-type": "application/json", "x-mock-account": OWNER_ACCOUNT }, body: JSON.stringify(change),
+          method: "POST", headers: { "content-type": "application/json", ...mockAuthHeaders(account) }, body: JSON.stringify(change),
         });
-        audit("owner-approved", "apply", platform, f.field_key, { sent: change, http: resp.status, at: nowTs() });
+        audit(st.bizId, "owner-approved", "apply", platform, f.field_key, { sent: change, http: resp.status, at: nowTs() });
         if (resp.status === 200 || resp.status === 202) {
           transition(f.id, "APPLIED", "applier", resp.status === 202 ? "sent; platform queued it for moderation" : "sent to platform dashboard");
           out.push(`${f.field_key}: sent (${resp.status})`);
@@ -185,11 +187,11 @@ export const TOOLS: Record<ToolName, ToolDef> = {
     description: "Reload the public page and dashboard and verify applied edits. Only this tool can mark a field VERIFIED.",
     schema: PlatformIn,
     async run(st, { platform }) {
-      const rows = listFields(platform).filter((f) => f.state === "APPLIED" || f.state === "PENDING_MODERATION");
+      const rows = listFields(st.bizId, platform).filter((f) => f.state === "APPLIED" || f.state === "PENDING_MODERATION");
       if (!rows.length) return { summary: "nothing to verify" };
       const r = await ensureRead(st, platform, true); // fresh reload
       const n = normalisePublic(r.pub);
-      const comps = compareAll(getBusiness(), listExceptions(), r.pub, n);
+      const comps = compareAll(getBusiness(st.bizId), listExceptions(st.bizId), r.pub, n);
       const res: string[] = [];
       for (const f of rows) {
         const change = ChangeZ.parse(JSON.parse(f.intended!)) as Change;
@@ -205,7 +207,7 @@ export const TOOLS: Record<ToolName, ToolDef> = {
           transition(f.id, "MISMATCH", "verifier", "reloaded page does not show the update and nothing is pending", patch);
           res.push(`${f.field_key}: NOT APPLIED`);
         }
-        audit("verifier", "verify", platform, f.field_key, { result: getFieldByKey(platform, f.field_key)?.state });
+        audit(st.bizId, "verifier", "verify", platform, f.field_key, { result: getFieldByKey(st.bizId, platform, f.field_key)?.state });
       }
       return { summary: res.join("; ") };
     },
@@ -225,13 +227,9 @@ export function toolCatalogue() {
   return TOOL_NAMES.map((n) => ({ name: n, description: TOOLS[n].description }));
 }
 
-export function platformIds(): string[] {
-  return listPlatforms().map((p) => p.id);
-}
-
-export function countStates(platformId: string): Record<string, number> {
+export function countStates(bizId: string, platformId: string): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const f of listFields(platformId) as FieldRow[]) out[f.state] = (out[f.state] ?? 0) + 1;
+  for (const f of listFields(bizId, platformId) as FieldRow[]) out[f.state] = (out[f.state] ?? 0) + 1;
   return out;
 }
 

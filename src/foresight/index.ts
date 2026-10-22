@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { z } from "zod";
 import { addDays, daysBetween, prettyDate, today } from "../core/clock.js";
 import { canonHoliday, parseHolidayLine } from "../core/normalise.js";
-import { addException, listExceptions, listFields, listPlatforms, getPlatformListing } from "../core/store.js";
+import { addException, getPlatformListing, listExceptions, listFields, listLinkedPlatforms } from "../core/store.js";
 import type { HolidayException } from "../core/types.js";
 import { fetchPage, parsePublic } from "../agent/reader.js";
 
@@ -49,10 +49,10 @@ function covering(ex: HolidayException[], date: string): HolidayException | null
   return ex.find((e) => e.status === "active" && e.start <= date && date <= e.end) ?? null;
 }
 
-async function readSites() {
+async function readSites(bizId: string) {
   const out: { platformId: string; platform: string; canon: Set<string> }[] = [];
-  for (const p of listPlatforms()) {
-    const l = getPlatformListing(p.id);
+  for (const p of listLinkedPlatforms(bizId)) {
+    const l = getPlatformListing(bizId, p.id);
     try {
       const page = await fetchPage(l.publicPath);
       const pub = parsePublic(p.slug, page.html);
@@ -66,12 +66,12 @@ async function readSites() {
   return out;
 }
 
-export async function foresight(): Promise<{ today: string; windowDays: number; holidays: HolidayStatus[]; alerts: Alert[]; next: HolidayStatus | null; formula: string }> {
+export async function foresight(bizId: string): Promise<{ today: string; windowDays: number; holidays: HolidayStatus[]; alerts: Alert[]; next: HolidayStatus | null; formula: string }> {
   const t = today();
   const until = addDays(t, WINDOW_DAYS);
-  const exs = listExceptions();
-  const sites = await readSites();
-  const fields = listFields();
+  const exs = listExceptions(bizId);
+  const sites = await readSites(bizId);
+  const fields = listFields(bizId);
   const upcoming = loadHolidays().filter((h) => h.date >= t && h.date <= until).sort((a, b) => a.date.localeCompare(b.date));
   const statuses: HolidayStatus[] = upcoming.map((h) => {
     const ex = covering(exs, h.date);
@@ -119,12 +119,12 @@ export async function foresight(): Promise<{ today: string; windowDays: number; 
 }
 
 /** The owner accepted a draft. Creates a record exception (source: foresight); the normal scan → approval → apply → verify pipeline then handles the sites. */
-export function acceptDraft(holidayId: string, override?: { kind?: "closed" | "special"; open?: string | null; close?: string | null }): HolidayException {
+export function acceptDraft(bizId: string, holidayId: string, override?: { kind?: "closed" | "special"; open?: string | null; close?: string | null }): HolidayException {
   const h = loadHolidays().find((x) => x.id === holidayId);
   if (!h) throw new Error("Unknown holiday");
   const s = suggest(h);
   const kind = override?.kind ?? s.kind;
   const open = kind === "closed" ? null : (override?.open ?? s.open ?? "10:00");
   const close = kind === "closed" ? null : (override?.close ?? s.close ?? "14:00");
-  return addException({ start: h.date, end: h.date, kind, open, close, reason: h.name, source: "foresight" });
+  return addException(bizId, { start: h.date, end: h.date, kind, open, close, reason: h.name, source: "foresight" });
 }

@@ -1,6 +1,5 @@
-import { listFields } from "../core/store.js";
+import { findPlatformListing, listFields, listPlatforms } from "../core/store.js";
 import { TOOL_NAMES, type Decision, type PlanView, type RunState, type ToolName } from "./types.js";
-import { getPlatformListing, listPlatforms } from "../core/store.js";
 
 export type GuardVerdict =
   | { kind: "allow" }
@@ -20,14 +19,15 @@ export function guard(d: Decision, view: PlanView, st: RunState): GuardVerdict {
   const platform = listPlatforms().find((p) => p.id === d.platform);
   if (!platform) return { kind: "block", reason: `unknown platform "${d.platform}"` };
   // look-alike / decoy protection: a planner may not target any listing but the registered one
-  const reg = getPlatformListing(platform.id);
+  const reg = findPlatformListing(st.bizId, platform.id);
   const extra = d as Decision & { listingId?: string };
-  if (extra.listingId && extra.listingId !== reg.listingId) {
-    return { kind: "block", reason: `listing ${extra.listingId} is not our registered listing (${reg.listingId}) — look-alike/decoy` };
+  if (extra.listingId && extra.listingId !== reg?.listingId) {
+    return { kind: "block", reason: `listing ${extra.listingId} is not our registered listing (${reg?.listingId ?? "none"}) — look-alike/decoy` };
   }
 
-  const pv = view.platforms.find((p) => p.id === d.platform)!;
-  const rows = listFields(platform.id);
+  const pv = view.platforms.find((p) => p.id === d.platform);
+  if (!pv) return { kind: "block", reason: `${platform.id} is not one of this business's listing sites` };
+  const rows = listFields(st.bizId, platform.id);
   const tool = d.tool as ToolName;
 
   if (st.phase === "scan" && (tool === "apply_approved" || tool === "reload_and_verify")) {

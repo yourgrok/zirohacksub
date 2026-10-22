@@ -15,9 +15,9 @@ const verifiedOf = (s: string) =>
      FLAGGED_NOT_OWNER: "FLAGGED — not the listing owner", MATCH: "No change needed", FORMAT_ONLY_EQUIVALENT: "No change needed (formatting only)",
      PROPOSED: "—", APPROVED: "—", REJECTED: "—", MISMATCH: "—" } as Record<string, string>)[s];
 
-export function buildRows(): ReportRow[] {
+export function buildRows(bizId: string): ReportRow[] {
   const names = new Map(listPlatforms().map((p) => [p.id, p.name]));
-  return listFields().map((f: FieldRow) => ({
+  return listFields(bizId).map((f: FieldRow) => ({
     fieldId: f.id, platform: names.get(f.platform_id) ?? f.platform_id, platformId: f.platform_id, field: f.label, fieldKey: f.field_key,
     original: f.original_raw ?? "", intended: f.intended_display ?? "", approval: approvalOf(f.state), verified: verifiedOf(f.state),
     state: f.state, reason: f.reason ?? "", current: f.current_raw ?? "", currentNorm: f.current_norm ?? "",
@@ -25,8 +25,8 @@ export function buildRows(): ReportRow[] {
 }
 
 /** Plain-English template summary (used when there is no Gemini key, or as the fallback). */
-export function templateSummary(): string {
-  const rows = buildRows();
+export function templateSummary(bizId: string): string {
+  const rows = buildRows(bizId);
   const by = (s: string) => rows.filter((r) => r.state === s);
   const sites = (rs: ReportRow[]) => [...new Set(rs.map((r) => r.platform.replace(/ \(.*\)/, "")))];
   const parts: string[] = [];
@@ -42,8 +42,8 @@ export function templateSummary(): string {
   return parts.join("; ") + ".";
 }
 
-export function latestRunSummary(): string | null {
-  const r = getDb().prepare("SELECT summary FROM runs WHERE summary IS NOT NULL ORDER BY started_at DESC, rowid DESC LIMIT 1").get() as { summary: string } | undefined;
+export function latestRunSummary(bizId: string): string | null {
+  const r = getDb().prepare("SELECT summary FROM runs WHERE business_id=? AND summary IS NOT NULL ORDER BY started_at DESC, rowid DESC LIMIT 1").get(bizId) as { summary: string } | undefined;
   return r?.summary ?? null;
 }
 

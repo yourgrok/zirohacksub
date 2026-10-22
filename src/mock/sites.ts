@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 import { getDb } from "../core/db.js";
 import { nowTs } from "../core/clock.js";
 import { formatHolidayLine, formatHours } from "../core/normalise.js";
-import { OTHER_ACCOUNT, OWNER_ACCOUNT, resetAndSeed } from "../core/seed.js";
+import { mockAccountOf } from "../auth/mockCreds.js";
 import type { WeeklyHours } from "../core/types.js";
 import { ChangeZ, summariseChange, type Change, type HolidayEntry } from "./changes.js";
 import { SITE_CFG, type SiteCfg } from "./siteConfig.js";
@@ -89,12 +89,16 @@ export function renderPublic(cfg: SiteCfg, l: MockListing): string {
   return page(cfg, l.display_name, `<div data-listing-id="${l.listing_id}">${body}</div>`);
 }
 
-function renderDashboard(cfg: SiteCfg, l: MockListing, account: string): string {
-  const canEdit = l.owner_account === account;
+function renderDashboard(cfg: SiteCfg, l: MockListing, account: string | null): string {
+  const canEdit = !!account && l.owner_account === account;
   const pending = getDb().prepare("SELECT * FROM mock_queue WHERE site=? AND listing_id=? AND status='pending'").all(l.site, l.listing_id) as any[];
-  const banner = canEdit
-    ? `<div class="banner ok claim-banner" data-claim="owner">You manage this listing (signed in as ${esc(account)}).</div>`
-    : `<div class="banner deny claim-banner" data-claim="other">This listing is claimed by another account. You do not have permission to edit it.</div>`;
+  const banner = !account
+    ? `<div class="banner deny claim-banner" data-claim="anon">Please sign in to manage this listing.</div>`
+    : canEdit
+      ? `<div class="banner ok claim-banner" data-claim="owner">You manage this listing (signed in as ${esc(account)}).</div>`
+      : l.owner_account
+        ? `<div class="banner deny claim-banner" data-claim="other">This listing is claimed by another account. You do not have permission to edit it.</div>`
+        : `<div class="banner deny claim-banner" data-claim="unclaimed">This listing has not been claimed yet. You must claim it before you can edit it.</div>`;
   const pendHtml = pending.length
     ? `<h3>Pending changes (${pending.length})</h3>${pending.map((p) => `<div class="banner pend pending-change" data-change="${esc(p.change_json)}">${esc(p.summary)} — awaiting moderator review</div>`).join("")}`
     : "";
@@ -147,15 +151,6 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
   r.post("/admin/queue/:id/approve", decide(true));
   r.post("/admin/queue/:id/reject", decide(false));
 
-  r.post("/_reset", (_req, res) => { resetAndSeed(); res.json({ ok: true }); });
-  r.get("/_writes", (req, res) => {
-    const site = req.query.site ? String(req.query.site) : null;
-    const rows = site
-      ? getDb().prepare("SELECT * FROM mock_writes WHERE site=? ORDER BY id").all(site)
-      : getDb().prepare("SELECT * FROM mock_writes ORDER BY id").all();
-    res.json(rows);
-  });
-
   /* per-site pages */
   r.param("slug", (req, res, next, slug) => {
     if (!SITE_CFG[slug]) return res.status(404).send("Unknown mock site");
@@ -182,18 +177,18 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
     const cfg = SITE_CFG[req.params.slug];
     const l = load(cfg.slug, req.params.id);
     if (!l) return res.status(404).send(page(cfg, "Not found", "<h1>Listing not found</h1>"));
-    const acct = String(req.header("x-mock-account") ?? req.query.acct ?? OWNER_ACCOUNT);
-    res.send(renderDashboard(cfg, l, acct));
+    res.send(renderDashboard(cfg, l, mockAccountOf(req)));
   });
 
   r.post("/:slug/dashboard/:id/update", (req, res) => {
     const cfg = SITE_CFG[req.params.slug];
     const l = load(cfg.slug, req.params.id);
-    const acct = String(req.header("x-mock-account") ?? OWNER_ACCOUNT);
+    const acct = mockAccountOf(req); // null = anonymous or a forged token
     const log = (action: string, code: number) =>
       getDb().prepare("INSERT INTO mock_writes (site,listing_id,at,account,action,result_code) VALUES (?,?,?,?,?,?)")
-        .run(`site_${cfg.slug}`, req.params.id, nowTs(), acct, action, code);
+        .run(`site_${cfg.slug}`, req.params.id, nowTs(), acct ?? "anonymous", action, code);
     if (!l) { log("unknown", 404); return res.status(404).json({ error: "listing not found" }); }
+    if (!acct) { log("unauthenticated", 401); return res.status(401).json({ error: "login_required" }); }
     const parsed = ChangeZ.safeParse(req.body);
     if (!parsed.success) { log("invalid", 400); return res.status(400).json({ error: "invalid change" }); }
     const change = parsed.data;
@@ -216,4 +211,3 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
   return r;
 }
 
-export { OTHER_ACCOUNT };

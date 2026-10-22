@@ -6,6 +6,7 @@ import { getTrace, makeRoguePlanner } from "../src/agent/loop.js";
 import { approveField, execute, scan } from "../src/agent/service.js";
 import { LlmError, llmCallCount, setLlmClient, type LlmClient, type LlmRequest } from "../src/agent/llm.js";
 import { startTestServer } from "./helpers.js";
+import { BUSINESS_ID as B } from "../src/core/seed.js";
 
 let s: Awaited<ReturnType<typeof startTestServer>>;
 beforeAll(async () => { s = await startTestServer(); });
@@ -42,18 +43,18 @@ const deciders = (runId: string) => getTrace(runId).map((t) => t.decider);
 describe("Gemini planner (mocked client)", () => {
   it("makes the decisions and the trace says Gemini; summary comes from Gemini", async () => {
     setLlmClient(sensible);
-    const r = await scan();
+    const r = await scan(B);
     const d = deciders(r.runId);
     expect(d.filter((x) => x === "Gemini").length).toBeGreaterThan(15);
     expect(d).not.toContain("Fallback");
     expect(r.summary).toContain("2 sites fixed");
-    expect(getFieldByKey("site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED");
+    expect(getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED");
   });
 
   it("uses the Interactions-style request: model, system, strict JSON schema, and never the key", async () => {
     const seen: LlmRequest[] = [];
     setLlmClient({ generate: async (req) => { seen.push(req); return sensible.generate(req); } });
-    const r = await scan();
+    const r = await scan(B);
     expect(seen[0].model).toBe("gemini-3.8-flash");
     expect(seen[0].jsonSchema).toHaveProperty("properties.tool");
     for (const q of seen) expect(JSON.stringify(q)).not.toContain(SECRET);
@@ -69,11 +70,11 @@ describe("Gemini planner (mocked client)", () => {
         return sensible.generate(req);
       },
     });
-    await scan();
+    await scan(B);
     const w0 = writes();
-    const r = await execute();
+    const r = await execute(B);
     expect(writes()).toBe(w0);
-    expect(getFieldByKey("site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED");
+    expect(getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED");
     const blocked = getTrace(r.runId).filter((t) => t.decider === "Blocked");
     expect(blocked.length).toBeGreaterThan(0);
     expect(blocked[0].output_summary).toMatch(/BLOCKED BY GUARDRAIL/);
@@ -88,9 +89,9 @@ describe("Gemini planner (mocked client)", () => {
         return sensible.generate(req);
       },
     });
-    await scan();
-    approveField(getFieldByKey("site_e", "hours")!.id);
-    const r = await execute();
+    await scan(B);
+    approveField(B, getFieldByKey(B, "site_e", "hours")!.id);
+    const r = await execute(B);
     expect(getTrace(r.runId).some((t) => t.decider === "Blocked" && /not owner-approved/.test(t.output_summary))).toBe(true);
   });
 
@@ -104,8 +105,8 @@ describe("Gemini planner (mocked client)", () => {
         return sensible.generate(req);
       },
     });
-    const r = await scan();
-    expect(getFieldByKey("site_d", "phone")!.state).toBe("FLAGGED_NOT_OWNER");
+    const r = await scan(B);
+    expect(getFieldByKey(B, "site_d", "phone")!.state).toBe("FLAGGED_NOT_OWNER");
     expect(getTrace(r.runId).some((t) => t.decider === "Blocked" && /forced flag_listing/.test(t.output_summary))).toBe(true);
     expect(writes()).toBe(0);
   });
@@ -118,27 +119,27 @@ describe("Gemini planner (mocked client)", () => {
       },
     });
     // schema rejects an unknown tool -> counted as Fallback (Zod), never executed
-    const r = await scan();
+    const r = await scan(B);
     expect(deciders(r.runId)).toContain("Fallback");
-    expect(listFields().some((f) => f.state === "VERIFIED")).toBe(false);
+    expect(listFields(B, ).some((f) => f.state === "VERIFIED")).toBe(false);
   });
 
   it("simulated rogue planner: every bad action is blocked, run still completes correctly", async () => {
-    const r = await scan(makeRoguePlanner(["site_a", "site_b", "site_c", "site_d", "site_e"]));
+    const r = await scan(B, makeRoguePlanner(["site_a", "site_b", "site_c", "site_d", "site_e"]));
     const blocked = getTrace(r.runId).filter((t) => t.decider === "Blocked");
     expect(blocked.length).toBeGreaterThanOrEqual(5);
     expect(writes()).toBe(0);
-    expect(getFieldByKey("site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED");
-    expect(listFields("site_a").some((f) => f.state === "FLAGGED_NOT_OWNER")).toBe(false);
+    expect(getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED");
+    expect(listFields(B, "site_a").some((f) => f.state === "FLAGGED_NOT_OWNER")).toBe(false);
   });
 
   it("falls back on invalid JSON", async () => {
     setLlmClient({ generate: async (req) => (req.system.includes("status for") ? "nope" : "this is not json") });
-    const r = await scan();
+    const r = await scan(B);
     const d = deciders(r.runId);
     expect(d).toContain("Fallback");
     expect(d).not.toContain("Gemini");
-    expect(getFieldByKey("site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED"); // work still completes
+    expect(getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state).toBe("PROPOSED"); // work still completes
     expect(r.summary).toMatch(/waiting for your approval/); // template summary
   });
 
@@ -146,7 +147,7 @@ describe("Gemini planner (mocked client)", () => {
     let n = 0;
     setLlmClient({ generate: async () => { n++; throw Object.assign(new Error("429 RESOURCE_EXHAUSTED"), { status: 429 }); } });
     process.env.GEMINI_MAX_CALLS_PER_RUN = "1";
-    const r = await scan();
+    const r = await scan(B);
     delete process.env.GEMINI_MAX_CALLS_PER_RUN;
     expect(n).toBe(4); // planner step: 1 try + exactly 1 retry; summary call: 1 try + 1 retry
     expect(deciders(r.runId)).toContain("Fallback");
@@ -155,7 +156,7 @@ describe("Gemini planner (mocked client)", () => {
   it("falls back on timeout", async () => {
     setLlmClient({ generate: () => new Promise(() => undefined) });
     process.env.GEMINI_MAX_CALLS_PER_RUN = "1";
-    const r = await scan();
+    const r = await scan(B);
     delete process.env.GEMINI_MAX_CALLS_PER_RUN;
     expect(getTrace(r.runId).find((t) => t.decider === "Fallback")!.note).toMatch(/timeout/);
   });
@@ -169,7 +170,7 @@ describe("Gemini planner (mocked client)", () => {
         return sensible.generate(req);
       },
     });
-    const r = await scan();
+    const r = await scan(B);
     expect(used).toContain("gemini-3.5-flash-lite");
     expect(deciders(r.runId)).toContain("Gemini");
   });
@@ -184,11 +185,11 @@ describe("Gemini planner (mocked client)", () => {
         return sensible.generate(req);
       },
     });
-    await scan();
+    await scan(B);
     const first = llmCallCount();
     expect(maxInflight).toBe(1);
     resetAndSeed();
-    await scan(); // identical prompts -> served from cache for planner steps
+    await scan(B); // identical prompts -> served from cache for planner steps
     expect(llmCallCount() - first).toBeLessThan(first);
   });
 

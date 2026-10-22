@@ -27,7 +27,7 @@ export function buildView(st: RunState, platforms: { id: string; name: string }[
   const pv: PlatformView[] = platforms.map((p) => {
     const stage = st.stage.get(p.id) ?? (st.phase === "scan" ? "unread" : "idle");
     const canEdit = st.canEdit.has(p.id) ? st.canEdit.get(p.id)! : null;
-    const counts = countStates(p.id);
+    const counts = countStates(st.bizId, p.id);
     return { id: p.id, name: p.name, stage, canEdit, counts, legal: legalFor(st.phase, stage, canEdit, counts) };
   });
   const proposalsOutstanding = pv.reduce((a, p) => a + (p.counts.PROPOSED ?? 0), 0);
