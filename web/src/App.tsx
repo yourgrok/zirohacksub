@@ -46,6 +46,13 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
     return () => clearInterval(t);
   }, [st?.busy, load]);
 
+  // While Autopilot is on the agent works by itself, so the page keeps looking (quietly) for what it found
+  useEffect(() => {
+    if (!st?.autopilot?.on || st?.busy) return;
+    const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 7000);
+    return () => clearInterval(t);
+  }, [st?.autopilot?.on, st?.busy, load]);
+
   const act = useCallback(async (fn: () => Promise<unknown>): Promise<boolean> => { setErr(null); let ok = true; try { await fn(); } catch (e: any) { ok = false; setErr(e.message); } await load(); return ok; }, [load]);
 
   // Start a run and follow it until the agent is idle again (the run itself is fast; this keeps the page in step with it)
@@ -96,6 +103,10 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const closeScan = () => setScanPrompt(null);
   const checkChanges = () => { setScanPrompt(null); go("approvals"); };
   const applyNow = () => { setNudgeDismissedAt(approvedCount); runExecute(); go("trace"); };
+  const ap = st.autopilot as { on: boolean; lastCheckedAt: string | null; everyMs: number };
+  const unseen = (st.events as any[]).filter((e) => !e.seen && e.kind !== "autopilot");
+  const toggleAutopilot = () => act(() => api("/api/autopilot", { on: !ap.on }));
+  const dismissEvents = () => act(() => api("/api/events/seen", {}));
   const ctx: Ctx = { st, me, act, go, rev, onSwitched };
   const Panel = PANELS[tab];
 
@@ -127,6 +138,13 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
               </span>
             </button>
           )}
+        </div>
+        <div className={`autopilot ${ap.on ? "on" : ""}`}>
+          <button type="button" role="switch" aria-checked={ap.on} className="switch" onClick={toggleAutopilot} title={`Autopilot: the agent checks your listings by itself about every ${Math.round(ap.everyMs / 1000)} seconds, applies what you already approved, and tells you what it found. It never approves anything for you.`}>
+            <span className="knob" aria-hidden />
+          </button>
+          <span className="aptext"><b>Autopilot {ap.on ? "on" : "off"}</b><small>{ap.on ? (ap.lastCheckedAt ? `last checked ${new Date(ap.lastCheckedAt).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })}` : "first check soon") : "agent waits for you"}</small></span>
+          {ap.on && <button type="button" className="btn small ghost" disabled={st.busy} onClick={() => act(() => followRun("/api/autopilot/check"))}>Check now</button>}
         </div>
         <button className="btn small ghost" onClick={onLogout}>Log out</button>
         </div>
@@ -160,6 +178,17 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
 
       {err && <div className="alert a-red" role="alert">{err}</div>}
       {st.lastError && <div className="alert a-red">Last run failed: {st.lastError}</div>}
+
+      {unseen.length > 0 && (
+        <div className="alert a-away" role="status">
+          <b>While you were away</b>
+          <ul>{unseen.slice(0, 5).map((e) => <li key={e.id}>{e.message}</li>)}</ul>
+          <div className="actions">
+            {unseen.some((e) => ["drift", "proposal"].includes(e.kind)) && <button className="btn small primary" onClick={() => { dismissEvents(); go("approvals"); }}>Review what it found</button>}
+            <button className="btn small ghost" onClick={dismissEvents}>Got it</button>
+          </div>
+        </div>
+      )}
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="panel">
         <Panel {...ctx} />

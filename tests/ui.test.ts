@@ -40,6 +40,16 @@ describe("tabbed console (browser)", () => {
     expect(await page.locator("#tab-details[aria-selected=true]").count()).toBe(1);
   }, 90000);
 
+  run("Autopilot switch is off by default and toggles on and off", async () => {
+    if (!browser) return;
+    expect(await page.locator(".autopilot .switch[aria-checked=false]").count()).toBe(1);
+    await page.click(".autopilot .switch");
+    await page.waitForSelector(".autopilot.on");
+    expect(await page.locator(".autopilot .switch[aria-checked=true]").count()).toBe(1);
+    await page.click(".autopilot .switch");
+    await page.waitForSelector(".autopilot:not(.on)");
+  }, 30000);
+
   run("the text box answers a question, previews an edit and still understands dates", async () => {
     if (!browser) return;
     await page.click("#tab-edit");

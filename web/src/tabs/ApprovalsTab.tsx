@@ -15,6 +15,7 @@ const inFilter = (f: Filter, r: Row) =>
   : r.state === "VERIFIED";
 
 export default function ApprovalsTab({ st, act }: Ctx) {
+  const drafts = (st.claimDrafts ?? []) as ClaimDraft[];
   const rows = (st.rows as Row[]).filter((r) => !["MATCH", "FORMAT_ONLY_EQUIVALENT"].includes(r.state));
   const [f, setF] = useState<Filter>("action");
   const count = (id: Filter) => rows.filter((r) => inFilter(id, r)).length;
@@ -39,6 +40,8 @@ export default function ApprovalsTab({ st, act }: Ctx) {
         </EmptyState>
       )}
 
+      {f === "flagged" && drafts.map((d) => <ClaimCard key={d.platformId} d={d} />)}
+
       {platforms.map((pid) => {
         const mine = shown.filter((r) => r.platformId === pid);
         const waiting = mine.filter((r) => r.state === "PROPOSED").length;
@@ -56,6 +59,22 @@ export default function ApprovalsTab({ st, act }: Ctx) {
   );
 }
 
+interface ClaimDraft { platformId: string; platform: string; listingId: string; listingPath: string; subject: string; body: string; steps: string[]; blockedFields: string[] }
+
+function ClaimCard({ d }: { d: ClaimDraft }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => { try { await navigator.clipboard.writeText(`Subject: ${d.subject}\n\n${d.body}`); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard blocked */ } };
+  return (
+    <div className="claimcard">
+      <h3>I prepared a claim request for {d.platform.replace(/ \(.*\)/, "")}</h3>
+      <p className="muted">I cannot take over a listing for you (that needs a code, call or postcard from you), so I did the paperwork around it.</p>
+      <ol className="steps">{d.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+      <details><summary>The message I drafted</summary><pre className="pre">{`Subject: ${d.subject}\n\n${d.body}`}</pre></details>
+      <div className="actions"><button className="btn small primary" onClick={copy}>{copied ? "Copied" : "Copy the message"}</button><a className="btn small" href={d.listingPath} target="_blank" rel="noreferrer">Open the listing</a></div>
+    </div>
+  );
+}
+
 function Card({ r, busy, act }: { r: Row; busy: boolean; act: Ctx["act"] }) {
   return (
     <div className={`fcard f-${r.state}`}>
@@ -63,7 +82,8 @@ function Card({ r, busy, act }: { r: Row; busy: boolean; act: Ctx["act"] }) {
       {r.fieldKey === "listing:create"
         ? <div className="fc-create"><span className="lbl">Exactly what will be sent</span><div className="pre">{r.intended}</div></div>
         : <div className="fc-diff"><div><span className="lbl">Listing shows</span><div>{r.original || "—"}</div></div><div className="arrow">→</div><div><span className="lbl">Your record says</span><div>{r.intended}</div></div></div>}
-      <p className="reason">{r.reason}</p>
+      {r.why && <p className="why"><span className="whytag">{r.whySource === "Gemini" ? "Gemini wrote this" : "Why"}</span> {r.why}</p>}
+      {r.reason && r.reason !== r.why && !/^(proposed to owner|approved by|sent to platform)/.test(r.reason) && <p className="reason">{r.reason}</p>}
       {r.state === "PROPOSED" && (
         <div className="actions">
           <button className="btn primary small" disabled={busy} onClick={() => act(() => api(`/api/fields/${r.fieldId}/approve`, {}))}>Approve</button>

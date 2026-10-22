@@ -20,6 +20,10 @@ import { IntentError, confirmDetails, confirmIntent, isDetailIntent, preview, re
 import { evidenceDir, writeGuardrail, writeResults } from "../runner/evidence.js";
 import { listTests, runAllTcs, runGuardrailDemo, runTc, TC_IDS, TEST_DATE, type TcMode, type TcResult } from "../runner/tc.js";
 import { geminiEnabled } from "../agent/llm.js";
+import { autopilotInfo, autopilotRun, listEvents, markEventsSeen, setAutopilot } from "../agent/autopilot.js";
+import { latestBriefing, polishWithGemini } from "../agent/briefing.js";
+import { buildClaimDrafts } from "../agent/claimDraft.js";
+import { SIM_KINDS, simulate, type SimKind } from "../mock/simulate.js";
 import { bizOf, login, logout, me, requireAuth, requireDemo, sameOrigin } from "./auth.js";
 import { publicRouteMounts } from "./registry.js";
 import "./onboarding.js"; // registers the public onboarding routes
@@ -76,6 +80,7 @@ export function createApp() {
       business: { id: b.id, name: b.name, address: b.address, phone: b.phone, hours: b.hours, isDemo: b.isDemo },
       exceptions: listExceptions(bizId), platforms, rows, coverage: coverageOf(bizId), matches: buildMatchRows(bizId),
       summary: latestRunSummary(bizId) ?? (rows.length ? templateSummary(bizId) : null), llmAvailable: geminiEnabled(),
+      briefing: latestBriefing(bizId), claimDrafts: buildClaimDrafts(bizId), autopilot: autopilotInfo(bizId), events: listEvents(bizId),
     };
   };
   api.get("/state", (req, res) => res.json(state(bizOf(req))));
@@ -112,7 +117,7 @@ export function createApp() {
     starting.add(bizId);
     const planner = req.query.planner === "rogue" ? makeRoguePlanner(listLinkedPlatforms(bizId).map((p) => p.id)) : currentPlanner();
     const p = (kind === "scan" ? scan(bizId, planner) : execute(bizId, planner))
-      .then(() => { lastErrors.delete(bizId); })
+      .then((r) => { lastErrors.delete(bizId); if (geminiEnabled()) void polishWithGemini(bizId, r.runId); }) // nicer wording for the briefing, in the background
       .catch((e) => { lastErrors.set(bizId, String(e?.message ?? e)); })
       .finally(() => { starting.delete(bizId); });
     if (req.query.wait) { await p; return res.json({ ok: true, ...state(bizId) }); }
@@ -129,6 +134,26 @@ export function createApp() {
     // a run id that belongs to another business simply returns nothing
     res.json({ runId: wanted ?? null, rows: wanted ? getTraceFor(bizId, wanted) : [] });
   });
+
+  /* ── autopilot: the agent checks on its own and tells the owner what it found (it never approves anything) ── */
+  api.post("/autopilot", wrap((req, res) => { setAutopilot(bizOf(req), !!req.body?.on); res.json(autopilotInfo(bizOf(req))); }));
+  api.post("/autopilot/check", wrap(async (req, res) => {
+    const bizId = bizOf(req);
+    if (isBusy(bizId) || starting.has(bizId) || testRunning) return res.status(409).json({ error: "Another run is in progress." });
+    starting.add(bizId);
+    void autopilotRun(bizId).finally(() => starting.delete(bizId));
+    res.status(202).json({ started: true });
+  }));
+  api.post("/events/seen", (req, res) => { markEventsSeen(bizOf(req)); res.json({ ok: true }); });
+
+  /* ── demo only: make the (mock) outside world change so the agent has to cope ── */
+  api.post("/demo/simulate", requireDemo, wrap((req, res) => {
+    const bizId = bizOf(req);
+    if (isBusy(bizId) || starting.has(bizId) || testRunning) return res.status(409).json({ error: "The agent is working right now." });
+    const kind = String(req.body?.kind) as SimKind;
+    if (!SIM_KINDS.includes(kind)) return res.status(400).json({ error: "Unknown simulation" });
+    res.json({ message: simulate(kind, String(req.body?.site ?? "b").replace(/[^a-e]/g, "") || "b") });
+  }));
 
   /* ── approvals ── */
   api.post("/fields/:id/approve", wrap((req, res) => res.json(approveField(bizOf(req), Number(req.params.id)))));

@@ -7,6 +7,7 @@ import type { WeeklyHours } from "../core/types.js";
 import { ChangeZ, CreateChangeZ, summariseChange, type Change, type CreateChange, type HolidayEntry } from "./changes.js";
 import { phoneKey } from "../onboarding/similarity.js";
 import { SITE_CFG, type SiteCfg } from "./siteConfig.js";
+import { consumeLostWrite, consumeOutage } from "./simulate.js";
 
 interface MockListing {
   site: string; listing_id: string; display_name: string; address: string; phone: string;
@@ -185,6 +186,7 @@ ${rows.map((q) => `<tr data-status="${q.status}"><td>${q.id}</td><td>${q.site}</
 
   r.get("/:slug/listing/:id", (req, res) => {
     const cfg = SITE_CFG[req.params.slug];
+    if (consumeOutage(cfg.slug)) return res.status(503).send(page(cfg, "Unavailable", "<h1>Temporarily unavailable</h1><p>Please try again shortly.</p>"));
     const l = load(cfg.slug, req.params.id);
     if (!l) return res.status(404).send(page(cfg, "Not found", "<h1>Listing not found</h1>"));
     res.send(renderPublic(cfg, l));
@@ -278,6 +280,7 @@ ${pending.length ? `<h3>Pending changes (${pending.length})</h3>${pending.map((p
       log(change.action, 202);
       return res.status(202).json({ status: "pending_moderation", queueId: Number(info.lastInsertRowid) });
     }
+    if (consumeLostWrite(cfg.slug)) { log(change.action, 200); return res.json({ status: "applied" }); } // simulated: says OK, stores nothing
     applyChange(l, change);
     save(l);
     log(change.action, 200);

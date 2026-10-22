@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { api } from "../api";
 import { Ctx, siteShort, weekRows } from "../shared";
 
 export default function DetailsTab({ st, me, act, go }: Ctx) {
   const b = st.business;
+  const [simMsg, setSimMsg] = useState<string | null>(null);
   const listed = st.coverage.filter((c: any) => c.status === "listed").length;
   const rows = st.rows as any[];
   const n = (s: string) => rows.filter((r) => r.state === s).length;
@@ -46,6 +47,7 @@ export default function DetailsTab({ st, me, act, go }: Ctx) {
               <button className="stat" onClick={() => go("approvals")}><b>{n("PENDING_MODERATION") + n("FLAGGED_NOT_OWNER")}</b><span>pending or flagged</span></button>
             </div>
             {!neverScanned && <p className="summary" aria-live="polite">{st.summary}</p>}
+            {!neverScanned && st.briefing && <div className="briefing"><span className="whytag">What I did</span> {st.briefing}</div>}
           </section>
 
           <section className="card">
@@ -72,6 +74,19 @@ export default function DetailsTab({ st, me, act, go }: Ctx) {
           <dt>Page reader</dt><dd>{st.readerMode}</dd>
           <dt>Login</dt><dd>PIN only{b.isDemo ? " (demo business)" : ""}</dd>
         </dl>
+        {me.business?.isDemo && (
+          <div className="simbox">
+            <h4>Make the outside world change (demo)</h4>
+            <p className="muted small">These act on the mock listing sites only, so you can watch the agent cope. Then press Scan, or turn on Autopilot and wait.</p>
+            <div className="actions">
+              <button className="btn small" disabled={st.busy} onClick={() => act(async () => { const r = await api("/api/demo/simulate", { kind: "drift_phone", site: "a" }); setSimMsg(r.message); })}>Someone changes a phone number</button>
+              <button className="btn small" disabled={st.busy} onClick={() => act(async () => { const r = await api("/api/demo/simulate", { kind: "drift_diwali", site: "b" }); setSimMsg(r.message); })}>Someone changes the Diwali hours</button>
+              <button className="btn small" disabled={st.busy} onClick={() => act(async () => { const r = await api("/api/demo/simulate", { kind: "outage", site: "a" }); setSimMsg(r.message); })}>A site goes down briefly</button>
+              <button className="btn small" disabled={st.busy} onClick={() => act(async () => { const r = await api("/api/demo/simulate", { kind: "lost_write", site: "b" }); setSimMsg(r.message); })}>A site drops my next edit</button>
+            </div>
+            {simMsg && <p className="note clay">{simMsg}</p>}
+          </div>
+        )}
         <div className="actions">
           <a className="btn small" href="/mock/" target="_blank" rel="noreferrer">Open the mock listing sites</a>
           <a className="btn small" href="/mock/admin" target="_blank" rel="noreferrer">Mock moderator page</a>

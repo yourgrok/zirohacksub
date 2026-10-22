@@ -7,6 +7,8 @@ import { getTrace, type TraceRow } from "../agent/loop.js";
 import { approveAllForPlatform, approveField, execute, scan } from "../agent/service.js";
 import { geminiEnabled } from "../agent/llm.js";
 import { buildRows, toCsv } from "../agent/report.js";
+import { autopilotRun, listEvents, setAutopilot } from "../agent/autopilot.js";
+import { simulate } from "../mock/simulate.js";
 import { foresight } from "../foresight/index.js";
 import { confirmIntent, preview, refine } from "../nl/index.js";
 import path from "node:path";
@@ -16,7 +18,7 @@ import { BUSINESS_ID as B } from "../core/seed.js";
 /** Tests always run against this fixed date so results never change from day to day. */
 export const TEST_DATE = "2026-10-21";
 export type TcMode = "deterministic" | "llm";
-export const TC_IDS = ["TC1", "TC2", "TC3", "TC4", "TC5", "TC6"] as const;
+export const TC_IDS = ["TC1", "TC2", "TC3", "TC4", "TC5", "TC6", "TC7", "TC8", "TC9"] as const;
 export type TcId = (typeof TC_IDS)[number];
 
 export interface Check { name: string; pass: boolean; detail: string }
@@ -35,6 +37,9 @@ const DEFS: Record<TcId, { title: string; input: string; expected: string }> = {
   TC4: { title: "Edit pending moderation", input: "Site E shows Sunday as closed; every edit on site E goes to a moderation queue.", expected: "PENDING_MODERATION (never reported corrected) until /mock/admin approves it and the page is reloaded, then VERIFIED." },
   TC5: { title: "Plain-language closure flows through approval", input: "Owner types: “we are closed on 26th December”.", expected: "Preview resolves 26 Dec 2026 (closed). Confirm creates a natural-language exception; the pipeline proposes it per site; approved sites are VERIFIED, E is PENDING_MODERATION, D is FLAGGED_NOT_OWNER. Nothing is saved before Confirm and nothing applied before approval." },
   TC6: { title: "Foresight alert for a holiday with no exception", input: "Today is pinned to 21 Oct 2026. Bhai Dooj (11 Nov 2026) has no exception on the record.", expected: "An alert is raised (30-day milestone, chip “Not set”) with a draft suggestion that is NOT applied automatically." },
+  TC7: { title: "A listing changes after the owner approved", input: "CityPages' Diwali fix is approved. Before it is sent, someone else changes the Diwali hours on CityPages to 9:00 AM to 12:00 PM.", expected: "The agent reloads, sees the page is not what the owner approved against, sends nothing, and asks the owner again with the new facts. After a second approval it is applied and VERIFIED." },
+  TC8: { title: "A site is briefly down, and a site drops an edit", input: "Listify fails its next two page loads. Later CityPages answers OK to the approved edit but does not store it.", expected: "The agent waits and retries the outage until the site answers. For the lost edit it re-sends the same owner-approved change once and verifies it. Both are visible in the trace." },
+  TC9: { title: "Autopilot notices a change by itself", input: "Everything is fixed and Autopilot is on. Someone changes the phone number on Listify. Autopilot runs with nobody clicking.", expected: "Autopilot detects the drift, writes a fix for the owner to approve, and sends nothing. After the owner approves, the next Autopilot pass applies it and verifies it." },
 };
 
 export const listTests = () => TC_IDS.map((id) => ({ id, ...DEFS[id] }));
@@ -152,6 +157,63 @@ const BODIES: Record<TcId, Body> = {
     c("Public page A now lists 26 Dec 2026 as closed", (await (await fetch(baseUrl() + "/mock/a/listing/LST-A-1001")).text()).includes("26 Dec 2026"), "visible on reload");
     await shots("TC5-siteA-after", "/mock/a/listing/LST-A-1001");
     return ["a", "b", "c", "d", "e"].map((x) => `${x}:${st("site_" + x)}`).join(" ");
+  },
+  async TC7(c, runs) {
+    runs.push((await scan(B)).runId);
+    const key = "holiday:ex_seed_diwali";
+    const f = getFieldByKey(B, "site_b", key)!;
+    c("CityPages Diwali proposed and approved", f.state === "PROPOSED", `shows "${f.original_raw}"`);
+    approveField(B, f.id);
+    c("Surprise: someone changes the page before it is applied", simulate("drift_diwali", "b").includes("changed"), "Diwali on CityPages is now 9:00 AM to 12:00 PM");
+    const w0 = writesAt("site_b");
+    const r = await execute(B); runs.push(r.runId);
+    const after = getFieldByKey(B, "site_b", key)!;
+    c("The agent sent nothing", writesAt("site_b") === w0, `writes at B = ${writesAt("site_b")}`);
+    c("It went back to the owner with the new facts", after.state === "PROPOSED" && /changed after you approved/i.test(after.reason ?? ""), `state=${after.state}; ${after.reason}`);
+    c("The trace says why", getTrace(r.runId).some((t) => /changed since approval/.test(t.output_summary)), "page changed since approval");
+    approveField(B, after.id);
+    runs.push((await execute(B)).runId);
+    const h = histOf("site_b", key);
+    c("After a second approval it is applied and VERIFIED", getFieldByKey(B, "site_b", key)!.state === "VERIFIED" && writesAt("site_b") === w0 + 1, h.join(" → "));
+    c("The public page shows the approved hours", (await (await fetch(baseUrl() + "/mock/b/listing/LST-B-1001")).text()).includes("10:00–14:00"), "10:00–14:00");
+    return `B holiday: ${h.join(" → ")}`;
+  },
+  async TC8(c, runs) {
+    simulate("outage", "a");
+    const r = await scan(B); runs.push(r.runId);
+    const t = getTrace(r.runId);
+    c("The agent retried the site that was down", t.filter((x) => /recovery: temporary outage/.test(x.note ?? "")).length === 2, `${t.filter((x) => /recovery: temporary outage/.test(x.note ?? "")).length} retries logged`);
+    c("Listify was read once it answered", listFields(B, "site_a").length > 0 && !t.some((x) => x.output_summary.startsWith("ERROR")), "no errors in the trace");
+    const f = getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!;
+    approveField(B, f.id);
+    simulate("lost_write", "b");
+    const r2 = await execute(B); runs.push(r2.runId);
+    const t2 = getTrace(r2.runId);
+    c("The agent noticed the edit was dropped and re-sent the same approved change", t2.some((x) => /recovery: lost write/.test(x.note ?? "")), "re-sent once");
+    c("It is VERIFIED after the re-send, and nothing else was written", getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state === "VERIFIED" && totalWrites() === 2, `writes = ${totalWrites()}`);
+    const retry = (getDb().prepare("SELECT COUNT(*) c FROM audit_log WHERE action='apply-retry'").get() as { c: number }).c;
+    c("The re-send is in the audit log", retry === 1, `apply-retry entries = ${retry}`);
+    return `outage retried; lost write re-sent; B holiday ${getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state}`;
+  },
+  async TC9(c, runs) {
+    runs.push((await scan(B)).runId);
+    approveField(B, getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.id);
+    runs.push((await execute(B)).runId);
+    setAutopilot(B, true);
+    const w0 = totalWrites();
+    c("Everything we could fix is fixed; autopilot is on", getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state === "VERIFIED", "Autopilot on");
+    simulate("drift_phone", "a");
+    const run1 = await autopilotRun(B);
+    const f = getFieldByKey(B, "site_a", "phone")!;
+    const drift = listEvents(B, 30).find((e) => e.kind === "drift" && /Listify/.test(e.message));
+    c("With nobody clicking, Autopilot ran and noticed the change", run1.ran && !!drift, drift?.message ?? "no event");
+    c("It wrote a fix for the owner to approve", f.state === "PROPOSED", `Listify phone: ${f.state}`);
+    c("It sent nothing and approved nothing", totalWrites() === w0, `writes = ${totalWrites()}`);
+    approveField(B, f.id);
+    const run2 = await autopilotRun(B);
+    c("After the owner approved, the next pass applied and verified it", run2.ran && getFieldByKey(B, "site_a", "phone")!.state === "VERIFIED" && totalWrites() === w0 + 1, `Listify phone: ${getFieldByKey(B, "site_a", "phone")!.state}; writes = ${totalWrites()}`);
+    setAutopilot(B, false);
+    return `Autopilot found: ${drift?.message ?? "nothing"}`;
   },
   async TC6(c, runs, extra) {
     const exBefore = listExceptions(B).length;

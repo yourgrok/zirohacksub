@@ -19,6 +19,7 @@ export const TAB_DEFS: { id: TabId; label: string; hint: string; more?: boolean 
 export type Row = {
   fieldId: number; platform: string; platformId: string; field: string; fieldKey: string; original: string; intended: string;
   approval: string; verified: string; state: string; reason: string; current: string; currentNorm: string;
+  why?: string; whySource?: "agent" | "Gemini";
 };
 
 export interface Ctx {

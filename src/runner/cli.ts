@@ -23,7 +23,7 @@ async function main() {
   process.env.BASE_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const sub = mode === "llm" ? "llm" : "";
   const shotDir = path.join(evidenceDir(), sub, "screenshots");
-  console.log(`Running TC1-TC6 (${mode}) ...`);
+  console.log(`Running TC1-TC9 (${mode}) ...`);
   const results = await runAllTcs({ mode, screenshotDir: shotDir });
   writeResults(results, sub);
   if (mode === "deterministic") {

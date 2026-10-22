@@ -1,10 +1,12 @@
 import { getDb } from "../core/db.js";
 import { CREATE_KEY } from "./createListing.js";
 import { listFields, listPlatforms, type FieldRow } from "../core/store.js";
+import { aiNoteFor, basisOf, whyOf } from "./why.js";
 
 export interface ReportRow {
   fieldId: number; platform: string; platformId: string; field: string; fieldKey: string;
   original: string; intended: string; approval: string; verified: string; state: string; reason: string; current: string; currentNorm: string;
+  why: string; whySource: "agent" | "Gemini";
 }
 
 const approvalOf = (s: string) =>
@@ -18,11 +20,15 @@ const verifiedOf = (s: string) =>
 
 export function buildRows(bizId: string): ReportRow[] {
   const names = new Map(listPlatforms().map((p) => [p.id, p.name]));
-  return listFields(bizId).map((f: FieldRow) => ({
-    fieldId: f.id, platform: names.get(f.platform_id) ?? f.platform_id, platformId: f.platform_id, field: f.label, fieldKey: f.field_key,
-    original: f.original_raw ?? "", intended: f.intended_display ?? "", approval: approvalOf(f.state), verified: verifiedOf(f.state),
-    state: f.state, reason: f.reason ?? "", current: f.current_raw ?? "", currentNorm: f.current_norm ?? "",
-  }));
+  return listFields(bizId).map((f: FieldRow) => {
+    const base = {
+      fieldId: f.id, platform: names.get(f.platform_id) ?? f.platform_id, platformId: f.platform_id, field: f.label, fieldKey: f.field_key,
+      original: f.original_raw ?? "", intended: f.intended_display ?? "", approval: approvalOf(f.state), verified: verifiedOf(f.state),
+      state: f.state, reason: f.reason ?? "", current: f.current_raw ?? "", currentNorm: f.current_norm ?? "",
+    };
+    const ai = aiNoteFor(bizId, f.id, basisOf(base));
+    return { ...base, why: ai ?? whyOf(base), whySource: ai ? "Gemini" as const : "agent" as const };
+  });
 }
 
 /** Plain-English template summary (used when there is no Gemini key, or as the fallback). */

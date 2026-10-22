@@ -67,10 +67,20 @@ Loop: **Collect → Plan → Read → Normalise → Compare → Propose → (own
 
 The agent has a **tool registry** of eight tools: \`read_listing\`, \`normalise\`, \`compare\`, \`propose\`, \`apply_approved\`, \`reload_and_verify\`, \`flag_listing\`, \`ask_owner\`. Two planners share it:
 
-- **Deterministic planner** — always available; used with no API key or when the LLM fails.
-- **Gemini planner** — default when \`GEMINI_API_KEY\` is set. Each step Gemini sees only the tool list, the business record, per-platform state and previous tool results (never secrets) and returns a Zod-validated JSON decision.
+- **Rules-driven planner** — the default and the one the deployed demo uses; needs no API key and cannot be slowed down or rate-limited by a model.
+- **Gemini planner** — optional (\`AGENT_PLANNER=gemini\` plus a key). Each step Gemini sees only the tool list, the business record, per-platform state and previous tool results (never secrets) and returns a Zod-validated JSON decision; any failure falls back to the rules.
 
 Every tool call is written to a timestamped **agent trace** (tool, input, output summary, duration) with a badge saying who decided: **Gemini / Deterministic / Fallback / Blocked**.
+
+**What the agent does on its own** (all inside the approval rules; none of it needs a click or a model):
+
+| Behaviour | What it does | Proven by |
+|---|---|---|
+| **Autopilot** | When switched on, a background pass checks every listing, applies what the owner already approved, re-checks edits waiting for a moderator, and tells the owner what it found ("while you were away"). It never approves anything. | TC9; \`tests/agentic.test.ts\` |
+| **Notices change after approval** | Before writing it reloads the page; if the page is no longer what the owner approved against it sends nothing and asks again with the new facts. | TC7 |
+| **Copes with a flaky world** | A site that is down is retried (each retry is a trace row); an edit the site said OK to but dropped is re-sent once (the same approved change) and verified. | TC8 |
+| **Says why** | Every card has a plain sentence saying what differs and why it matters; each run ends with a short "what I did" briefing. Built from facts in code; Gemini may reword it in the background. | \`tests/agentic.test.ts\` |
+| **Does the paperwork it is allowed to do** | For a listing claimed by someone else it drafts the claim request and lists the manual steps. It never touches OTP, CAPTCHA, calls or postcards. | \`tests/agentic.test.ts\` |
 
 Per-field state machine (enforced in \`src/core/states.ts\`, unit-tested): \`MATCH, FORMAT_ONLY_EQUIVALENT, MISMATCH, PROPOSED, APPROVED, REJECTED, APPLIED, VERIFIED, PENDING_MODERATION, FLAGGED_NOT_OWNER\`. Only the owner can enter \`APPROVED\`; only the verifier can enter \`VERIFIED\`.
 
@@ -79,9 +89,9 @@ An **audit log** records who approved what and when, and the exact payload sent 
 ## 3. How Gemini is used and constrained
 
 - Official \`@google/genai\` SDK, **Interactions API** (\`ai.interactions.create({ model, input, system_instruction, response_format })\` and \`output_text\`). Not the legacy \`generateContent\`, and no Gemini managed agents — our own code owns the loop.
-- Models from env: \`GEMINI_MODEL\` (default \`gemini-3.8-flash\`) for planning and the report summary; \`GEMINI_FAST_MODEL\` (default \`gemini-3.5-flash-lite\`) for the live closure-preview cross-check. If a model is unavailable (404/unsupported) the other is tried, then the deterministic path.
+- Models from env: \`GEMINI_MODEL\` (default \`gemini-3.5-flash-lite\`) for the optional planner and the briefing wording; \`GEMINI_FAST_MODEL\` (default \`gemini-3.5-flash-lite\`) for the live closure-preview cross-check. If a model is unavailable (404/unsupported) the other is tried, then the deterministic path.
 - Calls go through one queue (**one at a time**), identical calls are **cached**, a 429 is **retried once** after a back-off, and there is an **8 s timeout**. Invalid JSON, a Zod failure, a timeout or a 429 → that step falls back to the deterministic planner and the trace shows a **Fallback** badge with the reason.
-- Gemini also writes the one-line plain-English summary on the report (deterministic template without a key).
+- The plain-English headline and the \"what I did\" briefing are built from facts in code; with a key Gemini may reword them in the background (it is told to add no facts, the output is validated, and the built-in sentences stay if it fails).
 - In plain-language closures Gemini's reading is **cross-checked** against the deterministic parser; if they disagree the owner sees both and chooses.
 - **Honest status of the live evidence:** the build environment had no Gemini API key and could not reach Google's docs site, so the Gemini path was built against the installed SDK's type definitions and is verified by unit tests with a mocked client (12 tests: Gemini decisions, blocked decisions, forced flag, invalid JSON, 429 retry-then-fallback, timeout, model 404 fallback, caching/serialisation, key never leaked). ${llmRan ? "A live Gemini run **was** executed; see evidence/llm/." : "**No live Gemini run is included in this evidence set.** Run \`npm run test:tc:llm\` with a key to produce \`evidence/llm/\`; \`evidence/SUMMARY.md\` then shows both runs side by side and lists every Gemini fallback or guardrail block."}
 
@@ -167,7 +177,7 @@ const slides = `# Slide outline (11 slides) — built from real run data
 
 **10. New owner: PIN login + score matching** — no username; a view-once PIN; the agent scores every listing on every site (phone 40 · address 35 · name 25), look-alike *Sunrise Sweet House* scores 37.7 vs 100, a good match owned by someone else is flagged, the owner confirms each match, and missing sites are added only after approval and verified (\`evidence/onboarding-demo.md\`). Every business is isolated from the others.
 
-**11. Results** — Deterministic TC1–TC6: ${det.filter((r) => r?.pass).length}/6 pass from a fresh reset. ${unit ? `${unit.numPassedTests}/${unit.numTotalTests} automated tests pass.` : ""} One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
+**11. Results** — Deterministic TC1–TC9: ${det.filter((r) => r?.pass).length}/9 pass from a fresh reset. ${unit ? `${unit.numPassedTests}/${unit.numTotalTests} automated tests pass.` : ""} One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
 
 **12. Limitations (honest)** — Mock sites only · claiming a listing is a mock (no OTP) · a lost PIN means redoing onboarding · festival dates must be owner-confirmed · free-host DB resets (app reseeds on boot) · LLM is optional and guarded · live Gemini evidence needs the owner's key · Docker/Render not built in the build sandbox.
 `;

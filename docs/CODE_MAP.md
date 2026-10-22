@@ -40,9 +40,13 @@
 │   ├── nl/parse.ts                deterministic date parser (chrono-node + rules)
 │   ├── nl/intent.ts               the text box brain: edit details, weekly hours, answer questions, or fall back to dates
 │   ├── core/details.ts            validated edit of the owner-approved record (+ resets stale approvals), shared validators
+│   ├── agent/autopilot.ts         Autopilot pass (apply approved, re-check, re-scan, report drift as events) + timer; never approves
+│   ├── agent/briefing.ts          "what I did" sentences from facts; optional background Gemini rewording
+│   ├── agent/why.ts, claimDraft.ts  one plain sentence per card; claim request + manual steps for flagged listings
+│   ├── mock/simulate.ts           demo-only "world changes" switches (drift, outage, lost edit)
 │   ├── agent/changelog.ts         merges record edits and audit events into one readable change log
 │   ├── nl/index.ts                preview, Gemini cross-check (refine), confirm
-│   ├── runner/                    tc.ts (TC1-TC6 + guardrail demo), evidence.ts (JSON + SUMMARY.md), cli.ts, docs.ts, demo-onboarding.ts (new-owner journey over HTTP)
+│   ├── runner/                    tc.ts (TC1-TC9 + guardrail demo + before/after consistency export), evidence.ts (JSON + SUMMARY.md), cli.ts, docs.ts, demo-onboarding.ts (new-owner journey over HTTP)
 │   └── server/                    app.ts (routes, all scoped to the logged-in business), auth.ts (login/logout/requireAuth/origin check), onboarding.ts (public routes), registry.ts, index.ts (boot, reseed-if-empty)
 ├── web/src/                       React: main.tsx (auth gate), Gate.tsx (PIN login, details, "Is this you?", view-once PIN), App.tsx (shell: header, sticky action bar, tabs, hash routing),
 │   │                              shared.tsx (tab list, helpers), tabs/ (DetailsTab, SitesTab, ApprovalsTab, ConsistencyTab, EditTab, ChangeLogTab, TraceTab, HolidaysTab, AddBusinessTab), Tests.tsx, api.tsx, styles.css

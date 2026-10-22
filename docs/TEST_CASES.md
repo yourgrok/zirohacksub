@@ -1,6 +1,6 @@
 # Test cases
 
-Copied from the latest deterministic run (2026-10-22T15:26:18.209Z; date pinned to 2026-10-21 IST; fresh reset before every test). Full per-check evidence: `evidence/SUMMARY.md` and `evidence/TC*.json`.
+Copied from the latest deterministic run (2026-10-22T20:40:02.558Z; date pinned to 2026-10-21 IST; fresh reset before every test). Full per-check evidence: `evidence/SUMMARY.md` and `evidence/TC*.json`.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
@@ -10,6 +10,9 @@ Copied from the latest deterministic run (2026-10-22T15:26:18.209Z; date pinned 
 | TC4 — Edit pending moderation | PASS | not run (no API key in build environment) | 29 | site E hours: MISMATCH → PROPOSED → APPROVED → APPLIED → PENDING_MODERATION → VERIFIED |
 | TC5 — Plain-language closure flows through approval | PASS | not run (no API key in build environment) | 32 | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
 | TC6 — Foresight alert for a holiday with no exception | PASS | not run (no API key in build environment) | 0 | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
+| TC7 — A listing changes after the owner approved | PASS | not run (no API key in build environment) | 27 | B holiday: MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED |
+| TC8 — A site is briefly down, and a site drops an edit | PASS | not run (no API key in build environment) | 28 | outage retried; lost write re-sent; B holiday VERIFIED |
+| TC9 — Autopilot notices a change by itself | PASS | not run (no API key in build environment) | 25 | Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
 
 ## TC1 — Holiday hours differ on one site
 
@@ -84,7 +87,7 @@ Copied from the latest deterministic run (2026-10-22T15:26:18.209Z; date pinned 
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjp1n9b0 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvk093aw0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -104,6 +107,53 @@ Copied from the latest deterministic run (2026-10-22T15:26:18.209Z; date pinned 
 | Holiday is flagged for the owner to verify its date | pass | verified=false → UI shows “verify date” |
 | A draft is suggested but nothing is applied automatically | pass | draft: Special hours 10:00–14:00 on Bhai Dooj; exceptions unchanged (1); writes=0 |
 | Each holiday shows whether it is set: Diwali is saved but not on every site yet; Bhai Dooj is Not set | pass | Diwali: Saved — not on all sites yet (4/5 sites); Bhai Dooj: Not set |
+
+## TC7 — A listing changes after the owner approved
+
+- **Input:** CityPages' Diwali fix is approved. Before it is sent, someone else changes the Diwali hours on CityPages to 9:00 AM to 12:00 PM.
+- **Expected:** The agent reloads, sees the page is not what the owner approved against, sends nothing, and asks the owner again with the new facts. After a second approval it is applied and VERIFIED.
+- **Actual:** B holiday: MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED
+- **Result:** PASS — Actual result matches the expected result.
+
+| Check | Result | Detail |
+|---|---|---|
+| CityPages Diwali proposed and approved | pass | shows "8 Nov 2026: Closed" |
+| Surprise: someone changes the page before it is applied | pass | Diwali on CityPages is now 9:00 AM to 12:00 PM |
+| The agent sent nothing | pass | writes at B = 0 |
+| It went back to the owner with the new facts | pass | state=PROPOSED; The page changed after you approved: it showed "8 Nov 2026: Closed" and now shows "8 Nov 2026: 9:00 AM – 12:00 PM". Nothing was sent. Please look again and approve if the fix is still right. |
+| The trace says why | pass | page changed since approval |
+| After a second approval it is applied and VERIFIED | pass | MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED |
+| The public page shows the approved hours | pass | 10:00–14:00 |
+
+## TC8 — A site is briefly down, and a site drops an edit
+
+- **Input:** Listify fails its next two page loads. Later CityPages answers OK to the approved edit but does not store it.
+- **Expected:** The agent waits and retries the outage until the site answers. For the lost edit it re-sends the same owner-approved change once and verifies it. Both are visible in the trace.
+- **Actual:** outage retried; lost write re-sent; B holiday VERIFIED
+- **Result:** PASS — Actual result matches the expected result.
+
+| Check | Result | Detail |
+|---|---|---|
+| The agent retried the site that was down | pass | 2 retries logged |
+| Listify was read once it answered | pass | no errors in the trace |
+| The agent noticed the edit was dropped and re-sent the same approved change | pass | re-sent once |
+| It is VERIFIED after the re-send, and nothing else was written | pass | writes = 2 |
+| The re-send is in the audit log | pass | apply-retry entries = 1 |
+
+## TC9 — Autopilot notices a change by itself
+
+- **Input:** Everything is fixed and Autopilot is on. Someone changes the phone number on Listify. Autopilot runs with nobody clicking.
+- **Expected:** Autopilot detects the drift, writes a fix for the owner to approve, and sends nothing. After the owner approves, the next Autopilot pass applies it and verifies it.
+- **Actual:** Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve.
+- **Result:** PASS — Actual result matches the expected result.
+
+| Check | Result | Detail |
+|---|---|---|
+| Everything we could fix is fixed; autopilot is on | pass | Autopilot on |
+| With nobody clicking, Autopilot ran and noticed the change | pass | Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
+| It wrote a fix for the owner to approve | pass | Listify phone: PROPOSED |
+| It sent nothing and approved nothing | pass | writes = 1 |
+| After the owner approved, the next pass applied and verified it | pass | Listify phone: VERIFIED; writes = 2 |
 
 ## How to run
 

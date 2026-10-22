@@ -1,6 +1,6 @@
 # Test evidence summary
 
-Generated: 2026-10-22T20:21:55.101Z  
+Generated: 2026-10-22T20:40:25.944Z  
 Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **auto** · mock data only.
 
 Every run starts from a fresh reset of the seeded demo data. The deterministic run uses `LLM_PROVIDER=none` so results cannot fail randomly because of rate limits or model changes.
@@ -15,8 +15,11 @@ Every run starts from a fresh reset of the seeded demo data. The deterministic r
 | TC4 — Edit pending moderation | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
 | TC5 — Plain-language closure flows through approval | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
 | TC6 — Foresight alert for a holiday with no exception | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
+| TC7 — A listing changes after the owner approved | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
+| TC8 — A site is briefly down, and a site drops an edit | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
+| TC9 — Autopilot notices a change by itself | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
 
-Deterministic: **6/6 passed**. Gemini: not run in this evidence set.
+Deterministic: **9/9 passed**. Gemini: not run in this evidence set.
 
 ## TC1 — Holiday hours differ on one site
 
@@ -139,7 +142,7 @@ Trace: 29 tool calls recorded (see `TC4.json`).
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjzlhs50 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvk093aw0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -176,6 +179,68 @@ Trace: 32 tool calls recorded (see `TC5.json`).
 | Each holiday shows whether it is set: Diwali is saved but not on every site yet; Bhai Dooj is Not set | pass | Diwali: Saved — not on all sites yet (4/5 sites); Bhai Dooj: Not set |
 
 Trace: 0 tool calls recorded (see `TC6.json`).
+
+## TC7 — A listing changes after the owner approved
+
+**Input:** CityPages' Diwali fix is approved. Before it is sent, someone else changes the Diwali hours on CityPages to 9:00 AM to 12:00 PM.
+
+**Expected:** The agent reloads, sees the page is not what the owner approved against, sends nothing, and asks the owner again with the new facts. After a second approval it is applied and VERIFIED.
+
+**Actual (deterministic):** B holiday: MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED
+
+**Result:** ✅ PASS — Actual result matches the expected result.
+
+| Check | Result | Detail |
+|---|---|---|
+| CityPages Diwali proposed and approved | pass | shows "8 Nov 2026: Closed" |
+| Surprise: someone changes the page before it is applied | pass | Diwali on CityPages is now 9:00 AM to 12:00 PM |
+| The agent sent nothing | pass | writes at B = 0 |
+| It went back to the owner with the new facts | pass | state=PROPOSED; The page changed after you approved: it showed "8 Nov 2026: Closed" and now shows "8 Nov 2026: 9:00 AM – 12:00 PM". Nothing was sent. Please look again and approve if the fix is still right. |
+| The trace says why | pass | page changed since approval |
+| After a second approval it is applied and VERIFIED | pass | MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED |
+| The public page shows the approved hours | pass | 10:00–14:00 |
+
+Trace: 27 tool calls recorded (see `TC7.json`).
+
+## TC8 — A site is briefly down, and a site drops an edit
+
+**Input:** Listify fails its next two page loads. Later CityPages answers OK to the approved edit but does not store it.
+
+**Expected:** The agent waits and retries the outage until the site answers. For the lost edit it re-sends the same owner-approved change once and verifies it. Both are visible in the trace.
+
+**Actual (deterministic):** outage retried; lost write re-sent; B holiday VERIFIED
+
+**Result:** ✅ PASS — Actual result matches the expected result.
+
+| Check | Result | Detail |
+|---|---|---|
+| The agent retried the site that was down | pass | 2 retries logged |
+| Listify was read once it answered | pass | no errors in the trace |
+| The agent noticed the edit was dropped and re-sent the same approved change | pass | re-sent once |
+| It is VERIFIED after the re-send, and nothing else was written | pass | writes = 2 |
+| The re-send is in the audit log | pass | apply-retry entries = 1 |
+
+Trace: 28 tool calls recorded (see `TC8.json`).
+
+## TC9 — Autopilot notices a change by itself
+
+**Input:** Everything is fixed and Autopilot is on. Someone changes the phone number on Listify. Autopilot runs with nobody clicking.
+
+**Expected:** Autopilot detects the drift, writes a fix for the owner to approve, and sends nothing. After the owner approves, the next Autopilot pass applies it and verifies it.
+
+**Actual (deterministic):** Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve.
+
+**Result:** ✅ PASS — Actual result matches the expected result.
+
+| Check | Result | Detail |
+|---|---|---|
+| Everything we could fix is fixed; autopilot is on | pass | Autopilot on |
+| With nobody clicking, Autopilot ran and noticed the change | pass | Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
+| It wrote a fix for the owner to approve | pass | Listify phone: PROPOSED |
+| It sent nothing and approved nothing | pass | writes = 1 |
+| After the owner approved, the next pass applied and verified it | pass | Listify phone: VERIFIED; writes = 2 |
+
+Trace: 25 tool calls recorded (see `TC9.json`).
 
 ## Gemini decisions: fallbacks and guardrail blocks
 

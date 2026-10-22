@@ -40,7 +40,7 @@ export function writeSummary() {
   L.push("## Results side by side", "", "| Test | Deterministic | Gemini |", "|---|---|---|");
   meta.forEach((m, i) => L.push(`| ${m.id} — ${m.title} | ${mark(det[i])} | ${llm[i] ? mark(llm[i]) : "— not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`)"} |`));
   const dp = det.filter((r) => r?.pass).length, lp = llm.filter((r) => r?.pass).length;
-  L.push("", `Deterministic: **${dp}/6 passed**. Gemini: ${llm.some(Boolean) ? `**${lp}/${llm.filter(Boolean).length} passed**` : "not run in this evidence set"}.`, "");
+  L.push("", `Deterministic: **${dp}/${TC_IDS.length} passed**. Gemini: ${llm.some(Boolean) ? `**${lp}/${llm.filter(Boolean).length} passed**` : "not run in this evidence set"}.`, "");
 
   meta.forEach((m, i) => {
     const d = det[i], g = llm[i];

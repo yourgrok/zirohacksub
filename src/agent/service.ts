@@ -5,6 +5,7 @@ import { geminiPlanner, summariseReport } from "./geminiPlanner.js";
 import { geminiEnabled } from "./llm.js";
 import { deterministicPlanner } from "./planners.js";
 import { templateSummary } from "./report.js";
+import { briefingText, storeBriefing } from "./briefing.js";
 import type { Planner } from "./types.js";
 
 export class ApprovalError extends Error {
@@ -26,6 +27,12 @@ export function setPlannerProvider(p: PlannerProvider) { provider = p; }
 export const currentPlanner = () => provider();
 
 async function finish(bizId: string, runId: string) {
+  const summary = await finishHeadline(bizId, runId);
+  storeBriefing(runId, briefingText(bizId, runId)); // what I did, in plain sentences (facts only)
+  return summary;
+}
+
+async function finishHeadline(bizId: string, runId: string) {
   let summary: string;
   const t0 = performance.now();
   try {

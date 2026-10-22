@@ -7,20 +7,42 @@ import { applyCreate, isCreateRow, verifyCreate } from "./createListing.js";
 import { isCreate } from "../mock/changes.js";
 import { changeKey, compareAll, normalisePublic, showsIntended, type Comparison } from "./compare.js";
 import { baseUrl, fetchPage, parseDashboard, parsePublic } from "./reader.js";
+import { recordTrace } from "./loop.js";
 import { TOOL_NAMES, type RunState, type ToolName } from "./types.js";
 
 export interface ToolResult { summary: string; data?: unknown; forced?: { reason: string } }
 
 const slugOf = (platformId: string) => platformId.replace("site_", "");
 
+const RETRIES = 3;
+const retryMs = (n: number) => Number(process.env.AGENT_RETRY_MS ?? 300) * n;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** A site that is briefly down is retried a few times (and each retry is visible in the trace) before the agent gives up on it. */
+async function loadWithRetry(st: RunState, platformId: string, path: string, opts: Parameters<typeof fetchPage>[1] = {}) {
+  let last = "";
+  for (let attempt = 1; attempt <= RETRIES; attempt++) {
+    try {
+      const page = await fetchPage(path, opts);
+      if (page.status < 500) return page;
+      last = `HTTP ${page.status}`;
+    } catch (e) { last = (e as Error).message; }
+    if (attempt < RETRIES) {
+      recordTrace(st.runId, "read_listing", { platform: platformId, attempt }, `${platformId} did not answer (${last}); waiting, then trying again (${attempt}/${RETRIES - 1})`, 0, "Deterministic", "recovery: temporary outage");
+      await sleep(retryMs(attempt));
+    }
+  }
+  throw new Error(`${platformId} is not answering (${last}) after ${RETRIES} tries`);
+}
+
 async function ensureRead(st: RunState, platformId: string, fresh = false) {
   const existing = st.reads.get(platformId);
   if (existing && !fresh) return existing;
   const l = getPlatformListing(st.bizId, platformId);
   const slug = slugOf(platformId);
-  const pubPage = await fetchPage(l.publicPath);
+  const pubPage = await loadWithRetry(st, platformId, l.publicPath);
   // the dashboard is read with this business's delegated login for the site (the public page needs none)
-  const dashPage = await fetchPage(l.dashboardPath, { headers: mockAuthHeaders(getBusiness(st.bizId).mockAccount) });
+  const dashPage = await loadWithRetry(st, platformId, l.dashboardPath, { headers: mockAuthHeaders(getBusiness(st.bizId).mockAccount) });
   if (pubPage.status !== 200) throw new Error(`Public page returned HTTP ${pubPage.status}`);
   const pub = parsePublic(slug, pubPage.html);
   const dash = parseDashboard(dashPage.html);
@@ -166,9 +188,20 @@ export const TOOLS: Record<ToolName, ToolDef> = {
         const change = ChangeZ.parse(JSON.parse(f.intended!));
         // idempotence: re-read; if the page already shows the value, do not write again
         const fresh = await ensureRead(st, platform, true);
-        if (showsIntended(f.field_key, change, normalisePublic(fresh.pub))) {
+        const freshNorm = normalisePublic(fresh.pub);
+        if (showsIntended(f.field_key, change, freshNorm)) {
           transition(f.id, "APPLIED", "applier", "page already showed the approved value; no write sent");
           out.push(`${f.field_key}: already correct`);
+          continue;
+        }
+        // the page is not what the owner looked at when approving: do not write on stale information, ask again with the new facts
+        const now = compareAll(getBusiness(st.bizId), listExceptions(st.bizId), fresh.pub, freshNorm).find((c) => c.key === f.field_key);
+        if (now && f.current_norm != null && now.currentNorm !== f.current_norm) {
+          const was = f.current_raw ?? "";
+          transition(f.id, "PROPOSED", "planner", `The page changed after you approved: it showed "${was}" and now shows "${now.currentRaw}". Nothing was sent. Please look again and approve if the fix is still right.`,
+            { current_raw: now.currentRaw, current_norm: now.currentNorm, original_raw: now.currentRaw, original_norm: now.currentNorm });
+          audit(st.bizId, "agent", "replan", platform, f.field_key, { was, now: now.currentRaw });
+          out.push(`${f.field_key}: page changed since approval (was "${was}", now "${now.currentRaw}") — sent nothing, asked the owner again`);
           continue;
         }
         const resp = await fetch(baseUrl() + l.dashboardPath + "/update", {
@@ -214,8 +247,26 @@ export const TOOLS: Record<ToolName, ToolDef> = {
           transition(f.id, "PENDING_MODERATION", "verifier", "public page unchanged; edit is waiting in the platform's moderation queue", patch);
           res.push(`${f.field_key}: PENDING_MODERATION`);
         } else {
-          transition(f.id, "MISMATCH", "verifier", "reloaded page does not show the update and nothing is pending", patch);
-          res.push(`${f.field_key}: NOT APPLIED`);
+          // The site said OK but the page did not change and nothing is waiting in a queue: the edit was lost. Send the SAME owner-approved
+          // change once more, then look again. Nothing new is sent and nothing the owner did not approve.
+          const l = getPlatformListing(st.bizId, platform);
+          const resp = await fetch(baseUrl() + l.dashboardPath + "/update", { method: "POST", headers: { "content-type": "application/json", ...mockAuthHeaders(getBusiness(st.bizId).mockAccount) }, body: JSON.stringify(change) });
+          audit(st.bizId, "owner-approved", "apply-retry", platform, f.field_key, { sent: change, http: resp.status, at: nowTs() });
+          recordTrace(st.runId, "reload_and_verify", { platform, field: f.field_key }, `${f.field_key}: the page did not change and nothing is pending, so the edit was lost. Re-sent the same approved change (HTTP ${resp.status}) and looking again`, 0, "Deterministic", "recovery: lost write");
+          const again = await ensureRead(st, platform, true);
+          const n2 = normalisePublic(again.pub);
+          const cmp2 = compareAll(getBusiness(st.bizId), listExceptions(st.bizId), again.pub, n2).find((c) => c.key === f.field_key);
+          const patch2 = { current_raw: cmp2?.currentRaw ?? patch.current_raw, current_norm: cmp2?.currentNorm ?? patch.current_norm };
+          if (showsIntended(f.field_key, change, n2)) {
+            transition(f.id, "VERIFIED", "verifier", "reloaded public page shows the approved value (after one re-send)", patch2);
+            res.push(`${f.field_key}: VERIFIED after one re-send`);
+          } else if (again.dash.pending.some((p) => p.change && !isCreate(p.change) && changeKey(p.change) === changeKey(change))) {
+            transition(f.id, "PENDING_MODERATION", "verifier", "public page unchanged; edit is waiting in the platform's moderation queue", patch2);
+            res.push(`${f.field_key}: PENDING_MODERATION`);
+          } else {
+            transition(f.id, "MISMATCH", "verifier", "the site said OK twice but the page still does not show the update; needs your attention", patch2);
+            res.push(`${f.field_key}: NOT APPLIED (re-sent once, still not shown)`);
+          }
         }
         audit(st.bizId, "verifier", "verify", platform, f.field_key, { result: getFieldByKey(st.bizId, platform, f.field_key)?.state });
       }

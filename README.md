@@ -9,19 +9,19 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 **Live demo:** <https://zirohacksub.onrender.com/> · **demo PIN** `7KQ4X-M9PHT` (synthetic, public on purpose).
 
 1. The free host sleeps when idle: the **first load can take about 30 to 60 seconds**. Wait for the login page.
-2. Log in with the PIN. Press **Reset demo data** on the My Details tab (only the demo business can; the `/tests` page also runs TC1-TC6) to return to a clean starting state; the data also reseeds whenever the host restarts.
+2. Log in with the PIN. Press **Reset demo data** on the My Details tab (only the demo business can; the `/tests` page also runs TC1-TC9) to return to a clean starting state; the data also reseeds whenever the host restarts.
 3. Press **1 Scan listings**, approve the cards in **Approvals**, then **Apply approved & verify**. ShopFront shows *Pending moderation*; approve it at `/mock/admin`, return to the app and it re-checks and shows *Verified*.
 4. Open **Consistency** for the before/after table (CSV button).
 
 | Rubric line | Where the proof is |
 |---|---|
 | Problem fit & usefulness | [docs/SUBMISSION_NOTES.md](docs/SUBMISSION_NOTES.md) §1; the Consistency table; [evidence/consistency-before.csv](evidence/consistency-before.csv) and [after](evidence/consistency-after.csv) (platform, field, original, intended, approval, verified) |
-| Agentic capability | Agent loop with 8 tools (read, normalise, compare, propose, apply, verify, flag, ask) in `src/agent/`; the **Agent Trace** tab; [evidence/guardrail-demo.json](evidence/guardrail-demo.json): 6 of 6 unsafe attempts blocked |
+| Agentic capability | Agent loop with 8 tools in `src/agent/`; **Autopilot** (`src/agent/autopilot.ts`); recovery and replanning (TC7 page changes after approval, TC8 outage and lost edit, TC9 Autopilot catches drift); the **Agent Trace** tab; [evidence/guardrail-demo.json](evidence/guardrail-demo.json): 6 of 6 unsafe attempts blocked |
 | Technical implementation | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); guardrails in code; `evidence/unit-tests.json` (286 tests) |
 | Innovation | PIN-only onboarding with score matching, Holiday Foresight, plain-language closures, trace map |
 | User experience | numbered step bar, reminder popups, plain-word Agent Trace |
 | Presentation | the slide deck, plus screenshots in `evidence/screenshots/` |
-| Official test cases TC1-TC4 | [evidence/SUMMARY.md](evidence/SUMMARY.md) and `evidence/TC1.json` to `TC6.json`: input, result and evidence for each; no differences from the expected results |
+| Official test cases TC1-TC4 | [evidence/SUMMARY.md](evidence/SUMMARY.md) and `evidence/TC1.json` to `TC9.json`: input, result and evidence for each; no differences from the expected results |
 
 ## What it does
 
@@ -31,13 +31,14 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 4. Only approved changes are sent (idempotent). The agent then **reloads the public page** and verifies. Listings claimed by someone else are **flagged, never edited**; edits waiting in a moderation queue are reported **PENDING**, never as corrected.
 5. You get a **before/after table** (CSV + printable) with: platform, field, original value, intended value, approval status, verified status.
 6. **New owners** log in with a PIN only (no username, no password). A new owner types their details, the agent finds their listings on every site by **score matching**, the owner confirms each match, and a **view-once PIN** is issued. Sites where the business is not listed can be added with the same approve → apply → verify safety.
-7. Extras: **Holiday Foresight** (90-day look-ahead, Not set / Set on all sites status, alerts at 30/14/7 days, date check first, then Closed all day / Special hours with prefilled editable times, and a "No, it's on another date" option to correct a festival date) and **plain-language closures** ("we are closed on 26th December").
+7. **It works on its own (all inside the approval rules).** Turn **Autopilot** on and the agent re-checks every listing, applies what you already approved and re-checks edits waiting for a moderator, then tells you what it found ("while you were away"). If a page changes after you approved, it **sends nothing and asks again**. If a site is down it **retries**; if a site says OK but drops an edit it **re-sends the same approved change once** and verifies. Every card says **why**, each run ends with a plain-English **"what I did"** briefing, and for a listing someone else owns it **drafts the claim request** and the manual steps. It never approves for you and never touches OTP or CAPTCHA.
+8. Extras: **Holiday Foresight** (90-day look-ahead, Not set / Set on all sites status, alerts at 30/14/7 days, date check first, then Closed all day / Special hours with prefilled editable times, and a "No, it's on another date" option to correct a festival date) and **plain-language closures** ("we are closed on 26th December").
 
 | Edit & Ask | Agent Trace | Phone |
 |---|---|---|
 | ![](docs/screenshots/24-tab-edit-ask.png) | ![](docs/screenshots/26-tab-trace.png) | ![](docs/screenshots/29-mobile-tabs.png) |
 
-The agent loop is **rules-driven** and needs **no API key**: a fixed collect → plan → find → act sequence where each step picks its tool by rules, and every edit is guarded in code and approved by the owner. Gemini (`gemini-3.5-flash-lite`, Interactions API) is used in **one place only**: the Edit & Ask box double-checks the date parser. An experimental Gemini planner can be switched on with `AGENT_PLANNER=gemini` (used by `npm run test:tc:llm`); it falls back to the rules on any failure.
+The agent loop is **rules-driven** and needs **no API key**: each step picks its tool by rules from what it observes (so a site outage, a page that changed, or a lost edit changes what it does next), and every edit is guarded in code and approved by the owner. Gemini (`gemini-3.5-flash-lite`, Interactions API) double-checks the date parser in Edit & Ask and, when a key is set, can reword the briefing and the "why" lines in the background (facts always come from code; the built-in sentences stay if it fails). An experimental Gemini planner can be switched on with `AGENT_PLANNER=gemini` (used by `npm run test:tc:llm`); it falls back to the rules on any failure.
 
 ---
 
@@ -77,9 +78,9 @@ Open <http://localhost:3000> and log in with the **demo PIN `7KQ4X-M9PHT`** (syn
 ```powershell
 npm run typecheck
 npm test                 # unit + integration tests
-npm run test:tc          # TC1-TC6, deterministic, writes evidence/ (no LLM, never flaky)
-npm run test:tc:llm      # TC1-TC6 with Gemini (needs the key in .env), writes evidence/llm/
-npm run demo:onboarding  # the whole new-owner journey over real HTTP, then TC1-TC6 again -> evidence/onboarding-demo.md
+npm run test:tc          # TC1-TC9, deterministic, writes evidence/ (no LLM, never flaky)
+npm run test:tc:llm      # TC1-TC9 with Gemini (needs the key in .env), writes evidence/llm/
+npm run demo:onboarding  # the whole new-owner journey over real HTTP, then TC1-TC9 again -> evidence/onboarding-demo.md
 ```
 Or log in with the demo PIN, open <http://localhost:3000/tests> and press **Run all** (only the demo business can open that page, because it resets the shared demo data).
 
@@ -104,7 +105,7 @@ GitHub will ask you to sign in in the browser the first time (Git Credential Man
 1. Go to <https://render.com> → **New + → Web Service** → connect the GitHub repo → choose branch `claude/determined-goldberg-qj02eh` (or merge to `main` first).
 2. **Runtime: Docker** (it finds `Dockerfile`). Instance type: **Free**. (`render.yaml` in the repo describes the same settings if you prefer *New + → Blueprint*.)
 3. **Environment → Add Environment Variable:** `PIN_SECRET` = a long random string (click **Generate** if offered; a blueprint creates it for you), and `GEMINI_API_KEY` = your key (optional). The others default correctly (`READER_MODE=http`, models). Set **Health Check Path** to `/health`.
-4. Deploy. When it is live open `https://<your-service>.onrender.com/health` — you should see `"status":"ok"`. Then open the root URL for the console and `/tests` to run all six tests.
+4. Deploy. When it is live open `https://<your-service>.onrender.com/health` — you should see `"status":"ok"`. Then open the root URL for the console and `/tests` to run all nine tests.
 
 > **Businesses created through "Set up my business" are lost whenever a free service restarts or sleeps** (their PINs then stop working; the seeded demo PIN `7KQ4X-M9PHT` always works). Keeping them would need a paid persistent disk or a hosted database.
 >
@@ -164,7 +165,7 @@ The business **name** is now a compared field too, so a rename is proposed, appr
 - **Never stored in plain text.** The database keeps `HMAC-SHA256(PIN_SECRET, PIN)`, which is also the lookup key (so no username is needed). The match is re-checked with a constant-time comparison.
 - **Rate limit:** 5 wrong PINs per client IP, then a 60 s cool-down that doubles on each further lock-out (max 15 min). Every failure gets the same message: "Invalid PIN."
 - **Session:** a random 256-bit id in an `httpOnly`, `SameSite=Lax` (and `Secure` over HTTPS) cookie; only its SHA-256 is stored; 8-hour lifetime; **Log out** destroys it on the server. State-changing requests from another origin are refused.
-- **Demo PIN: `7KQ4X-M9PHT`** (synthetic; it opens the seeded "Sunrise Sweets & Bakery" business so TC1–TC6 and `/tests` keep working). It is re-hashed on every boot, so changing `PIN_SECRET` never locks it out. Only this business can reset the shared data or open `/tests`.
+- **Demo PIN: `7KQ4X-M9PHT`** (synthetic; it opens the seeded "Sunrise Sweets & Bakery" business so TC1–TC9 and `/tests` keep working). It is re-hashed on every boot, so changing `PIN_SECRET` never locks it out. Only this business can reset the shared data or open `/tests`.
 - `PIN_SECRET` (env var) is the server-side HMAC key. Set it on Render (a blueprint generates one). If you leave it empty (the default in `.env.example`) and use a file database, the app generates a random secret **once** and keeps it in `data/.pin_secret` (git-ignored, owner-only), so restarting the server on your PC never invalidates a PIN. Only with an in-memory database, or a disk that cannot be written, is a temporary per-process secret used.
 - **When does a PIN stop working?** Reloading the browser, logging out or restarting the server on your PC does *not* invalidate it. It stops working if (1) the business was deleted: on a free host the database is temporary, so businesses created through onboarding vanish whenever the service restarts or sleeps (the seeded demo PIN keeps working because it is re-created on every boot); (2) it was never used within 30 minutes of being issued (the business is discarded and onboarding can be repeated); (3) you changed `PIN_SECRET` after the PIN was issued (the seeded demo PIN is re-hashed on every boot, but other PINs are not); or (4) you reset the demo data.
 - The PIN screen cannot be shown again: if you reload it before saving the PIN, the PIN is lost (it is still valid if you wrote it down, but if not, wait 30 minutes or just run onboarding again).
@@ -195,7 +196,7 @@ Real scores from the seeded data: Sunrise vs its true listing **100**, vs the lo
 
 ### Demo it end to end
 ```powershell
-npm run demo:onboarding     # narrated run + evidence/onboarding-demo.md; also re-runs TC1-TC6
+npm run demo:onboarding     # narrated run + evidence/onboarding-demo.md; also re-runs TC1-TC9
 ```
 or by hand: open the console → **Set up my business** → enter `Green Leaf Cafe` / `8 Lotus Street, Baner, Pune, Maharashtra 411045` / `+91 90000 00031` / `Mon-Sun 8am-10pm` → confirm the two strong matches (Listify, LocalLoop; NearbyNow is flagged as claimed by someone else) → save the PIN → log in → **Add my business here** on CityPages and ShopFront → **Approve all** → **Apply approved & verify** (CityPages is VERIFIED, ShopFront is PENDING until you approve it at `/mock/admin` and press Apply again).
 
@@ -223,6 +224,9 @@ Every site also lists a look-alike business, *Sunrise Sweet House* (different ID
 | TC4 | pending moderation | PENDING_MODERATION → VERIFIED only after /mock/admin approval + reload |
 | TC5 | "we are closed on 26th December" | exception created, flows through approval to the sites |
 | TC6 | upcoming holiday with no exception | foresight alert raised |
+| TC7 | a listing changes after the owner approved | nothing sent, owner asked again with the new facts, then applied and VERIFIED |
+| TC8 | a site is down, then drops an edit | retried until it answers; lost edit re-sent once (same approved change) and VERIFIED |
+| TC9 | someone changes a listing while Autopilot is on | drift detected with no click, fix proposed, nothing sent; after approval the next pass applies and verifies |
 
 Results of the latest run: [`evidence/SUMMARY.md`](evidence/SUMMARY.md) · details in [`docs/TEST_CASES.md`](docs/TEST_CASES.md).
 
@@ -230,7 +234,7 @@ Results of the latest run: [`evidence/SUMMARY.md`](evidence/SUMMARY.md) · detai
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (Mermaid diagrams) · [`docs/CODE_MAP.md`](docs/CODE_MAP.md) · [`docs/TEST_CASES.md`](docs/TEST_CASES.md) · [`docs/SUBMISSION_NOTES.md`](docs/SUBMISSION_NOTES.md) · [`docs/SLIDES.md`](docs/SLIDES.md)
 
 ## Configuration
-See `.env.example`: `PIN_SECRET`, `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`), `GEMINI_FAST_MODEL` (default `gemini-3.5-flash-lite`), `LLM_PROVIDER=gemini|none`, `READER_MODE=playwright|http|auto`, `DEMO_NOW=YYYY-MM-DD` (fixes "today"; the header then says "(demo date)"). All date logic is Asia/Kolkata.
+See `.env.example`: `PIN_SECRET`, `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.5-flash-lite`), `AUTOPILOT_INTERVAL_MS` (default 60000), `GEMINI_FAST_MODEL` (default `gemini-3.5-flash-lite`), `LLM_PROVIDER=gemini|none`, `READER_MODE=playwright|http|auto`, `DEMO_NOW=YYYY-MM-DD` (fixes "today"; the header then says "(demo date)"). All date logic is Asia/Kolkata.
 
 ## Honest limitations
-Mock sites only · festival dates in `data/holidays.json` are approximate and must be confirmed by the owner ("verify date") · free-host database resets (reseeds on boot) · the LLM is optional (Edit & Ask only) and fully guarded · the exact Gemini model names are taken from the brief and could not be checked against Google's docs from the build environment — if a model name is rejected the app tries the other one, then falls back to deterministic · the optional mock-OTP step was not built · claiming an unclaimed listing is a mock (no OTP) · the login rate limiter lives in memory (resets on restart, per instance) · there is no screen to edit a business record after onboarding · `/mock/admin` is deliberately open.
+Mock sites only · festival dates in `data/holidays.json` are approximate and must be confirmed by the owner ("verify date") · free-host database resets (reseeds on boot) · the LLM is optional (Edit & Ask, plus optional background wording of the briefing) and fully guarded · Autopilot is a timer inside the one server process (it pauses if the free host sleeps) and only ever applies what you already approved · the "outside world changes" buttons exist for the demo business only and act on the mock sites · the exact Gemini model names are taken from the brief and could not be checked against Google's docs from the build environment — if a model name is rejected the app tries the other one, then falls back to deterministic · the optional mock-OTP step was not built · claiming an unclaimed listing is a mock (no OTP) · the login rate limiter lives in memory (resets on restart, per instance) · there is no screen to edit a business record after onboarding · `/mock/admin` is deliberately open.

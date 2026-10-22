@@ -2,6 +2,7 @@ import { getDb, wipeAll } from "./db.js";
 import { logChange } from "./store.js";
 import { nowTs } from "./clock.js";
 import { DEMO_PIN, hashPin } from "../auth/pin.js";
+import { resetSimulation } from "../mock/simulate.js";
 import type { Business, Platform, PlatformListing, WeeklyHours } from "./types.js";
 
 export const BUSINESS_ID = "biz_sunrise_001";
@@ -65,6 +66,7 @@ const diwaliShown = { start: DIWALI.start, end: DIWALI.end, kind: "special", ope
 /** Wipe everything and restore the seeded conditions. */
 export function resetAndSeed() {
   wipeAll();
+  resetSimulation();
   const db = getDb();
   const tx = db.transaction(() => {
     db.prepare("INSERT INTO business (id,name,address,phone,hours_json,pin_hmac,mock_account,status,is_demo,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")

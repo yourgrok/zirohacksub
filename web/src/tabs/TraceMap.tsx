@@ -13,7 +13,12 @@ const SAY: Record<string, string> = {
   read_listing: "Reading…", normalise: "Tidying up", compare: "Comparing", propose: "Suggesting", flag_listing: "Not yours!",
   apply_approved: "Applying", reload_and_verify: "Double-checking", ask_owner: "Your turn", done: "All done", summarise_report: "Summing up", create_listing: "Adding a listing",
 };
-export const say = (r: { tool: string; decider?: string }) => (r.decider === "Blocked" ? "Stopped!" : SAY[r.tool] ?? "Working…");
+export const say = (r: { tool: string; decider?: string; note?: string | null; output_summary?: string }) =>
+  r.decider === "Blocked" ? "Stopped!"
+  : /recovery: temporary outage/.test(r.note ?? "") ? "Site is down, retrying"
+  : /recovery: lost write/.test(r.note ?? "") ? "Edit lost, re-sending"
+  : /changed since approval/.test(r.output_summary ?? "") ? "Page changed! Asking you"
+  : SAY[r.tool] ?? "Working…";
 
 export default function TraceMap({ rows }: { rows: any[] }) {
   const reduced = useReducedMotion();

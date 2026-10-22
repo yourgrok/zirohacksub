@@ -70,7 +70,7 @@ describe("HTTP API", () => {
   });
 });
 
-describe("official test cases TC1-TC6 (deterministic, fresh reset each)", () => {
+describe("test cases TC1-TC9 (deterministic, fresh reset each)", () => {
   it("all pass and evidence/SUMMARY.md is generated", async () => {
     process.env.EVIDENCE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "ev-"));
     const results = await runAllTcs({ mode: "deterministic" });
@@ -79,7 +79,8 @@ describe("official test cases TC1-TC6 (deterministic, fresh reset each)", () => 
     writeResults(results, "");
     writeGuardrail(await runGuardrailDemo());
     const md = fs.readFileSync(path.join(process.env.EVIDENCE_DIR, "SUMMARY.md"), "utf8");
-    expect(md).toContain("6/6 passed");
+    expect(md).toContain(`${results.length}/${results.length} passed`);
+    expect(results.length).toBe(9);
     expect(md).toContain("Guardrail demonstration");
     expect(md).not.toContain(SECRET);
     expect(JSON.stringify(results)).not.toContain(SECRET);
