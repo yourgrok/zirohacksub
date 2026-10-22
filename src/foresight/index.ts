@@ -14,6 +14,8 @@ export type Holiday = z.infer<typeof HolidayZ>;
 
 export const WINDOW_DAYS = 90;
 export const ALERT_MILESTONES = [30, 14, 7] as const;
+/** How far the owner may move a festival away from the bundled calendar date (calendars differ by a day or two; a typo should not slip through). */
+export const DATE_SHIFT_DAYS = 30;
 
 export function loadHolidays(): Holiday[] {
   const raw = fs.readFileSync(new URL("../../data/holidays.json", import.meta.url), "utf8");
@@ -29,6 +31,10 @@ export function loadHolidays(): Holiday[] {
 export type ChipKind = "NOT_SET" | "SET_PARTIAL" | "SET_ALL";
 export interface HolidayStatus {
   holiday: Holiday;
+  /** The date that counts: the owner's own date when they said the calendar is wrong, else the calendar date. */
+  date: string;
+  /** true when the owner saved a different date than the calendar's (holiday.date). */
+  dateChanged: boolean;
   daysAway: number;
   exception: HolidayException | null;
   chip: ChipKind;
@@ -67,7 +73,23 @@ function covering(ex: HolidayException[], date: string): HolidayException | null
   return ex.find((e) => e.status === "active" && e.start <= date && date <= e.end) ?? null;
 }
 
-const isSingleDay = (e: HolidayException, date: string) => e.start === date && e.end === date;
+const isSingleDay = (e: HolidayException) => e.start === e.end;
+
+/**
+ * The exception that belongs to this holiday: one the owner saved for it from this tab (matched by name, and allowed to sit
+ * a few weeks away from the calendar date when they corrected the date), else whatever covers the calendar date.
+ */
+function linkedException(exs: HolidayException[], h: Holiday): HolidayException | null {
+  const own = exs.find((e) => e.status === "active" && e.source === "foresight" && e.reason === h.name && isSingleDay(e) && Math.abs(daysBetween(h.date, e.start)) <= DATE_SHIFT_DAYS);
+  return own ?? covering(exs, h.date);
+}
+
+/** A real calendar date written YYYY-MM-DD (rejects 2026-13-40 and 2026-02-30, which Date would otherwise throw on or roll over). */
+function validDate(d: unknown): d is string {
+  if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  const t = new Date(`${d}T00:00:00Z`);
+  return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d;
+}
 
 async function readSites(bizId: string) {
   const out: { platformId: string; platform: string; canon: Set<string> }[] = [];
@@ -91,10 +113,11 @@ export async function foresight(bizId: string): Promise<{ today: string; windowD
   const until = addDays(t, WINDOW_DAYS);
   const exs = listExceptions(bizId);
   const sites = await readSites(bizId);
-  const upcoming = loadHolidays().filter((h) => h.date >= t && h.date <= until).sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = loadHolidays().filter((h) => h.date >= t && h.date <= until);
   const statuses: HolidayStatus[] = upcoming.map((h) => {
-    const ex = covering(exs, h.date);
-    const daysAway = daysBetween(t, h.date);
+    const ex = linkedException(exs, h);
+    const date = ex && isSingleDay(ex) ? ex.start : h.date;
+    const daysAway = daysBetween(t, date);
     let chip: ChipKind = "NOT_SET";
     let showing = 0;
     if (ex) {
@@ -104,13 +127,13 @@ export async function foresight(bizId: string): Promise<{ today: string; windowD
     }
     const chipText = { NOT_SET: "Not set", SET_PARTIAL: "Saved — not on all sites yet", SET_ALL: "Set on all sites" }[chip];
     return {
-      holiday: h, daysAway, exception: ex, chip, chipText,
+      holiday: h, date, dateChanged: date !== h.date, daysAway, exception: ex, chip, chipText,
       setText: ex ? describeSet(ex) : null,
       sitesShowing: showing, sitesTotal: sites.length,
-      editable: !ex || isSingleDay(ex, h.date),
+      editable: !ex || isSingleDay(ex),
       suggestion: suggest(h),
     };
-  });
+  }).sort((a, b) => a.date.localeCompare(b.date));
 
   const alerts: Alert[] = [];
   for (const s of statuses) {
@@ -119,27 +142,36 @@ export async function foresight(bizId: string): Promise<{ today: string; windowD
     if (!milestone) continue;
     const when = s.daysAway === 0 ? "today" : `in ${s.daysAway} day${s.daysAway === 1 ? "" : "s"}`;
     const what = s.chip === "NOT_SET" ? "has no opening-hours exception on your record" : "is saved on your record but not on all your listing sites yet (see Approvals)";
-    alerts.push({ holidayId: s.holiday.id, name: s.holiday.name, date: s.holiday.date, daysAway: s.daysAway, milestone: milestone as 7 | 14 | 30, chip: s.chip, message: `${s.holiday.name} (${prettyDate(s.holiday.date)}) is ${when} and ${what}. Dates can shift — verify first.` });
+    alerts.push({ holidayId: s.holiday.id, name: s.holiday.name, date: s.date, daysAway: s.daysAway, milestone: milestone as 7 | 14 | 30, chip: s.chip, message: `${s.holiday.name} (${prettyDate(s.date)}) is ${when} and ${what}. Dates can shift — verify first.` });
   }
   return { today: t, windowDays: WINDOW_DAYS, holidays: statuses, alerts };
 }
 
-function guardEditable(bizId: string, h: Holiday): HolidayException | null {
-  const ex = covering(listExceptions(bizId), h.date);
-  if (ex && !isSingleDay(ex, h.date))
+/** Refuse to touch a day that is part of a longer closure the owner typed in Edit & Ask. */
+function guardDay(bizId: string, date: string, h: Holiday): void {
+  const ex = covering(listExceptions(bizId), date);
+  if (ex && !isSingleDay(ex))
     throw new HolidayInputError(`${h.name} is part of a longer closure you set (${prettyDate(ex.start)} – ${prettyDate(ex.end)}). Change that one in Edit & Ask.`);
-  return ex;
 }
 
 /**
- * The owner chose Closed / Special hours for a holiday (the draft suggestion, or their own times).
- * Saves it on the owner's record only (creating the exception, or updating the one already set for that day);
- * the normal scan → approval → apply → verify pipeline then handles the sites.
+ * The owner chose Closed / Special hours for a holiday (the draft suggestion, or their own times), and optionally said the
+ * calendar date is wrong (override.date). Saves it on the owner's record only: creates the exception, updates the one already
+ * set for that day, or moves it to the corrected date (the old date is cancelled, so the scan proposes removing it from sites
+ * that still show it). The normal scan → approval → apply → verify pipeline then handles the sites.
  */
-export function acceptDraft(bizId: string, holidayId: string, override?: { kind?: "closed" | "special"; open?: string | null; close?: string | null }): HolidayException {
+export function acceptDraft(bizId: string, holidayId: string, override?: { kind?: "closed" | "special"; open?: string | null; close?: string | null; date?: string }): HolidayException {
   const h = loadHolidays().find((x) => x.id === holidayId);
   if (!h) throw new HolidayInputError("Unknown holiday");
-  guardEditable(bizId, h);
+  const current = linkedException(listExceptions(bizId), h);
+  if (current && !isSingleDay(current)) guardDay(bizId, current.start, h); // throws: longer closure, change it in Edit & Ask
+  const target = override?.date ?? (current ? current.start : h.date);
+  if (!validDate(target)) throw new HolidayInputError("Enter the date as day, month and year.");
+  if (target < today()) throw new HolidayInputError("That date has already passed.");
+  if (Math.abs(daysBetween(h.date, target)) > DATE_SHIFT_DAYS)
+    throw new HolidayInputError(`That is more than ${DATE_SHIFT_DAYS} days from the calendar date (${prettyDate(h.date)}). Check the date and try again.`);
+  guardDay(bizId, target, h);
+
   const s = suggest(h);
   const kind = override?.kind ?? s.kind;
   if (kind !== "closed" && kind !== "special") throw new HolidayInputError("Choose Closed or Special hours.");
@@ -151,15 +183,17 @@ export function acceptDraft(bizId: string, holidayId: string, override?: { kind?
     if (!HHMM.test(open) || !HHMM.test(close)) throw new HolidayInputError("Enter the opening and closing time like 10:00 and 14:00.");
     if (open >= close) throw new HolidayInputError("The closing time must be after the opening time.");
   }
-  return upsertException(bizId, { start: h.date, end: h.date, kind, open, close, reason: h.name, source: "foresight" });
+  if (current && current.start !== target) removeException(bizId, current.id); // the date moved: cancel the old day
+  return upsertException(bizId, { start: target, end: target, kind, open, close, reason: h.name, source: "foresight" });
 }
 
-/** "Open as usual": cancel the exception saved for that day. A scan then proposes removing it from any site that still shows it. */
+/** "Open as usual": cancel the exception saved for that holiday. A scan then proposes removing it from any site that still shows it. */
 export function clearHoliday(bizId: string, holidayId: string): { ok: true; cleared: boolean } {
   const h = loadHolidays().find((x) => x.id === holidayId);
   if (!h) throw new HolidayInputError("Unknown holiday");
-  const ex = guardEditable(bizId, h);
+  const ex = linkedException(listExceptions(bizId), h);
   if (!ex) return { ok: true, cleared: false }; // already open as usual
+  if (!isSingleDay(ex)) guardDay(bizId, ex.start, h);
   removeException(bizId, ex.id);
   return { ok: true, cleared: true };
 }

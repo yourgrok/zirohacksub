@@ -126,7 +126,7 @@ Per-check detail with raw and normalised values, state histories and screenshots
 
 ## 6. Innovation
 
-- **Holiday Foresight:** scans 90 days ahead from the bundled festival calendar (all dates flagged \`verified:false\` → the tab warns that festival dates shift and asks the owner to confirm the date before saving), a status per holiday (Not set / Saved — not on all sites yet / Set on all sites), alerts at 30/14/7 days, and one-click Closed all day / Special hours (editable opening and closing time) / Open as usual buttons. Choosing hours only saves them on the owner's record; every site change still goes through the normal approval cards, and field-level mismatches stay in the scan and Approvals.
+- **Holiday Foresight:** scans 90 days ahead from the bundled festival calendar (all dates flagged \`verified:false\` → the tab warns that festival dates shift and asks the owner to confirm the date, or enter the right one if the calendar is wrong, before saving), a status per holiday (Not set / Saved — not on all sites yet / Set on all sites), alerts at 30/14/7 days, and one-click Closed all day / Special hours (editable opening and closing time) / Open as usual buttons. Choosing hours only saves them on the owner's record; every site change still goes through the normal approval cards, and field-level mismatches stay in the scan and Approvals.
 - **Plain-language closures:** one text box; a 300 ms-debounced live preview resolves "tomorrow", "next Monday", "24 to 26 Dec", "open 10 to 2 on Diwali" against today (Asia/Kolkata) and shows the resolved date; unclear/past/ambiguous input gets exactly one clarifying question; 23 unit tests on the parser.
 - **Visible guardrails:** blocked actions appear in the trace with a red "Blocked" badge.
 

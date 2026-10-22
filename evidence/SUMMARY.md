@@ -1,6 +1,6 @@
 # Test evidence summary
 
-Generated: 2026-10-22T13:48:30.040Z  
+Generated: 2026-10-22T14:00:10.479Z  
 Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **auto** · mock data only.
 
 Every run starts from a fresh reset of the seeded demo data. The deterministic run uses `LLM_PROVIDER=none` so results cannot fail randomly because of rate limits or model changes.
@@ -139,7 +139,7 @@ Trace: 33 tool calls recorded (see `TC4.json`).
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvjljj6v0 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvjlyjf30 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |

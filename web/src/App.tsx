@@ -66,11 +66,24 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   return (
     <div className="wrap">
       <header className="top">
-        <div>
+        <div className="top-title">
           <h1>{me.business?.name}</h1>
           <p className="sub">Listing Consistency Agent: keeps your details the same everywhere, and asks before changing anything.</p>
         </div>
+        <div className="top-right">
+        <div className="busy-slot" aria-live="polite">
+          {st.busy && (
+            <button type="button" className="busy-pill" onClick={() => go("trace")} title="Open the Agent Trace to see each step as it happens">
+              <span className="emo" aria-hidden>🤖</span>
+              <span className="busy-text">
+                <b>Agent is working<span className="dots" aria-hidden /></b>
+                <span className="busy-sub">{tab === "trace" ? "You're watching it live below" : "Click here to check progress"}</span>
+              </span>
+            </button>
+          )}
+        </div>
         <button className="btn small ghost" onClick={onLogout}>Log out</button>
+        </div>
       </header>
 
       <div className="sticky">
@@ -78,7 +91,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
           <button className="btn primary small" disabled={st.busy} onClick={() => act(() => api("/api/runs/scan", {}))} title="Reads every listing site and compares meaning, not formatting"><span className="stepno">1</span>Scan listings</button>
           <button className="btn small" disabled={st.busy || waiting === 0} onClick={() => go("approvals")} title="Review what the agent found"><span className="stepno">2</span>Review{waiting > 0 ? ` (${waiting})` : ""}</button>
           <button className="btn small" disabled={st.busy} onClick={() => act(() => api("/api/runs/execute", {}))} title="Sends only what you approved, then reloads each page to check"><span className="stepno">3</span>Apply approved &amp; verify</button>
-          {st.busy && <span className="spin" aria-live="polite">Working…</span>}
+          {st.busy && <button type="button" className="spin linkish-btn" onClick={() => go("trace")} title="Open the Agent Trace">🤖 Working… view progress</button>}
         </div>
         <div className="tabs" role="tablist" aria-label="Sections" onKeyDown={onTabKey}>
           {TAB_DEFS.map((t, i) => (

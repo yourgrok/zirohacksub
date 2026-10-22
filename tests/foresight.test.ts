@@ -146,3 +146,68 @@ describe("owner chooses hours for a holiday", () => {
     expect(getFieldByKey(B, "site_a", key)!.state).toBe("PROPOSED");
   });
 });
+
+describe("owner says the calendar date is wrong", () => {
+  const active = () => listExceptions(B).filter((e) => e.status === "active");
+  const special = { kind: "special" as const, open: "10:00", close: "14:00" };
+
+  it("moves the saved day to the owner's date and cancels the old one", async () => {
+    const old = active().find((e) => e.start === "2026-11-08")!;
+    const ex = acceptDraft(B, "hol_2026_diwali", { ...special, date: "2026-11-09" });
+    expect([ex.start, ex.end, ex.source, ex.reason]).toEqual(["2026-11-09", "2026-11-09", "foresight", "Diwali (Lakshmi Puja)"]);
+    expect(listExceptions(B).find((e) => e.id === old.id)!.status).toBe("removed");
+    expect(active().filter((e) => e.start === "2026-11-08")).toHaveLength(0);
+    const f = await foresight(B);
+    const d = f.holidays.find((h) => h.holiday.id === "hol_2026_diwali")!;
+    expect([d.date, d.dateChanged, d.holiday.date, d.daysAway]).toEqual(["2026-11-09", true, "2026-11-08", 19]);
+    expect(d.chip).toBe("SET_PARTIAL"); // sites still show 8 Nov, not 9 Nov
+    expect(f.alerts.find((a) => a.holidayId === "hol_2026_diwali")!.date).toBe("2026-11-09");
+  });
+
+  it("the scan proposes adding the new day and removing the old one; nothing is sent without approval", async () => {
+    const old = active().find((e) => e.start === "2026-11-08")!;
+    const ex = acceptDraft(B, "hol_2026_diwali", { ...special, date: "2026-11-09" });
+    await scan(B);
+    expect(getFieldByKey(B, "site_a", `holiday:${ex.id}`)!.state).toBe("PROPOSED");
+    expect(getFieldByKey(B, "site_a", `holiday:${old.id}`)!.state).toBe("PROPOSED");
+    await execute(B); // no approval clicked
+    expect(getFieldByKey(B, "site_a", `holiday:${ex.id}`)!.state).toBe("PROPOSED");
+    expect(getFieldByKey(B, "site_a", `holiday:${old.id}`)!.state).toBe("PROPOSED");
+  });
+
+  it("changing hours later keeps the owner's date, and the date can be moved back", async () => {
+    acceptDraft(B, "hol_2026_diwali", { ...special, date: "2026-11-09" });
+    const again = acceptDraft(B, "hol_2026_diwali", { kind: "closed" }); // no date given: stays on 9 Nov
+    expect([again.start, again.kind]).toEqual(["2026-11-09", "closed"]);
+    expect(active().filter((e) => e.reason === "Diwali (Lakshmi Puja)")).toHaveLength(1);
+    const back = acceptDraft(B, "hol_2026_diwali", { ...special, date: "2026-11-08" });
+    expect(back.start).toBe("2026-11-08");
+    const f = await foresight(B);
+    const d = f.holidays.find((h) => h.holiday.id === "hol_2026_diwali")!;
+    expect([d.date, d.dateChanged]).toEqual(["2026-11-08", false]);
+    expect(active().filter((e) => e.reason === "Diwali (Lakshmi Puja)" || e.start === "2026-11-09")).toHaveLength(1);
+  });
+
+  it("Open as usual cancels the moved day too", async () => {
+    acceptDraft(B, "hol_2026_diwali", { ...special, date: "2026-11-09" });
+    expect(clearHoliday(B, "hol_2026_diwali")).toEqual({ ok: true, cleared: true });
+    expect(active().some((e) => e.start === "2026-11-09")).toBe(false);
+    const f = await foresight(B);
+    expect(f.holidays.find((h) => h.holiday.id === "hol_2026_diwali")!.chip).toBe("NOT_SET");
+  });
+
+  it("rejects dates that are past, malformed, impossible, or too far from the calendar, and saves nothing", () => {
+    const before = JSON.stringify(listExceptions(B));
+    for (const date of ["2026-10-20", "2026-13-40", "2026-02-30", "8 Nov 2026", "", "2026-12-20", "2027-01-01"]) {
+      try { acceptDraft(B, "hol_2026_diwali", { ...special, date }); throw new Error(`should have thrown for "${date}"`); }
+      catch (e: any) { expect(e.status).toBe(400); }
+    }
+    expect(JSON.stringify(listExceptions(B))).toBe(before);
+  });
+
+  it("will not move a day into a longer closure typed in Edit & Ask", () => {
+    addException(B, { start: "2026-11-09", end: "2026-11-12", kind: "closed", open: null, close: null, reason: "trip", source: "owner" });
+    expect(() => acceptDraft(B, "hol_2026_diwali", { ...special, date: "2026-11-10" })).toThrow(/longer closure/);
+    expect(active().some((e) => e.start === "2026-11-08")).toBe(true); // the original day is untouched
+  });
+});

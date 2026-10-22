@@ -135,7 +135,7 @@ flowchart TD
   EX --> PIPE[normal scan → approval → apply → verify]
   RM --> PIPE
 ```
-Field-level mismatches (which site shows what) are not shown on the Holidays tab: they live in the scan, Approvals and Consistency tabs. Days inside a longer closure typed in Edit & Ask are read-only here.
+Field-level mismatches (which site shows what) are not shown on the Holidays tab: they live in the scan, Approvals and Consistency tabs. Days inside a longer closure typed in Edit & Ask are read-only here. If the calendar date is wrong, the owner answers "No, it's on another date" and enters the right one (within 30 days of the calendar date, not in the past): the saved day moves there and the old day is proposed for removal from sites that still show it, through the normal approval cards.
 
 ## 7. Add-on flow: plain-language closures
 

@@ -12,7 +12,7 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 4. Only approved changes are sent (idempotent). The agent then **reloads the public page** and verifies. Listings claimed by someone else are **flagged, never edited**; edits waiting in a moderation queue are reported **PENDING**, never as corrected.
 5. You get a **before/after table** (CSV + printable) with: platform, field, original value, intended value, approval status, verified status.
 6. **New owners** log in with a PIN only (no username, no password). A new owner types their details, the agent finds their listings on every site by **score matching**, the owner confirms each match, and a **view-once PIN** is issued. Sites where the business is not listed can be added with the same approve → apply → verify safety.
-7. Extras: **Holiday Foresight** (90-day look-ahead, Not set / Set on all sites status, alerts at 30/14/7 days, Closed / Special hours / Open as usual buttons) and **plain-language closures** ("we are closed on 26th December").
+7. Extras: **Holiday Foresight** (90-day look-ahead, Not set / Set on all sites status, alerts at 30/14/7 days, Closed / Special hours / Open as usual buttons, and a "No, it's on another date" option to correct a festival date) and **plain-language closures** ("we are closed on 26th December").
 
 | Edit & Ask | Agent Trace | Phone |
 |---|---|---|

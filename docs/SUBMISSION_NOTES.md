@@ -78,7 +78,7 @@ The rogue planner tried to apply with no approval, apply fields nobody approved,
 
 ## 5. Test results (copied from the latest run)
 
-Run: 2026-10-22T13:48:13.794Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
+Run: 2026-10-22T13:59:54.123Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
@@ -89,7 +89,7 @@ Run: 2026-10-22T13:48:13.794Z, date pinned to 2026-10-21 IST, every test starts 
 | TC5 — Plain-language closure flows through approval | PASS | not run (no API key in build environment) | 35 | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
 | TC6 — Foresight alert for a holiday with no exception | PASS | not run (no API key in build environment) | 0 | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
 
-Unit/integration suite: **279/279 tests passed** across 22 files.
+Unit/integration suite: **285/285 tests passed** across 22 files.
 
 Per-check detail with raw and normalised values, state histories and screenshots: `evidence/SUMMARY.md`.
 
@@ -104,7 +104,7 @@ Per-check detail with raw and normalised values, state histories and screenshots
 
 ## 6. Innovation
 
-- **Holiday Foresight:** scans 90 days ahead from the bundled festival calendar (all dates flagged `verified:false` → the tab warns that festival dates shift and asks the owner to confirm the date before saving), a status per holiday (Not set / Saved — not on all sites yet / Set on all sites), alerts at 30/14/7 days, and one-click Closed all day / Special hours (editable opening and closing time) / Open as usual buttons. Choosing hours only saves them on the owner's record; every site change still goes through the normal approval cards, and field-level mismatches stay in the scan and Approvals.
+- **Holiday Foresight:** scans 90 days ahead from the bundled festival calendar (all dates flagged `verified:false` → the tab warns that festival dates shift and asks the owner to confirm the date, or enter the right one if the calendar is wrong, before saving), a status per holiday (Not set / Saved — not on all sites yet / Set on all sites), alerts at 30/14/7 days, and one-click Closed all day / Special hours (editable opening and closing time) / Open as usual buttons. Choosing hours only saves them on the owner's record; every site change still goes through the normal approval cards, and field-level mismatches stay in the scan and Approvals.
 - **Plain-language closures:** one text box; a 300 ms-debounced live preview resolves "tomorrow", "next Monday", "24 to 26 Dec", "open 10 to 2 on Diwali" against today (Asia/Kolkata) and shows the resolved date; unclear/past/ambiguous input gets exactly one clarifying question; 23 unit tests on the parser.
 - **Visible guardrails:** blocked actions appear in the trace with a red "Blocked" badge.
 
