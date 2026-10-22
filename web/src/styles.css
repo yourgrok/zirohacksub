@@ -239,3 +239,6 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 .mdetail.tr-Gemini { border-left-color: var(--brand); } .mdetail.tr-Fallback { border-left-color: var(--clay); } .mdetail.tr-Blocked { border-left-color: var(--red); }
 @media (hover: none) { }
 @media (prefers-reduced-motion: reduce) { .mbot-emoji { animation: none; } .mnode, .mseg { transition: none; } }
+
+.mbot-img { display: block; width: 54px; height: auto; user-select: none; filter: drop-shadow(0 3px 4px #0005); animation: bob .8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .mbot-img { animation: none; } }

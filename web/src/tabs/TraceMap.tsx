@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { timeIST, useReducedMotion } from "../shared";
 
-/** A winding "map" of the agent's steps. The 🤖 follows the pointer; when the pointer rests it walks the route by itself. */
+/** A winding "map" of the agent's steps. The agent mascot follows the pointer; when the pointer rests it walks the route by itself. */
 const PAD = 64, DX = 128, H = 300, R = 28, YS = [96, 212];
 const ICON: Record<string, string> = {
   read_listing: "📄", normalise: "🔧", compare: "⚖️", propose: "📝", flag_listing: "🚩", apply_approved: "✅",
@@ -15,7 +15,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const bot = useRef<HTMLDivElement>(null);
-  const face = useRef<HTMLSpanElement>(null);
+  const face = useRef<HTMLImageElement>(null);
   const pos = useRef({ x: PAD, y: YS[0] });
   const target = useRef({ x: PAD, y: YS[0] });
   const raf = useRef<number | null>(null);
@@ -33,7 +33,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
       if (face.current && Math.abs(dx) > 2) face.current.style.transform = `scaleX(${dx < 0 ? -1 : 1})`;
       raf.current = requestAnimationFrame(draw);
     }
-    if (bot.current) bot.current.style.transform = `translate(${pos.current.x - 18}px, ${pos.current.y - 22}px)`;
+    if (bot.current) bot.current.style.transform = `translate(${pos.current.x - 27}px, ${pos.current.y - 44}px)`;
   };
   const kick = () => { if (raf.current === null) raf.current = requestAnimationFrame(draw); };
   const goTo = (i: number) => { idx.current = i; setFocus(i); if (pts[i]) { target.current = { ...pts[i] }; kick(); } };
@@ -47,7 +47,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
     const last = n - 1;
     idx.current = last; setFocus(last);
     target.current = { ...pts[last] }; pos.current = { ...pts[last] };
-    if (bot.current) bot.current.style.transform = `translate(${pts[last].x - 18}px, ${pts[last].y - 22}px)`;
+    if (bot.current) bot.current.style.transform = `translate(${pts[last].x - 27}px, ${pts[last].y - 44}px)`;
     box.current?.scrollTo({ left: Math.max(0, pts[last].x - (box.current?.clientWidth ?? 600) / 2) });
   }, [n, pts]);
 
@@ -105,7 +105,7 @@ export default function TraceMap({ rows }: { rows: any[] }) {
               </React.Fragment>
             );
           })}
-          <div className="mbot" ref={bot} aria-hidden><span ref={face} className="mbot-emoji">🤖</span></div>
+          <div className="mbot" ref={bot} aria-hidden><img ref={face} className="mbot-img" src="/agent.png" alt="" draggable={false} /></div>
         </div>
       </div>
       {t && (
