@@ -9,7 +9,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15.5px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 18px 28px; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 20px 18px 28px; }
 h1 { font-size: 20px; line-height: 1.3; margin: 0; font-weight: 650; } h2 { font-size: 18px; line-height: 1.35; margin: 0 0 10px; font-weight: 650; } h3 { font-size: 15px; margin: 18px 0 8px; font-weight: 650; }
 p { margin: 0 0 10px; }
 .sub, .muted { color: var(--muted); } .small { font-size: 13px; } .big { font-size: 19px; font-weight: 650; margin: 0 0 8px; }
@@ -273,3 +273,23 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 .claimcard { border: 1px dashed var(--clay); border-radius: 10px; padding: 12px 14px; margin: 10px 0; background: color-mix(in srgb, var(--clay) 5%, var(--card)); } .claimcard h3 { margin: 0 0 4px; } .claimcard .steps { margin: 8px 0 8px 20px; padding: 0; } .claimcard .pre { white-space: pre-wrap; font-size: 13px; }
 .simbox { margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; } .simbox h4 { margin: 0 0 2px; }
 @media (max-width: 720px) { .autopilot { order: 3; } }
+
+/* ── side navigation ── */
+.shell { display: flex; gap: 18px; align-items: flex-start; }
+.sidenav { flex: 0 0 210px; position: sticky; top: 12px; align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+.shell.navclosed .sidenav { flex-basis: auto; padding: 6px; }
+.mainpane { flex: 1 1 0; min-width: 0; }
+.navtoggle { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; border-radius: 8px; padding: 8px 10px; font: inherit; font-weight: 650; color: var(--ink); cursor: pointer; }
+.navtoggle:hover { background: var(--gray-bg); } .navtoggle:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.tabs.vtabs { flex-direction: column; overflow: visible; gap: 2px; margin-top: 4px; }
+.vtabs .tab { text-align: left; border-bottom: 0; border-left: 3px solid transparent; border-radius: 8px; padding: 9px 12px; white-space: normal; }
+.vtabs .tab:hover { border-radius: 8px; } .vtabs .tab.on { border-left-color: var(--brand); background: var(--brand-soft); }
+.vtabs .tabsep { flex: 0 0 1px; height: 1px; margin: 6px 4px; background: var(--line); }
+.sticky { margin: 0 0 14px; border-radius: 10px; }
+@media (max-width: 720px) { .shell { flex-direction: column; } .sidenav { position: static; width: 100%; flex-basis: auto; } }
+@media print { .sidenav { display: none !important; } }
+
+/* ── demo PIN flash card ── */
+.flashcard { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 10px 0 4px; padding: 16px; border: 1.5px dashed var(--brand); border-radius: 14px; background: var(--green-bg); text-align: center; }
+.fc-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.fc-pin { font: 700 26px/1.2 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; user-select: all; }

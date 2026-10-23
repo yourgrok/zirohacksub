@@ -77,7 +77,7 @@ export default function DetailsTab({ st, me, act, go }: Ctx) {
         {me.business?.isDemo && (
           <div className="simbox">
             <h4>Make the outside world change (demo)</h4>
-            <p className="muted small">These act on the mock listing sites only, so you can watch the agent cope. Then press Scan, or turn on Autopilot and wait.</p>
+            <p className="muted small">These act on the mock listing sites only, so you can watch the agent cope. Then press Scan listings to see how the agent copes.</p>
             <div className="actions">
               <button className="btn small" disabled={st.busy} onClick={() => act(async () => { const r = await api("/api/demo/simulate", { kind: "drift_phone", site: "a" }); setSimMsg(r.message); })}>Someone changes a phone number</button>
               <button className="btn small" disabled={st.busy} onClick={() => act(async () => { const r = await api("/api/demo/simulate", { kind: "drift_diwali", site: "b" }); setSimMsg(r.message); })}>Someone changes the Diwali hours</button>

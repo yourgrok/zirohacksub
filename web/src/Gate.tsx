@@ -27,6 +27,7 @@ function Login({ onLoggedIn, onNew, notice }: { onLoggedIn: () => void; onNew: (
   const [pin, setPin] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true); setErr(null);
@@ -42,6 +43,17 @@ function Login({ onLoggedIn, onNew, notice }: { onLoggedIn: () => void; onNew: (
       <input id="pin" className="pin-input" value={pin} onChange={(e) => setPin(e.target.value.toUpperCase())} autoComplete="off" autoCapitalize="characters" spellCheck={false} autoFocus placeholder="XXXXX-XXXXX" maxLength={14} />
       {err && <p className="err" role="alert">{err}</p>}
       <button className="btn primary wide" disabled={busy || pin.replace(/[\s-]/g, "").length < 8}>{busy ? "Checking…" : "Log in"}</button>
+      <p className="gate-alt"><button type="button" className="linkish" aria-expanded={showDemo} onClick={() => setShowDemo((v) => !v)}>Access the Demo PIN</button></p>
+      {showDemo && (
+        <div className="flashcard" role="note">
+          <span className="fc-label">Default demo PIN</span>
+          <b className="fc-pin">7KQ4X-M9PHT</b>
+          <div className="fc-actions">
+            <button type="button" className="btn small" onClick={() => setPin("7KQ4X-M9PHT")}>Use this PIN</button>
+          </div>
+          <small className="muted">Synthetic demo business only.</small>
+        </div>
+      )}
       <p className="gate-alt">New here? <button type="button" className="linkish" onClick={onNew}>Set up my business</button></p>
     </form>
   );

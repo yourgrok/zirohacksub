@@ -40,14 +40,14 @@ describe("tabbed console (browser)", () => {
     expect(await page.locator("#tab-details[aria-selected=true]").count()).toBe(1);
   }, 90000);
 
-  run("Autopilot switch is off by default and toggles on and off", async () => {
+  run("side menu is open by default, has all 9 tabs, closes and reopens; no Autopilot switch", async () => {
     if (!browser) return;
-    expect(await page.locator(".autopilot .switch[aria-checked=false]").count()).toBe(1);
-    await page.click(".autopilot .switch");
-    await page.waitForSelector(".autopilot.on");
-    expect(await page.locator(".autopilot .switch[aria-checked=true]").count()).toBe(1);
-    await page.click(".autopilot .switch");
-    await page.waitForSelector(".autopilot:not(.on)");
+    expect(await page.locator(".autopilot").count()).toBe(0);
+    expect(await page.locator(".sidenav [role=tab]").count()).toBe(9);
+    await page.click(".navtoggle");
+    expect(await page.locator("#side-tabs").isHidden()).toBe(true);
+    await page.click(".navtoggle");
+    expect(await page.locator("#side-tabs").isVisible()).toBe(true);
   }, 30000);
 
   run("the text box answers a question, previews an edit and still understands dates", async () => {

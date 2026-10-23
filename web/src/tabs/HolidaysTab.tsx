@@ -122,7 +122,6 @@ function HolidayRow({ h, today, st, act, go, expanded, onToggle }: { h: any; tod
                     <button className="btn primary small" disabled={st.busy || bad} onClick={save}>
                       {answer === "no" && otherOk ? `Save for ${niceDate(finalDate)}` : "Save to my record"}
                     </button>
-                    <button className="btn ghost small" disabled={st.busy} onClick={cancel}>Cancel</button>
                   </div>
                   <p className="muted small">This only saves it on your record. You approve every listing-site change in Approvals.</p>
                 </div>

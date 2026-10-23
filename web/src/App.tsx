@@ -27,6 +27,8 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const [rev, setRev] = useState(0);
   const [tab, setTab] = useState<TabId>(tabFromHash);
   const [scanPrompt, setScanPrompt] = useState<"show" | null>(null);
+  const [navOpen, setNavOpen] = useState<boolean>(() => { try { return localStorage.getItem("navOpen") !== "0"; } catch { return true; } });
+  const toggleNav = () => setNavOpen((o) => { try { localStorage.setItem("navOpen", o ? "0" : "1"); } catch { /* ignore */ } return !o; });
   const [nudgeDismissedAt, setNudgeDismissedAt] = useState(-1); // approved-count the owner last chose "Later" for
 
   useEffect(() => {
@@ -45,13 +47,6 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
     const t = setInterval(load, 1200);
     return () => clearInterval(t);
   }, [st?.busy, load]);
-
-  // While Autopilot is on the agent works by itself, so the page keeps looking (quietly) for what it found
-  useEffect(() => {
-    if (!st?.autopilot?.on || st?.busy) return;
-    const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 7000);
-    return () => clearInterval(t);
-  }, [st?.autopilot?.on, st?.busy, load]);
 
   const act = useCallback(async (fn: () => Promise<unknown>): Promise<boolean> => { setErr(null); let ok = true; try { await fn(); } catch (e: any) { ok = false; setErr(e.message); } await load(); return ok; }, [load]);
 
@@ -103,9 +98,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const closeScan = () => setScanPrompt(null);
   const checkChanges = () => { setScanPrompt(null); go("approvals"); };
   const applyNow = () => { setNudgeDismissedAt(approvedCount); runExecute(); go("trace"); };
-  const ap = st.autopilot as { on: boolean; lastCheckedAt: string | null; everyMs: number };
   const unseen = (st.events as any[]).filter((e) => !e.seen && e.kind !== "autopilot");
-  const toggleAutopilot = () => act(() => api("/api/autopilot", { on: !ap.on }));
   const dismissEvents = () => act(() => api("/api/events/seen", {}));
   const ctx: Ctx = { st, me, act, go, rev, onSwitched };
   const Panel = PANELS[tab];
@@ -139,13 +132,6 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
             </button>
           )}
         </div>
-        <div className={`autopilot ${ap.on ? "on" : ""}`}>
-          <button type="button" role="switch" aria-checked={ap.on} className="switch" onClick={toggleAutopilot} title={`Autopilot: the agent checks your listings by itself about every ${Math.round(ap.everyMs / 1000)} seconds, applies what you already approved, and tells you what it found. It never approves anything for you.`}>
-            <span className="knob" aria-hidden />
-          </button>
-          <span className="aptext"><b>Autopilot {ap.on ? "on" : "off"}</b><small>{ap.on ? (ap.lastCheckedAt ? `last checked ${new Date(ap.lastCheckedAt).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" })}` : "first check soon") : "agent waits for you"}</small></span>
-          {ap.on && <button type="button" className="btn small ghost" disabled={st.busy} onClick={() => act(() => followRun("/api/autopilot/check"))}>Check now</button>}
-        </div>
         <button className="btn small ghost" onClick={onLogout}>Log out</button>
         </div>
       </header>
@@ -159,23 +145,33 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
           <button className={`btn stepbtn ${next === 3 ? "primary next" : ""}`} disabled={st.busy || approvedCount + pendingMod === 0} onClick={runExecute} title={approvedCount > 0 ? "Sends only what you approved, then reloads each page to check" : pendingMod > 0 ? "Reloads the sites that were waiting for a moderator and checks whether the change is live now" : "Approve at least one change first"}><span className="stepno">3</span><span className="steptxt">{approvedCount > 0 ? `Apply approved & verify (${approvedCount})` : pendingMod > 0 ? `Re-check pending sites (${pendingMod})` : "Apply approved & verify"}<small>{approvedCount > 0 ? "press this to send" : pendingMod > 0 ? "did the site approve it?" : "approve something first"}</small></span></button>
           {st.busy && <button type="button" className="spin linkish-btn" onClick={() => go("trace")} title="Open the Agent Trace"><img className="spin-robot" src="/robot.png" alt="" aria-hidden draggable={false} /> Working… view progress</button>}
         </div>
-        <div className="tabs" role="tablist" aria-label="Sections" onKeyDown={onTabKey}>
-          {TAB_DEFS.map((t, i) => (
-            <React.Fragment key={t.id}>
-              {t.more && !TAB_DEFS[i - 1]?.more && <span className="tabsep" aria-hidden />}
-              <button
-                id={`tab-${t.id}`} role="tab" aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1}
-                className={`tab ${t.more ? "more" : ""} ${tab === t.id ? "on" : ""} ${t.id === "approvals" && pendingMod > 0 ? "attn" : ""}`} title={t.hint} onClick={() => go(t.id)}
-              >
-                {t.label}
-                {t.id === "approvals" && waiting > 0 && <span className="tabcount" aria-label={`${waiting} waiting`}>{waiting}</span>}
-                {t.id === "approvals" && pendingMod > 0 && <span className="tabcount pend" title="Waiting for a site's moderator to approve" aria-label={`${pendingMod} waiting for site moderation`}>⏳ {pendingMod}</span>}
-              </button>
-            </React.Fragment>
-          ))}
-        </div>
       </div>
 
+      <div className={`shell ${navOpen ? "" : "navclosed"}`}>
+        <nav className="sidenav" aria-label="Sections">
+          <button type="button" className="navtoggle" aria-expanded={navOpen} aria-controls="side-tabs" title={navOpen ? "Close the menu" : "Open the menu"} onClick={toggleNav}>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" /></svg>
+            {navOpen && <span>Menu</span>}
+          </button>
+          <div id="side-tabs" hidden={!navOpen}>
+      <div className="tabs vtabs" role="tablist" aria-orientation="vertical" aria-label="Sections" onKeyDown={onTabKey}>
+        {TAB_DEFS.map((t, i) => (
+          <React.Fragment key={t.id}>
+            {t.more && !TAB_DEFS[i - 1]?.more && <span className="tabsep" aria-hidden />}
+            <button
+              id={`tab-${t.id}`} role="tab" aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} tabIndex={tab === t.id ? 0 : -1}
+              className={`tab ${t.more ? "more" : ""} ${tab === t.id ? "on" : ""} ${t.id === "approvals" && pendingMod > 0 ? "attn" : ""}`} title={t.hint} onClick={() => go(t.id)}
+            >
+              {t.label}
+              {t.id === "approvals" && waiting > 0 && <span className="tabcount" aria-label={`${waiting} waiting`}>{waiting}</span>}
+              {t.id === "approvals" && pendingMod > 0 && <span className="tabcount pend" title="Waiting for a site's moderator to approve" aria-label={`${pendingMod} waiting for site moderation`}>⏳ {pendingMod}</span>}
+            </button>
+          </React.Fragment>
+        ))}
+      </div>
+          </div>
+        </nav>
+        <div className="mainpane">
       {err && <div className="alert a-red" role="alert">{err}</div>}
       {st.lastError && <div className="alert a-red">Last run failed: {st.lastError}</div>}
 
@@ -231,6 +227,8 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
           </div>
         </div>
       )}
+        </div>
+      </div>
       <footer className="foot">Mock listing sites and synthetic data only. SQLite is temporary on free hosts; the app reseeds on boot.</footer>
     </div>
   );
