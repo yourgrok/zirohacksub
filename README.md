@@ -10,7 +10,7 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 
 **Demo video (2 minutes, captions on screen, no voice-over):** [docs/demo/demo.mp4](docs/demo/demo.mp4), with [subtitles](docs/demo/demo.srt) and the [timeline](docs/demo/demo-script.md). It is recorded from the real app by `npm run demo:video` (see "Re-record the demo video" below).
 
-**Jury deck (18 slides, speaker notes included):** [docs/Business-Listing-Consistency-Agent-Jury-Deck.pptx](docs/Business-Listing-Consistency-Agent-Jury-Deck.pptx) with a [PDF copy](docs/Business-Listing-Consistency-Agent-Jury-Deck.pdf). Where each figure comes from: [docs/deck/NOTES.md](docs/deck/NOTES.md).
+**Jury deck (10 slides, speaker notes included):** [docs/Business-Listing-Consistency-Agent-Jury-Deck.pptx](docs/Business-Listing-Consistency-Agent-Jury-Deck.pptx) with a [PDF copy](docs/Business-Listing-Consistency-Agent-Jury-Deck.pdf). Where each figure comes from: [docs/deck/NOTES.md](docs/deck/NOTES.md).
 
 1. The free host sleeps when idle: the **first load can take about 30 to 60 seconds**. Wait for the login page.
 2. Log in with the PIN. Press **Reset demo data** on the My Details tab (only the demo business can; the `/tests` page also runs TC1-TC8) to return to a clean starting state; the data also reseeds whenever the host restarts.

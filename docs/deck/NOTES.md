@@ -1,6 +1,6 @@
 # Jury deck: where every figure comes from
 
-Deck: `docs/Business-Listing-Consistency-Agent-Jury-Deck.pptx` (PDF copy next to it). 18 slides with speaker notes.
+Deck: `docs/Business-Listing-Consistency-Agent-Jury-Deck.pptx` (PDF copy next to it). 10 slides with speaker notes (body text 14 pt and up).
 Rebuild: `pip install python-pptx pillow` then `python scripts/build-deck.py`. Screenshots are in `docs/deck/img/` (cropped from the running app, fictional data).
 
 | On the slides | Source |
