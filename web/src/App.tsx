@@ -79,6 +79,15 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
     return () => { document.removeEventListener("visibilitychange", onVis); window.removeEventListener("blur", leave); window.removeEventListener("focus", back); };
   }, [followRun, load]);
 
+  // While an edit waits for a site's moderator, look again every few seconds so an approval OR a rejection shows up without any clicking
+  const waitingMod = st ? (st.rows as Row[]).some((r) => r.state === "PENDING_MODERATION") : false;
+  const busyNow = !!st?.busy;
+  useEffect(() => {
+    if (!waitingMod || busyNow) return;
+    const t = setInterval(() => { if (document.visibilityState === "visible") followRun("/api/runs/execute").catch(() => load()); }, 8000);
+    return () => clearInterval(t);
+  }, [waitingMod, busyNow, followRun, load]);
+
   if (!st) return <div className="wrap"><p>Loading…</p>{err && <p className="err">{err}</p>}</div>;
 
   const rows: Row[] = st.rows;
