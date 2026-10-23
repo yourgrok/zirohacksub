@@ -264,7 +264,6 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 .briefing { margin: 8px 0; font-size: 14px; line-height: 1.45; padding: 9px 12px; border-left: 3px solid var(--clay); background: color-mix(in srgb, var(--clay) 7%, var(--card)); border-radius: 0 9px 9px 0; }
 .claimcard { border: 1px dashed var(--clay); border-radius: 10px; padding: 12px 14px; margin: 10px 0; background: color-mix(in srgb, var(--clay) 5%, var(--card)); } .claimcard h3 { margin: 0 0 4px; } .claimcard .steps { margin: 8px 0 8px 20px; padding: 0; } .claimcard .pre { white-space: pre-wrap; font-size: 13px; }
 .simbox { margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; } .simbox h4 { margin: 0 0 2px; }
-@media (max-width: 720px) { 
 /* ── side navigation ── */
 .shell { display: flex; gap: 18px; align-items: flex-start; }
 .sidenav { flex: 0 0 210px; position: sticky; top: 12px; align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }

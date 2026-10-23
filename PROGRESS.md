@@ -88,3 +88,6 @@ Feedback: the teal-green still looked too close to blue. Replaced it in `web/src
 
 ### Fix: beige never showed on dark-mode devices
 The console followed the OS dark-mode setting, so a user whose device is in dark mode saw the dark palette and never the beige one (my review had forced light mode, which hid this). Removed the `prefers-color-scheme: dark` block and set `color-scheme: light`: the console is now beige on every device. Dark screenshots removed.
+
+### Fix: the vertical side menu only appeared on phones
+`web/src/styles.css` had a stray `@media (max-width: 720px) {` that was never closed, so every side-menu rule (and the rest of the file after it) applied only at 720 px or narrower; on a desktop the sections still showed as a horizontal top row under the Menu button. Removed that one line; the menu is now a vertical column beside the content on desktop (the toggle still collapses it, and phones still stack it above the content). Arrow keys now follow the vertical layout (Up/Down, in addition to Left/Right). Guards: `tests/css.test.ts` (braces must balance) and a browser test that checks the tabs share one column, stack downwards, and sit left of the content; both were confirmed to fail with the stray line put back.

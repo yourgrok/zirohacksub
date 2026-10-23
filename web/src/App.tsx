@@ -112,7 +112,7 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
 
   const onTabKey = (e: React.KeyboardEvent) => {
     const i = TAB_DEFS.findIndex((t) => t.id === tab);
-    const to = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? TAB_DEFS.length - 1 : null;
+    const to = e.key === "ArrowDown" || e.key === "ArrowRight" ? i + 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? TAB_DEFS.length - 1 : null;
     if (to === null) return;
     e.preventDefault();
     const next = TAB_DEFS[(to + TAB_DEFS.length) % TAB_DEFS.length].id;

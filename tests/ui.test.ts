@@ -50,6 +50,21 @@ describe("tabbed console (browser)", () => {
     expect(await page.locator("#side-tabs").isVisible()).toBe(true);
   }, 30000);
 
+  run("on a desktop the menu really is a vertical column beside the content (not a top row); arrow keys go up and down", async () => {
+    if (!browser) return;
+    await page.click("#tab-details");
+    const box = async (sel: string) => (await page.locator(sel).boundingBox())!;
+    const [d, si, ap, panel] = [await box("#tab-details"), await box("#tab-sites"), await box("#tab-approvals"), await box("#panel-details")];
+    expect(Math.abs(d.x - si.x)).toBeLessThan(2);                 // same column
+    expect(si.y).toBeGreaterThan(d.y + d.height - 2);             // stacked downwards
+    expect(ap.y).toBeGreaterThan(si.y + si.height - 2);
+    expect(panel.x).toBeGreaterThan(d.x + d.width);               // content sits to the right of the menu
+    await page.focus("#tab-details"); await page.keyboard.press("ArrowDown");
+    expect(await page.locator("#tab-sites[aria-selected=true]").count()).toBe(1);
+    await page.keyboard.press("ArrowUp");
+    expect(await page.locator("#tab-details[aria-selected=true]").count()).toBe(1);
+  }, 30000);
+
   run("the text box answers a question, previews an edit and still understands dates", async () => {
     if (!browser) return;
     await page.click("#tab-edit");
