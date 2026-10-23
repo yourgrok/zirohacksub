@@ -1,6 +1,6 @@
 # Test evidence summary
 
-Generated: 2026-10-22T20:40:25.944Z  
+Generated: 2026-10-23T13:04:11.808Z  
 Pinned test date: **2026-10-21** (Asia/Kolkata) · reader: **auto** · mock data only.
 
 Every run starts from a fresh reset of the seeded demo data. The deterministic run uses `LLM_PROVIDER=none` so results cannot fail randomly because of rate limits or model changes.
@@ -17,9 +17,8 @@ Every run starts from a fresh reset of the seeded demo data. The deterministic r
 | TC6 — Foresight alert for a holiday with no exception | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
 | TC7 — A listing changes after the owner approved | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
 | TC8 — A site is briefly down, and a site drops an edit | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
-| TC9 — Autopilot notices a change by itself | ✅ PASS | — not run (needs `GEMINI_API_KEY`; run `npm run test:tc:llm`) |
 
-Deterministic: **9/9 passed**. Gemini: not run in this evidence set.
+Deterministic: **8/8 passed**. Gemini: not run in this evidence set.
 
 ## TC1 — Holiday hours differ on one site
 
@@ -142,7 +141,7 @@ Trace: 29 tool calls recorded (see `TC4.json`).
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvk093aw0 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvkzeb3r0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -221,26 +220,6 @@ Trace: 27 tool calls recorded (see `TC7.json`).
 | The re-send is in the audit log | pass | apply-retry entries = 1 |
 
 Trace: 28 tool calls recorded (see `TC8.json`).
-
-## TC9 — Autopilot notices a change by itself
-
-**Input:** Everything is fixed and Autopilot is on. Someone changes the phone number on Listify. Autopilot runs with nobody clicking.
-
-**Expected:** Autopilot detects the drift, writes a fix for the owner to approve, and sends nothing. After the owner approves, the next Autopilot pass applies it and verifies it.
-
-**Actual (deterministic):** Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve.
-
-**Result:** ✅ PASS — Actual result matches the expected result.
-
-| Check | Result | Detail |
-|---|---|---|
-| Everything we could fix is fixed; autopilot is on | pass | Autopilot on |
-| With nobody clicking, Autopilot ran and noticed the change | pass | Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
-| It wrote a fix for the owner to approve | pass | Listify phone: PROPOSED |
-| It sent nothing and approved nothing | pass | writes = 1 |
-| After the owner approved, the next pass applied and verified it | pass | Listify phone: VERIFIED; writes = 2 |
-
-Trace: 25 tool calls recorded (see `TC9.json`).
 
 ## Gemini decisions: fallbacks and guardrail blocks
 

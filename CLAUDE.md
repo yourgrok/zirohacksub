@@ -32,9 +32,9 @@ MATCH, FORMAT_ONLY_EQUIVALENT, MISMATCH, PROPOSED, APPROVED, REJECTED, APPLIED, 
 - `npm run dev` — server (3000) + Vite (5173)
 - `npm run build` — build console; `npm start` — production server
 - `npm run typecheck` / `npm test`
-- `npm run test:tc` — TC1-TC9 deterministic -> evidence/
-- `npm run test:tc:llm` — TC1-TC9 with Gemini -> evidence/llm/ (needs GEMINI_API_KEY in .env)
-- `npm run demo:onboarding` — new-owner journey end to end (+ TC1-TC9) -> evidence/onboarding-demo.md
+- `npm run test:tc` — TC1-TC8 deterministic -> evidence/
+- `npm run test:tc:llm` — TC1-TC8 with Gemini -> evidence/llm/ (needs GEMINI_API_KEY in .env)
+- `npm run demo:onboarding` — new-owner journey end to end (+ TC1-TC8) -> evidence/onboarding-demo.md
 
 ## Layout
 See docs/CODE_MAP.md. Architecture: docs/ARCHITECTURE.md.

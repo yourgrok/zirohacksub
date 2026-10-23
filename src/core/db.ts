@@ -40,8 +40,7 @@ let db: DB | null = null;
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS business (
   id TEXT PRIMARY KEY, name TEXT, address TEXT, phone TEXT, hours_json TEXT,
-  pin_hmac TEXT, mock_account TEXT, status TEXT DEFAULT 'active', is_demo INTEGER DEFAULT 0, created_at TEXT,
-  autopilot INTEGER DEFAULT 0, autopilot_checked_at TEXT);
+  pin_hmac TEXT, mock_account TEXT, status TEXT DEFAULT 'active', is_demo INTEGER DEFAULT 0, created_at TEXT);
 CREATE TABLE IF NOT EXISTS exceptions (
   id TEXT PRIMARY KEY, business_id TEXT, start_date TEXT, end_date TEXT, kind TEXT, open TEXT, close TEXT,
   reason TEXT, source TEXT, status TEXT DEFAULT 'active', created_at TEXT);
@@ -80,8 +79,6 @@ CREATE TABLE IF NOT EXISTS mock_listings (
 CREATE TABLE IF NOT EXISTS mock_queue (
   id INTEGER PRIMARY KEY AUTOINCREMENT, site TEXT, listing_id TEXT, change_json TEXT, summary TEXT,
   status TEXT DEFAULT 'pending', created_at TEXT, account TEXT);
-CREATE TABLE IF NOT EXISTS agent_events (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, business_id TEXT NOT NULL, at TEXT, kind TEXT, platform_id TEXT, message TEXT, seen INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS ai_notes (
   business_id TEXT NOT NULL, field_id INTEGER NOT NULL, basis TEXT, text TEXT, at TEXT, PRIMARY KEY (business_id, field_id));
 CREATE TABLE IF NOT EXISTS mock_writes (
@@ -118,7 +115,7 @@ function migrate(d: DB) {
   for (const [t, c, ddl] of [
     ["business", "pin_hmac", "TEXT"], ["business", "mock_account", "TEXT"], ["business", "status", "TEXT DEFAULT 'active'"],
     ["business", "is_demo", "INTEGER DEFAULT 0"], ["business", "created_at", "TEXT"],
-    ["business", "autopilot", "INTEGER DEFAULT 0"], ["business", "autopilot_checked_at", "TEXT"], ["runs", "briefing", "TEXT"],
+    ["runs", "briefing", "TEXT"],
     ["platform_listings", "source", "TEXT DEFAULT 'seed'"], ["platform_listings", "linked_at", "TEXT"],
     ["audit_log", "business_id", "TEXT"], ["runs", "business_id", "TEXT"], ["trace", "business_id", "TEXT"], ["mock_queue", "account", "TEXT"],
   ] as const) addColumn(d, t, c, ddl);
@@ -151,7 +148,7 @@ export function closeDb() {
 
 const TABLES = [
   "business", "exceptions", "platforms", "platform_listings", "field_states", "state_history", "audit_log",
-  "runs", "trace", "change_log", "site_matches", "onboarding_drafts", "mock_listings", "mock_queue", "mock_writes", "agent_events", "ai_notes",
+  "runs", "trace", "change_log", "site_matches", "onboarding_drafts", "mock_listings", "mock_queue", "mock_writes", "ai_notes",
 ];
 
 export function wipeAll() {

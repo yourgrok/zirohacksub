@@ -34,7 +34,7 @@ export default function TestsPage({ me, onLogout }: { me: Me; onLogout: () => vo
 
   if (!me.business?.isDemo) {
     return (
-      <div className="wrap"><div className="card"><h2>Test cases TC1–TC9</h2>
+      <div className="wrap"><div className="card"><h2>Test cases TC1–TC8</h2>
         <p>The test page resets the shared demo data, so only the <b>demo business</b> can open it. Log out and log in with the demo PIN (see the README).</p>
         <div className="actions"><a className="btn small" href="/">← Console</a><button className="btn small" onClick={onLogout}>Log out</button></div></div></div>
     );
@@ -44,7 +44,7 @@ export default function TestsPage({ me, onLogout }: { me: Me; onLogout: () => vo
   return (
     <div className="wrap">
       <header className="top">
-        <div><h1>Test cases TC1–TC9</h1><p className="sub">One click each, or run all. Every run starts from a fresh reset, records input, expected, actual and evidence. Running a test resets the demo data.</p></div>
+        <div><h1>Test cases TC1–TC8</h1><p className="sub">One click each, or run all. Every run starts from a fresh reset, records input, expected, actual and evidence. Running a test resets the demo data.</p></div>
         <div className="badges"><a className="btn small" href="/">← Console</a><button className="btn small ghost" onClick={onLogout}>Log out</button><a className="btn small" href="/api/evidence/summary" target="_blank" rel="noreferrer">evidence/SUMMARY.md</a></div>
       </header>
       <section className="card">

@@ -15,7 +15,7 @@ export function whyOf(r: WhyInput): string {
       return `${s} shows "${r.original}" but your record says "${r.intended}". That is a real difference in meaning, not just formatting, so I'm proposing a fix. Nothing is sent until you approve.`;
     case "FORMAT_ONLY_EQUIVALENT": return `${s} writes this differently but it means the same as your record, so I left it alone.`;
     case "MATCH": return `${s} already matches your record.`;
-    case "APPROVED": return `You approved this. I'll send it to ${s} when you press Apply (or straight away if Autopilot is on).`;
+    case "APPROVED": return `You approved this. I'll send it to ${s} when you press Apply.`;
     case "APPLIED": return `Sent to ${s}. I still have to reload the page to check it.`;
     case "PENDING_MODERATION": return `${s} accepted the edit but its moderator has not approved it, so the public page still shows the old value. I won't call it fixed until I see it live.`;
     case "SITE_REJECTED": return `The moderator of ${s} (or the site owner) rejected this edit, so the public page still shows the old value. I will not send it again unless you approve it again.`;

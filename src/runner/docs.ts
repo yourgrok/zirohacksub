@@ -76,7 +76,6 @@ Every tool call is written to a timestamped **agent trace** (tool, input, output
 
 | Behaviour | What it does | Proven by |
 |---|---|---|
-| **Autopilot** | When switched on, a background pass checks every listing, applies what the owner already approved, re-checks edits waiting for a moderator, and tells the owner what it found ("while you were away"). It never approves anything. | TC9; \`tests/agentic.test.ts\` |
 | **Notices change after approval** | Before writing it reloads the page; if the page is no longer what the owner approved against it sends nothing and asks again with the new facts. | TC7 |
 | **Copes with a flaky world** | A site that is down is retried (each retry is a trace row); an edit the site said OK to but dropped is re-sent once (the same approved change) and verified. | TC8 |
 | **Says why** | Every card has a plain sentence saying what differs and why it matters; each run ends with a short "what I did" briefing. Built from facts in code; Gemini may reword it in the background. | \`tests/agentic.test.ts\` |
@@ -177,7 +176,7 @@ const slides = `# Slide outline (11 slides) — built from real run data
 
 **10. New owner: PIN login + score matching** — no username; a view-once PIN; the agent scores every listing on every site (phone 40 · address 35 · name 25), look-alike *Sunrise Sweet House* scores 37.7 vs 100, a good match owned by someone else is flagged, the owner confirms each match, and missing sites are added only after approval and verified (\`evidence/onboarding-demo.md\`). Every business is isolated from the others.
 
-**11. Results** — Deterministic TC1–TC9: ${det.filter((r) => r?.pass).length}/9 pass from a fresh reset. ${unit ? `${unit.numPassedTests}/${unit.numTotalTests} automated tests pass.` : ""} One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
+**11. Results** — Deterministic TC1–TC8: ${det.filter((r) => r?.pass).length}/8 pass from a fresh reset. ${unit ? `${unit.numPassedTests}/${unit.numTotalTests} automated tests pass.` : ""} One deployable service (Docker, Render free tier, READER_MODE=http), /health, no key needed.
 
 **12. Limitations (honest)** — Mock sites only · claiming a listing is a mock (no OTP) · a lost PIN means redoing onboarding · festival dates must be owner-confirmed · free-host DB resets (app reseeds on boot) · LLM is optional and guarded · live Gemini evidence needs the owner's key · Docker/Render not built in the build sandbox.
 `;

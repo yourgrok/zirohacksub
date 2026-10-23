@@ -107,8 +107,6 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
   const closeScan = () => setScanPrompt(null);
   const checkChanges = () => { setScanPrompt(null); go("approvals"); };
   const applyNow = () => { setNudgeDismissedAt(approvedCount); runExecute(); go("trace"); };
-  const unseen = (st.events as any[]).filter((e) => !e.seen && e.kind !== "autopilot");
-  const dismissEvents = () => act(() => api("/api/events/seen", {}));
   const ctx: Ctx = { st, me, act, go, rev, onSwitched };
   const Panel = PANELS[tab];
 
@@ -183,17 +181,6 @@ export default function App({ me, onLogout, onSwitched }: { me: Me; onLogout: ()
         <div className="mainpane">
       {err && <div className="alert a-red" role="alert">{err}</div>}
       {st.lastError && <div className="alert a-red">Last run failed: {st.lastError}</div>}
-
-      {unseen.length > 0 && (
-        <div className="alert a-away" role="status">
-          <b>While you were away</b>
-          <ul>{unseen.slice(0, 5).map((e) => <li key={e.id}>{e.message}</li>)}</ul>
-          <div className="actions">
-            {unseen.some((e) => ["drift", "proposal"].includes(e.kind)) && <button className="btn small primary" onClick={() => { dismissEvents(); go("approvals"); }}>Review what it found</button>}
-            <button className="btn small ghost" onClick={dismissEvents}>Got it</button>
-          </div>
-        </div>
-      )}
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="panel">
         <Panel {...ctx} />

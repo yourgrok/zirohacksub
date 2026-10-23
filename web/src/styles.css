@@ -258,22 +258,13 @@ ul.hlist { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10p
 @media (max-width: 560px) { .busy-pill { min-height: 64px; } .busy-pill .busy-robot { width: 48px; height: 48px; } .busy-text b { font-size: 15px; } }
 @media (prefers-reduced-motion: reduce) { .busy-pill .busy-robot { animation: none; } }
 
-/* ── autopilot, "while you were away", why lines, claim card, briefing ── */
-.autopilot { display: flex; align-items: center; gap: 9px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); }
-.autopilot.on { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, var(--green, #2f7d4f) 9%, var(--card)); }
-.autopilot .switch { width: 40px; height: 22px; border-radius: 999px; border: 0; background: #b9b4a8; position: relative; cursor: pointer; padding: 0; flex: none; transition: background .2s; }
-.autopilot.on .switch { background: var(--green, #2f7d4f); }
-.autopilot .knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
-.autopilot.on .knob { transform: translateX(18px); }
-.autopilot .switch:focus-visible { outline: 3px solid #1a73e8; outline-offset: 2px; }
-.aptext { display: flex; flex-direction: column; line-height: 1.15; font-size: 13.5px; } .aptext small { color: var(--muted); font-size: 12px; }
+/* ── why lines, claim card, briefing ── */
 .alert.a-away { background: #eef6ee; border: 1px solid #b9d8bf; color: #1d4a2c; border-radius: 10px; padding: 10px 14px; margin: 10px 0; } .alert.a-away ul { margin: 6px 0 8px 18px; padding: 0; } .alert.a-away li { margin: 2px 0; }
 .why { margin: 6px 0 2px; font-size: 14px; line-height: 1.4; } .whytag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; background: var(--soft-bg); color: var(--soft-ink); border-radius: 5px; padding: 1px 6px; margin-right: 4px; font-weight: 700; }
 .briefing { margin: 8px 0; font-size: 14px; line-height: 1.45; padding: 9px 12px; border-left: 3px solid var(--clay); background: color-mix(in srgb, var(--clay) 7%, var(--card)); border-radius: 0 9px 9px 0; }
 .claimcard { border: 1px dashed var(--clay); border-radius: 10px; padding: 12px 14px; margin: 10px 0; background: color-mix(in srgb, var(--clay) 5%, var(--card)); } .claimcard h3 { margin: 0 0 4px; } .claimcard .steps { margin: 8px 0 8px 20px; padding: 0; } .claimcard .pre { white-space: pre-wrap; font-size: 13px; }
 .simbox { margin: 12px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; } .simbox h4 { margin: 0 0 2px; }
-@media (max-width: 720px) { .autopilot { order: 3; } }
-
+@media (max-width: 720px) { 
 /* ── side navigation ── */
 .shell { display: flex; gap: 18px; align-items: flex-start; }
 .sidenav { flex: 0 0 210px; position: sticky; top: 12px; align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px; }

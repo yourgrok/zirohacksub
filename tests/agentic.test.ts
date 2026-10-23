@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client, insertBusiness, startTestServer } from "./helpers.js";
-import { autopilotRun, setAutopilot, listEvents } from "../src/agent/autopilot.js";
 import { scan, approveField } from "../src/agent/service.js";
 import { buildClaimDrafts } from "../src/agent/claimDraft.js";
 import { whyOf } from "../src/agent/why.js";
@@ -39,26 +38,9 @@ describe("the agent explains itself", () => {
   });
 });
 
-describe("autopilot", () => {
-  it("is off by default, toggles per business, and never approves", async () => {
-    resetAndSeed();
-    expect((await c.get("/api/state")).body.autopilot.on).toBe(false);
-    expect((await c.post("/api/autopilot", { on: true })).body.on).toBe(true);
-    await autopilotRun(B);
-    const rows = (await c.get("/api/state")).body.rows;
-    expect(rows.some((r: any) => r.state === "PROPOSED")).toBe(true);
-    expect(rows.some((r: any) => ["APPROVED", "APPLIED", "VERIFIED"].includes(r.state))).toBe(false);
-    expect((await c.post("/api/autopilot", { on: false })).body.on).toBe(false);
-  });
-  it("another business's autopilot setting and events are separate", async () => {
-    insertBusiness("biz_other_ap", "Other Shop", "GHKMNPQRST", { demo: false });
-    setAutopilot("biz_other_ap", true);
-    const other = new Client(s.url); expect((await other.login("GHKMNPQRST")).status).toBe(200);
-    expect((await other.get("/api/state")).body.autopilot.on).toBe(true);
-    expect((await c.get("/api/state")).body.autopilot.on).toBe(false);
-    expect(listEvents("biz_other_ap").every((e) => /Autopilot is on/.test(e.message))).toBe(true);
-  });
+describe("demo simulate switches", () => {
   it("only the demo business can use the simulate switches", async () => {
+    insertBusiness("biz_other_ap", "Other Shop", "GHKMNPQRST", { demo: false });
     const other = new Client(s.url); await other.login("GHKMNPQRST");
     expect((await other.post("/api/demo/simulate", { kind: "drift_phone" })).status).toBe(403);
     expect((await c.post("/api/demo/simulate", { kind: "nonsense" })).status).toBe(400);

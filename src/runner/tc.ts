@@ -7,7 +7,6 @@ import { getTrace, type TraceRow } from "../agent/loop.js";
 import { approveAllForPlatform, approveField, execute, scan } from "../agent/service.js";
 import { geminiEnabled } from "../agent/llm.js";
 import { buildRows, toCsv } from "../agent/report.js";
-import { autopilotRun, listEvents, setAutopilot } from "../agent/autopilot.js";
 import { simulate } from "../mock/simulate.js";
 import { foresight } from "../foresight/index.js";
 import { confirmIntent, preview, refine } from "../nl/index.js";
@@ -18,7 +17,7 @@ import { BUSINESS_ID as B } from "../core/seed.js";
 /** Tests always run against this fixed date so results never change from day to day. */
 export const TEST_DATE = "2026-10-21";
 export type TcMode = "deterministic" | "llm";
-export const TC_IDS = ["TC1", "TC2", "TC3", "TC4", "TC5", "TC6", "TC7", "TC8", "TC9"] as const;
+export const TC_IDS = ["TC1", "TC2", "TC3", "TC4", "TC5", "TC6", "TC7", "TC8"] as const;
 export type TcId = (typeof TC_IDS)[number];
 
 export interface Check { name: string; pass: boolean; detail: string }
@@ -39,7 +38,6 @@ const DEFS: Record<TcId, { title: string; input: string; expected: string }> = {
   TC6: { title: "Foresight alert for a holiday with no exception", input: "Today is pinned to 21 Oct 2026. Bhai Dooj (11 Nov 2026) has no exception on the record.", expected: "An alert is raised (30-day milestone, chip “Not set”) with a draft suggestion that is NOT applied automatically." },
   TC7: { title: "A listing changes after the owner approved", input: "CityPages' Diwali fix is approved. Before it is sent, someone else changes the Diwali hours on CityPages to 9:00 AM to 12:00 PM.", expected: "The agent reloads, sees the page is not what the owner approved against, sends nothing, and asks the owner again with the new facts. After a second approval it is applied and VERIFIED." },
   TC8: { title: "A site is briefly down, and a site drops an edit", input: "Listify fails its next two page loads. Later CityPages answers OK to the approved edit but does not store it.", expected: "The agent waits and retries the outage until the site answers. For the lost edit it re-sends the same owner-approved change once and verifies it. Both are visible in the trace." },
-  TC9: { title: "Autopilot notices a change by itself", input: "Everything is fixed and Autopilot is on. Someone changes the phone number on Listify. Autopilot runs with nobody clicking.", expected: "Autopilot detects the drift, writes a fix for the owner to approve, and sends nothing. After the owner approves, the next Autopilot pass applies it and verifies it." },
 };
 
 export const listTests = () => TC_IDS.map((id) => ({ id, ...DEFS[id] }));
@@ -194,26 +192,6 @@ const BODIES: Record<TcId, Body> = {
     const retry = (getDb().prepare("SELECT COUNT(*) c FROM audit_log WHERE action='apply-retry'").get() as { c: number }).c;
     c("The re-send is in the audit log", retry === 1, `apply-retry entries = ${retry}`);
     return `outage retried; lost write re-sent; B holiday ${getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state}`;
-  },
-  async TC9(c, runs) {
-    runs.push((await scan(B)).runId);
-    approveField(B, getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.id);
-    runs.push((await execute(B)).runId);
-    setAutopilot(B, true);
-    const w0 = totalWrites();
-    c("Everything we could fix is fixed; autopilot is on", getFieldByKey(B, "site_b", "holiday:ex_seed_diwali")!.state === "VERIFIED", "Autopilot on");
-    simulate("drift_phone", "a");
-    const run1 = await autopilotRun(B);
-    const f = getFieldByKey(B, "site_a", "phone")!;
-    const drift = listEvents(B, 30).find((e) => e.kind === "drift" && /Listify/.test(e.message));
-    c("With nobody clicking, Autopilot ran and noticed the change", run1.ran && !!drift, drift?.message ?? "no event");
-    c("It wrote a fix for the owner to approve", f.state === "PROPOSED", `Listify phone: ${f.state}`);
-    c("It sent nothing and approved nothing", totalWrites() === w0, `writes = ${totalWrites()}`);
-    approveField(B, f.id);
-    const run2 = await autopilotRun(B);
-    c("After the owner approved, the next pass applied and verified it", run2.ran && getFieldByKey(B, "site_a", "phone")!.state === "VERIFIED" && totalWrites() === w0 + 1, `Listify phone: ${getFieldByKey(B, "site_a", "phone")!.state}; writes = ${totalWrites()}`);
-    setAutopilot(B, false);
-    return `Autopilot found: ${drift?.message ?? "nothing"}`;
   },
   async TC6(c, runs, extra) {
     const exBefore = listExceptions(B).length;

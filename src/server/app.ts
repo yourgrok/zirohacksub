@@ -20,7 +20,6 @@ import { IntentError, confirmDetails, confirmIntent, isDetailIntent, preview, re
 import { evidenceDir, writeGuardrail, writeResults } from "../runner/evidence.js";
 import { listTests, runAllTcs, runGuardrailDemo, runTc, TC_IDS, TEST_DATE, type TcMode, type TcResult } from "../runner/tc.js";
 import { geminiEnabled } from "../agent/llm.js";
-import { autopilotInfo, autopilotRun, listEvents, markEventsSeen, setAutopilot } from "../agent/autopilot.js";
 import { latestBriefing, polishWithGemini } from "../agent/briefing.js";
 import { buildClaimDrafts } from "../agent/claimDraft.js";
 import { SIM_KINDS, simulate, type SimKind } from "../mock/simulate.js";
@@ -80,7 +79,7 @@ export function createApp() {
       business: { id: b.id, name: b.name, address: b.address, phone: b.phone, hours: b.hours, isDemo: b.isDemo },
       exceptions: listExceptions(bizId), platforms, rows, coverage: coverageOf(bizId), matches: buildMatchRows(bizId),
       summary: latestRunSummary(bizId) ?? (rows.length ? templateSummary(bizId) : null), llmAvailable: geminiEnabled(),
-      briefing: latestBriefing(bizId), claimDrafts: buildClaimDrafts(bizId), autopilot: autopilotInfo(bizId), events: listEvents(bizId),
+      briefing: latestBriefing(bizId), claimDrafts: buildClaimDrafts(bizId),
     };
   };
   api.get("/state", (req, res) => res.json(state(bizOf(req))));
@@ -134,17 +133,6 @@ export function createApp() {
     // a run id that belongs to another business simply returns nothing
     res.json({ runId: wanted ?? null, rows: wanted ? getTraceFor(bizId, wanted) : [] });
   });
-
-  /* ── autopilot: the agent checks on its own and tells the owner what it found (it never approves anything) ── */
-  api.post("/autopilot", wrap((req, res) => { setAutopilot(bizOf(req), !!req.body?.on); res.json(autopilotInfo(bizOf(req))); }));
-  api.post("/autopilot/check", wrap(async (req, res) => {
-    const bizId = bizOf(req);
-    if (isBusy(bizId) || starting.has(bizId) || testRunning) return res.status(409).json({ error: "Another run is in progress." });
-    starting.add(bizId);
-    void autopilotRun(bizId).finally(() => starting.delete(bizId));
-    res.status(202).json({ started: true });
-  }));
-  api.post("/events/seen", (req, res) => { markEventsSeen(bizOf(req)); res.json({ ok: true }); });
 
   /* ── demo only: make the (mock) outside world change so the agent has to cope ── */
   api.post("/demo/simulate", requireDemo, wrap((req, res) => {

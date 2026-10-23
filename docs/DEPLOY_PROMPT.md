@@ -37,7 +37,7 @@ business can open `/tests` or reset the data.
   `Dockerfile.playwright` (bigger image with Chromium, optional), `render.yaml` (Render blueprint),
   `.env.example`, `README.md` (PowerShell steps), `docs/SUBMISSION_NOTES.md`, `evidence/`.
 - Verified in the build sandbox (Linux): typecheck, 119/119 tests, production build, `npm start` from an empty DB,
-  `/health`, and TC1-TC9 passing (`npm run test:tc`) with evidence written to `evidence/`.
+  `/health`, and TC1-TC8 passing (`npm run test:tc`) with evidence written to `evidence/`.
 - NOT verified anywhere yet (so expect possible small problems, and treat them as normal debugging):
   1. The Docker image has never been built (no Docker in the sandbox).
   2. Nothing has been run on Windows.
@@ -92,7 +92,7 @@ PowerShell window: `Invoke-RestMethod http://localhost:3000/health` should show 
 
 **Step 5, produce the LIVE Gemini evidence (PowerShell).** `npm run test:tc:llm`. This is the first real Gemini
 call, so it may expose small problems. What to look for:
-- It should print PASS for TC1-TC9 and write `evidence/llm/` and refresh `evidence/SUMMARY.md` (deterministic and
+- It should print PASS for TC1-TC8 and write `evidence/llm/` and refresh `evidence/SUMMARY.md` (deterministic and
   Gemini side by side, plus every step where Gemini fell back or was blocked).
 - Even if Gemini misbehaves, the tests should still pass because the app falls back to its deterministic planner;
   the fallbacks are listed in SUMMARY.md and in the agent trace on the page ("Fallback" badge with the reason).
@@ -123,7 +123,7 @@ temporary and wiped on every restart, which is fine because the app reseeds the 
 **Step 8, verify the live service (browser).** Open `https://<service>.onrender.com/health` (expect
 `"status":"ok"`, `readerMode":"http"`, `plannerMode":"gemini"`), then `/` (it now shows a PIN login screen; the demo
 business PIN is `7KQ4X-M9PHT`, synthetic and public on purpose), log in, then `/tests` and press
-"Run all" (expect 9 of 9 passed; with a key there is also a "With Gemini" option). Also try "Set up my business"
+"Run all" (expect 8 of 8 passed; with a key there is also a "With Gemini" option). Also try "Set up my business"
 with: Green Leaf Cafe / 8 Lotus Street, Baner, Pune, Maharashtra 411045 / +91 90000 00031 to see the new-owner flow. Also try the "Run guardrail demo"
 button on `/tests` (it uses a SIMULATED rogue planner; it should show every unsafe attempt blocked).
 

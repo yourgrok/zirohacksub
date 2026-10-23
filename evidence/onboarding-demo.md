@@ -1,6 +1,6 @@
 # New-owner onboarding demo (real run)
 
-Run: 2026-10-22T20:41:18.540Z · mock sites and synthetic data only · in-memory database · the PIN is masked everywhere in this log.
+Run: 2026-10-23T13:05:19.752Z · mock sites and synthetic data only · in-memory database · the PIN is masked everywhere in this log.
 
 ## 1. Not logged in: nothing is reachable
 
@@ -33,7 +33,7 @@ PIN issued: `•••••-•••••` (masked here; shown to the owner e
 
 ## 4. Owner logs in with only the PIN
 
-- ✅ login with the PIN works (no username, no password) — business biz_c80b7b5abc58
+- ✅ login with the PIN works (no username, no password) — business biz_45e89e533db6
 - ✅ first login claimed and linked the two confirmed listings — LST-A-4001, LST-C-4001
 | Site | Status | Note |
 |---|---|---|
@@ -106,7 +106,6 @@ Agent trace for this business: 19 events (match_site×5, owner_confirm×2, creat
 | TC6 Foresight alert for a holiday with no exception | PASS | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
 | TC7 A listing changes after the owner approved | PASS | B holiday: MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED |
 | TC8 A site is briefly down, and a site drops an edit | PASS | outage retried; lost write re-sent; B holiday VERIFIED |
-| TC9 Autopilot notices a change by itself | PASS | Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
 
 
 **All checks passed.**

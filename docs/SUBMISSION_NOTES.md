@@ -39,7 +39,6 @@ Every tool call is written to a timestamped **agent trace** (tool, input, output
 
 | Behaviour | What it does | Proven by |
 |---|---|---|
-| **Autopilot** | When switched on, a background pass checks every listing, applies what the owner already approved, re-checks edits waiting for a moderator, and tells the owner what it found ("while you were away"). It never approves anything. | TC9; `tests/agentic.test.ts` |
 | **Notices change after approval** | Before writing it reloads the page; if the page is no longer what the owner approved against it sends nothing and asks again with the new facts. | TC7 |
 | **Copes with a flaky world** | A site that is down is retried (each retry is a trace row); an edit the site said OK to but dropped is re-sent once (the same approved change) and verified. | TC8 |
 | **Says why** | Every card has a plain sentence saying what differs and why it matters; each run ends with a short "what I did" briefing. Built from facts in code; Gemini may reword it in the background. | `tests/agentic.test.ts` |
@@ -88,7 +87,7 @@ The rogue planner tried to apply with no approval, apply fields nobody approved,
 
 ## 5. Test results (copied from the latest run)
 
-Run: 2026-10-22T20:40:02.558Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
+Run: 2026-10-23T13:03:51.640Z, date pinned to 2026-10-21 IST, every test starts from a fresh reset, reader mode auto.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
@@ -100,9 +99,8 @@ Run: 2026-10-22T20:40:02.558Z, date pinned to 2026-10-21 IST, every test starts 
 | TC6 — Foresight alert for a holiday with no exception | PASS | not run (no API key in build environment) | 0 | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
 | TC7 — A listing changes after the owner approved | PASS | not run (no API key in build environment) | 27 | B holiday: MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED |
 | TC8 — A site is briefly down, and a site drops an edit | PASS | not run (no API key in build environment) | 28 | outage retried; lost write re-sent; B holiday VERIFIED |
-| TC9 — Autopilot notices a change by itself | PASS | not run (no API key in build environment) | 25 | Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
 
-Unit/integration suite: **294/294 tests passed** across 23 files.
+Unit/integration suite: **293/293 tests passed** across 23 files.
 
 Per-check detail with raw and normalised values, state histories and screenshots: `evidence/SUMMARY.md`.
 

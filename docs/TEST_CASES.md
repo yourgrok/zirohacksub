@@ -1,6 +1,6 @@
 # Test cases
 
-Copied from the latest deterministic run (2026-10-22T20:40:02.558Z; date pinned to 2026-10-21 IST; fresh reset before every test). Full per-check evidence: `evidence/SUMMARY.md` and `evidence/TC*.json`.
+Copied from the latest deterministic run (2026-10-23T13:03:51.640Z; date pinned to 2026-10-21 IST; fresh reset before every test). Full per-check evidence: `evidence/SUMMARY.md` and `evidence/TC*.json`.
 
 | Test | Deterministic | Gemini | Tool calls (det.) | Actual result (deterministic run) |
 |---|---|---|---|---|
@@ -12,7 +12,6 @@ Copied from the latest deterministic run (2026-10-22T20:40:02.558Z; date pinned 
 | TC6 — Foresight alert for a holiday with no exception | PASS | not run (no API key in build environment) | 0 | Bhai Dooj (11 Nov 2026) is in 21 days and has no opening-hours exception on your record. Dates can shift — verify first. |
 | TC7 — A listing changes after the owner approved | PASS | not run (no API key in build environment) | 27 | B holiday: MISMATCH → PROPOSED → APPROVED → PROPOSED → APPROVED → APPLIED → VERIFIED |
 | TC8 — A site is briefly down, and a site drops an edit | PASS | not run (no API key in build environment) | 28 | outage retried; lost write re-sent; B holiday VERIFIED |
-| TC9 — Autopilot notices a change by itself | PASS | not run (no API key in build environment) | 25 | Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
 
 ## TC1 — Holiday hours differ on one site
 
@@ -87,7 +86,7 @@ Copied from the latest deterministic run (2026-10-22T20:40:02.558Z; date pinned 
 |---|---|---|
 | Preview resolves the date explicitly (26 Dec 2026, closed) | pass | Action: Closed \| Date: Sat 26 Dec 2026 |
 | Nothing is saved before Confirm | pass | exceptions: 1 |
-| Confirm created a natural-language exception | pass | ex_mvk093aw0 source=natural-language |
+| Confirm created a natural-language exception | pass | ex_mvkzeb3r0 source=natural-language |
 | Proposed on A, B, C and E; flagged on D | pass | a:PROPOSED b:PROPOSED c:PROPOSED d:FLAGGED_NOT_OWNER e:PROPOSED |
 | Approval is never skipped: no write without an approval click | pass | writes = 0 |
 | A, B, C verified after reload; E pending; D flagged | pass | a:VERIFIED b:VERIFIED c:VERIFIED d:FLAGGED_NOT_OWNER e:PENDING_MODERATION |
@@ -139,21 +138,6 @@ Copied from the latest deterministic run (2026-10-22T20:40:02.558Z; date pinned 
 | The agent noticed the edit was dropped and re-sent the same approved change | pass | re-sent once |
 | It is VERIFIED after the re-send, and nothing else was written | pass | writes = 2 |
 | The re-send is in the audit log | pass | apply-retry entries = 1 |
-
-## TC9 — Autopilot notices a change by itself
-
-- **Input:** Everything is fixed and Autopilot is on. Someone changes the phone number on Listify. Autopilot runs with nobody clicking.
-- **Expected:** Autopilot detects the drift, writes a fix for the owner to approve, and sends nothing. After the owner approves, the next Autopilot pass applies it and verifies it.
-- **Actual:** Autopilot found: Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve.
-- **Result:** PASS — Actual result matches the expected result.
-
-| Check | Result | Detail |
-|---|---|---|
-| Everything we could fix is fixed; autopilot is on | pass | Autopilot on |
-| With nobody clicking, Autopilot ran and noticed the change | pass | Listify changed by itself: Phone now shows "+91 90000 00123" instead of the correct value. I wrote a fix for you to approve. |
-| It wrote a fix for the owner to approve | pass | Listify phone: PROPOSED |
-| It sent nothing and approved nothing | pass | writes = 1 |
-| After the owner approved, the next pass applied and verified it | pass | Listify phone: VERIFIED; writes = 2 |
 
 ## How to run
 
