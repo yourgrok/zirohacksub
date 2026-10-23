@@ -103,18 +103,21 @@ export interface DashboardRead {
   canEdit: boolean;
   claimedByOther: boolean;
   pending: { summary: string; change: AnyChange | null }[];
+  rejected: { summary: string; change: AnyChange | null }[];
 }
 
 export function parseDashboard(html: string): DashboardRead {
   const $ = cheerio.load(html);
   const root = $("[data-listing-id]").first();
   const canEdit = root.attr("data-can-edit") === "true";
-  const pending = $(".pending-change").map((_, el) => {
+  const readChanges = (sel: string) => $(sel).map((_, el) => {
     let change: AnyChange | null = null;
     try { const p = AnyChangeZ.safeParse(JSON.parse($(el).attr("data-change") ?? "")); if (p.success) change = p.data; } catch { /* ignore */ }
     return { summary: $(el).text().replace(/\s+/g, " ").trim(), change };
   }).get();
-  return { listingId: root.attr("data-listing-id") ?? null, canEdit, claimedByOther: $(".claim-banner").attr("data-claim") === "other", pending };
+  const pending = readChanges(".pending-change");
+  const rejected = readChanges(".rejected-change");
+  return { listingId: root.attr("data-listing-id") ?? null, canEdit, claimedByOther: $(".claim-banner").attr("data-claim") === "other", pending, rejected };
 }
 
 /** The site's search/index page: every listing it shows (including look-alikes), by listing id. */

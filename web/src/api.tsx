@@ -22,7 +22,7 @@ export async function api<T = any>(path: string, body?: unknown, method?: string
 
 export const STATE_LABEL: Record<string, string> = {
   MATCH: "Matches", FORMAT_ONLY_EQUIVALENT: "Same, formatted differently", MISMATCH: "Different", PROPOSED: "Needs your approval",
-  APPROVED: "Approved", REJECTED: "Rejected", APPLIED: "Sent — not yet verified", VERIFIED: "Verified", PENDING_MODERATION: "Pending moderation",
+  APPROVED: "Approved", REJECTED: "Rejected", APPLIED: "Sent — not yet verified", VERIFIED: "Verified", PENDING_MODERATION: "Pending moderation", SITE_REJECTED: "Rejected by the site",
   FLAGGED_NOT_OWNER: "Flagged — not your listing",
 };
 

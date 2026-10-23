@@ -46,6 +46,6 @@ export interface PlatformListing {
 
 export const FIELD_STATES = [
   "MATCH", "FORMAT_ONLY_EQUIVALENT", "MISMATCH", "PROPOSED", "APPROVED", "REJECTED",
-  "APPLIED", "VERIFIED", "PENDING_MODERATION", "FLAGGED_NOT_OWNER",
+  "APPLIED", "VERIFIED", "PENDING_MODERATION", "FLAGGED_NOT_OWNER", "SITE_REJECTED",
 ] as const;
 export type FieldState = (typeof FIELD_STATES)[number];

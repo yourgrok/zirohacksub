@@ -105,12 +105,16 @@ function renderDashboard(cfg: SiteCfg, l: MockListing, account: string | null): 
   const pendHtml = pending.length
     ? `<h3>Pending changes (${pending.length})</h3>${pending.map((p) => `<div class="banner pend pending-change" data-change="${esc(p.change_json)}">${esc(p.summary)} — awaiting moderator review</div>`).join("")}`
     : "";
+  const rejected = getDb().prepare("SELECT * FROM mock_queue WHERE site=? AND listing_id=? AND status='rejected' ORDER BY id DESC LIMIT 5").all(l.site, l.listing_id) as any[];
+  const rejHtml = rejected.length
+    ? `<h3>Rejected changes (${rejected.length})</h3>${rejected.map((p) => `<div class="banner deny rejected-change" data-change="${esc(p.change_json)}">${esc(p.summary)} — rejected by the site's moderator</div>`).join("")}`
+    : "";
   const body = `<div data-listing-id="${l.listing_id}" data-can-edit="${canEdit}">
 <h1>Owner dashboard</h1>${banner}
 <p><b>${esc(l.display_name)}</b> · ${l.listing_id}</p>
 <p>Address: ${esc(l.address)}<br>Phone: ${esc(l.phone)}</p>
 <p>Edits are submitted through the dashboard API. ${cfg.moderation ? "This site reviews every edit before it goes live." : "Edits go live immediately."}</p>
-${pendHtml}
+${pendHtml}${rejHtml}
 <p><a href="/mock/${cfg.slug}/listing/${l.listing_id}">View public page</a></p></div>`;
   return page(cfg, `Dashboard ${l.listing_id}`, body, `data-can-edit="${canEdit}"`);
 }

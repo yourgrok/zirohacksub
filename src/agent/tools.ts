@@ -69,6 +69,7 @@ function upsertComparison(bizId: string, platformId: string, c: Comparison) {
   }
   switch (ex.state) {
     case "APPROVED": case "APPLIED": case "PENDING_MODERATION": return; // in flight
+    case "SITE_REJECTED": return; // stays visible until the owner decides (send again, or leave it)
     case "FLAGGED_NOT_OWNER":
       if (c.state !== "MISMATCH") transition(ex.id, c.state, "comparator", c.note, { ...patch, original_raw: c.currentRaw, original_norm: c.currentNorm });
       return;
@@ -246,6 +247,10 @@ export const TOOLS: Record<ToolName, ToolDef> = {
         } else if (r.dash.pending.some((p) => p.change && !isCreate(p.change) && changeKey(p.change) === changeKey(change))) {
           transition(f.id, "PENDING_MODERATION", "verifier", "public page unchanged; edit is waiting in the platform's moderation queue", patch);
           res.push(`${f.field_key}: PENDING_MODERATION`);
+        } else if (r.dash.rejected.some((p) => p.change && !isCreate(p.change) && changeKey(p.change) === changeKey(change))) {
+          // The site's moderator turned the edit down. Do NOT re-send it: ask the owner what to do.
+          transition(f.id, "SITE_REJECTED", "verifier", "the site's moderator rejected this edit; the public page still shows the old value", patch);
+          res.push(`${f.field_key}: SITE_REJECTED`);
         } else {
           // The site said OK but the page did not change and nothing is waiting in a queue: the edit was lost. Send the SAME owner-approved
           // change once more, then look again. Nothing new is sent and nothing the owner did not approve.

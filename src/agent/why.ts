@@ -18,6 +18,7 @@ export function whyOf(r: WhyInput): string {
     case "APPROVED": return `You approved this. I'll send it to ${s} when you press Apply (or straight away if Autopilot is on).`;
     case "APPLIED": return `Sent to ${s}. I still have to reload the page to check it.`;
     case "PENDING_MODERATION": return `${s} accepted the edit but its moderator has not approved it, so the public page still shows the old value. I won't call it fixed until I see it live.`;
+    case "SITE_REJECTED": return `The moderator of ${s} (or the site owner) rejected this edit, so the public page still shows the old value. I will not send it again unless you approve it again.`;
     case "VERIFIED": return `I reloaded the ${s} page and it now shows the value you approved.`;
     case "FLAGGED_NOT_OWNER": return `This ${s} listing is claimed by another account, so I did not touch it. I drafted a claim request for you.`;
     case "REJECTED": return `You rejected this change, so I'm leaving ${s} as it is.`;

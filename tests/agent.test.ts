@@ -94,6 +94,26 @@ describe("TC4 edit pending moderation", () => {
   });
 });
 
+describe("TC4b the site's moderator rejects the edit", () => {
+  it("becomes SITE_REJECTED with a message, is not re-sent, and can be sent again only after the owner approves again", async () => {
+    await scan(B);
+    const hours = getFieldByKey(B, "site_e", "hours")!;
+    approveField(B, hours.id);
+    await execute(B);
+    expect(getFieldByKey(B, "site_e", "hours")!.state).toBe("PENDING_MODERATION");
+    const q = getDb().prepare("SELECT id FROM mock_queue WHERE status='pending'").get() as { id: number };
+    await fetch(`${s.url}/mock/admin/queue/${q.id}/reject`, { method: "POST", headers: { "content-type": "application/json" } });
+    const before = writes("site_e").length;
+    await execute(B);
+    expect(getFieldByKey(B, "site_e", "hours")!.state).toBe("SITE_REJECTED");
+    expect(writes("site_e")).toHaveLength(before); // not re-sent as a "lost edit"
+    await scan(B);
+    expect(getFieldByKey(B, "site_e", "hours")!.state).toBe("SITE_REJECTED"); // message stays until the owner decides
+    approveField(B, hours.id); // owner chooses "Send it again"
+    expect(getFieldByKey(B, "site_e", "hours")!.state).toBe("APPROVED");
+  });
+});
+
 describe("owner can change their mind", () => {
   it("a rejected card can be re-approved, and a rejected one is never sent", async () => {
     await scan(B);

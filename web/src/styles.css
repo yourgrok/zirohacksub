@@ -78,7 +78,7 @@ label { font-size: 14px; } .radio { display: flex; gap: 8px; align-items: flex-s
 .pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; background: var(--gray-bg); color: var(--soft-ink); }
 .s-MATCH, .s-VERIFIED { background: var(--green-bg); color: var(--green); } .s-FORMAT_ONLY_EQUIVALENT, .s-APPROVED, .s-APPLIED { background: var(--brand-soft); color: var(--brand-text); }
 .s-MISMATCH, .s-PROPOSED { background: var(--clay-bg); color: var(--clay); } .s-PENDING_MODERATION { background: var(--clay-bg); color: var(--clay); border: 1px dashed var(--clay); }
-.s-FLAGGED_NOT_OWNER { background: var(--red-bg); color: var(--red); } .s-REJECTED { background: var(--gray-bg); color: var(--muted); }
+.s-FLAGGED_NOT_OWNER, .s-SITE_REJECTED { background: var(--red-bg); color: var(--red); } .s-REJECTED { background: var(--gray-bg); color: var(--muted); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; } .chip { padding: 3px 11px; border-radius: 999px; font-size: 13.5px; background: var(--gray-bg); }
 .c-info { background: var(--soft-bg); color: var(--soft-ink); } .c-NOT_SET { background: var(--red-bg); color: var(--red); } .c-SET_PARTIAL { background: var(--clay-bg); color: var(--clay); } .c-SET_ALL { background: var(--green-bg); color: var(--green); }
 
@@ -104,7 +104,7 @@ details.tools { margin-top: 2px; } details.tools summary { cursor: pointer; colo
 .fchip { background: var(--gray-bg); border: 1px solid transparent; color: var(--ink); border-radius: 999px; padding: 3px 12px; font: inherit; font-size: 13.5px; cursor: pointer; } .fchip:hover { border-color: var(--brand); }
 .fchip.on { background: var(--brand-soft); color: var(--brand-text); border-color: var(--brand); font-weight: 650; } .fchip .cnt { opacity: .75; font-size: 12.5px; margin-left: 3px; }
 .fcard { border: 1px solid var(--line); border-left: 4px solid var(--clay); border-radius: 10px; padding: 12px 14px; margin: 10px 0; background: var(--card); }
-.f-FLAGGED_NOT_OWNER { border-left-color: var(--red); background: var(--red-bg); } .f-PENDING_MODERATION { border-left-color: var(--clay); background: var(--clay-bg); }
+.f-SITE_REJECTED { border-left-color: var(--red); background: var(--red-bg); } .f-FLAGGED_NOT_OWNER { border-left-color: var(--red); background: var(--red-bg); } .f-PENDING_MODERATION { border-left-color: var(--clay); background: var(--clay-bg); }
 .f-VERIFIED, .f-MATCH { border-left-color: var(--green); } .f-REJECTED { border-left-color: var(--muted); opacity: .8; } .f-APPLIED, .f-APPROVED { border-left-color: var(--brand); }
 .fc-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; } .fc-diff { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 8px 0; }
 .arrow { color: var(--muted); } .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); } .reason { margin: 2px 0; color: var(--muted); font-size: 13.5px; }
