@@ -1,0 +1,87 @@
+1
+00:00:04,129 --> 00:00:07,782
+PIN-only login: no passwords, one PIN per business.
+
+2
+00:00:07,782 --> 00:00:11,000
+A fictional demo business: Sunrise Sweets & Bakery, Pune. Mock data only.
+
+3
+00:00:11,000 --> 00:00:15,907
+Your record is the source of truth. The agent compares every listing with it.
+
+4
+00:00:15,907 --> 00:00:19,001
+Five mock listing sites. Look-alike businesses are never read or edited.
+
+5
+00:00:19,001 --> 00:00:21,865
+The agent reads each site and compares meaning, not formatting.
+
+6
+00:00:21,865 --> 00:00:29,577
+It reports what it found. Nothing has been changed yet.
+
+7
+00:00:29,577 --> 00:00:34,457
+Every proposed fix is yours to approve or reject.
+
+8
+00:00:34,457 --> 00:00:39,000
+NearbyNow belongs to someone else: zero edits, and a claim request is drafted for you.
+
+9
+00:00:39,000 --> 00:00:46,001
+Approve, and only approved changes are sent. Then every page is reloaded to verify.
+
+10
+00:00:46,001 --> 00:00:55,002
+Every step the agent took, who decided it, and what it found.
+
+11
+00:00:55,002 --> 00:00:58,661
+ShopFront queues edits for a moderator. The agent waits and does not claim success.
+
+12
+00:00:58,661 --> 00:01:03,790
+After approval, one click re-reads the page. VERIFIED only if it really changed.
+
+13
+00:01:03,790 --> 00:01:07,993
+Per site and field: the original value, the intended value, and whether it is verified.
+
+14
+00:01:07,993 --> 00:01:12,743
+Formatting-only differences are ignored. Export the table as CSV for evidence.
+
+15
+00:01:12,743 --> 00:01:16,647
+Type it in plain words. Questions are answered from your record.
+
+16
+00:01:16,647 --> 00:01:23,799
+Closures and edits get a preview first. Nothing is saved until you confirm.
+
+17
+00:01:23,799 --> 00:01:28,704
+Upcoming festivals are flagged early, so closures are never forgotten.
+
+18
+00:01:28,704 --> 00:01:31,500
+Who changed what and when, including what was verified on each site.
+
+19
+00:01:31,500 --> 00:01:37,502
+Test cases TC1 to TC8 run from one page, with input, expected and actual.
+
+20
+00:01:37,502 --> 00:01:45,025
+A new owner finds their listings by score: phone, address and name.
+
+21
+00:01:45,025 --> 00:01:50,306
+Matches are scored on phone, address and name. Nothing is linked until you say yes.
+
+22
+00:01:50,306 --> 00:01:54,002
+The PIN is shown once. Only a keyed hash of it is stored.

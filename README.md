@@ -8,6 +8,8 @@ An agent that keeps a local business's **address, phone and hours** consistent a
 
 **Live demo:** <https://zirohacksub.onrender.com/> · **demo PIN** `7KQ4X-M9PHT` (synthetic, public on purpose).
 
+**Demo video (2 minutes, captions on screen, no voice-over):** [docs/demo/demo.mp4](docs/demo/demo.mp4), with [subtitles](docs/demo/demo.srt) and the [timeline](docs/demo/demo-script.md). It is recorded from the real app by `npm run demo:video` (see "Re-record the demo video" below).
+
 1. The free host sleeps when idle: the **first load can take about 30 to 60 seconds**. Wait for the login page.
 2. Log in with the PIN. Press **Reset demo data** on the My Details tab (only the demo business can; the `/tests` page also runs TC1-TC8) to return to a clean starting state; the data also reseeds whenever the host restarts.
 3. Press **1 Scan listings**, approve the cards in **Approvals**, then **Apply approved & verify**. ShopFront shows *Pending moderation*; approve it at `/mock/admin`, return to the app and it re-checks and shows *Verified*.
@@ -90,6 +92,18 @@ Optional, for screenshots in `evidence/`: `npx playwright install chromium`, the
 Invoke-RestMethod http://localhost:3000/health
 ```
 Shows version, reader mode, planner mode (`gemini`/`deterministic`) and DB status — never the key.
+
+## Re-record the demo video
+
+`docs/demo/demo.mp4` is not an edited mock-up: `scripts/record-demo.mjs` starts the app with an in-memory database (no Gemini key, date pinned to 21 Oct 2026), drives it in a real browser (login, scan, approve, apply, moderation, consistency table, edit and ask, holidays, change log, test cases, new-owner onboarding) and records the screen with captions and a visible pointer.
+
+```powershell
+npm run build
+npx playwright install chromium ffmpeg
+npm run demo:video
+```
+
+It takes about two minutes and writes `docs/demo/demo.mp4`, `demo.srt` (subtitles) and `demo-script.md` (timeline). Add `DRY=1` to skip the video and instead save one screenshot per scene in `.scratch/dry/` plus a timing report. Playwright needs its own ffmpeg to record, and a system `ffmpeg` (any recent version) to write the final mp4; without a system ffmpeg you get a `.webm` instead.
 
 ## Put it on GitHub
 ```powershell
